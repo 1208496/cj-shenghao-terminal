@@ -1,5 +1,5 @@
 import {Coordinator,digest,messageData,messageText,cleanSource} from './timeline.js';
-import {validateDraft,initialize,profile,projection,clone,requireRule,parseEnvelope,narrative} from '../core/engine.js';
+import {validateDraft,initialize,profile,projection,clone,requireRule,parseEnvelope,narrative,hasEvidence} from '../core/engine.js';
 import uiHTML from '../ui/phone.html';
 import config from '../../project.json';
 import protocol from '../content/protocol.txt';
@@ -89,7 +89,14 @@ async function extract(messageId) {
 }
 const api={error:'',read:()=>view(),subscribe(f){listeners.add(f);f(view());return()=>listeners.delete(f);},
   async submit(d){return submit(d);},
-  async action(op,lineage){requireRule(!extraBusy&&!setupBusy,'GENERATION_BUSY');current=await coordinator.operate(op,lineage);diagnostics(current);inject();publish();return view();},
+  async action(op,lineage){requireRule(!extraBusy&&!setupBusy,'GENERATION_BUSY');
+    op={...op,restorePresent:false};
+    if(op.type==='PLAYER_RESTORE'){
+      try{const m=helper.getChatMessages(-1,{include_swipes:true})[0],source=messageText(m),packet=mode()==='inline'?parseEnvelope(source):messageData(m).cj_shenghao?.extraEnvelope;
+        const scene=packet?.events?.findLast(e=>e.type==='SCENE_REPLACE');
+        op.restorePresent=!!(scene&&scene.sceneId===current?.state?.scene.sceneId&&scene.presentCharacterIds.includes(op.personRef)&&hasEvidence(narrative(source),scene.evidence)&&!packet.events.some(e=>e.type==='SCENE_LEAVE'&&e.personRef===op.personRef));
+      }catch{}}
+    current=await coordinator.operate(op,lineage);diagnostics(current);inject();publish();return view();},
   preferences(p){uiPrefs={...uiPrefs,...p};savePrefs();publish();},
   async parserMode(value){requireRule(['inline','extra'].includes(value)&&!coordinator.busy&&!extraBusy,'INVALID_MODE');settings.mode=value;savePrefs();await update();},
   async retry(){if(mode()==='extra')await extract(helper.getChatMessages(-1)[0]?.message_id);else await update();},
@@ -138,7 +145,7 @@ api.bounds=()=>({width:topWindow.innerWidth,height:topWindow.innerHeight,rect:{l
 const ev=globalThis.tavern_events || {};
 for(const name of ['MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_DELETED','CHARACTER_MESSAGE_RENDERED','USER_MESSAGE_RENDERED'])listen(ev[name],schedule);
 listen(ev.CHAT_CHANGED,()=>{epoch++;current=null;loadPrefs();publish();schedule();});
-listen(ev.GENERATION_STARTED,()=>{coordinator.busy=true;publish();});
+listen(ev.GENERATION_STARTED,(_type,_options,dryRun)=>{if(!dryRun){coordinator.busy=true;publish();}});
 listen(ev.GENERATION_STOPPED,()=>{coordinator.busy=false;schedule();});
 listen(ev.GENERATION_ENDED,async mid=>{coordinator.busy=false;await update();if(mode()==='extra')await extract(mid);});
 listen(ev.GENERATION_AFTER_COMMANDS,()=>inject());

@@ -64,15 +64,15 @@ export class Coordinator {
     this.last=result;return result;
   }
   refresh() {return this.serial(async()=>{
-    const r=await this.read();if(r.state&&!this.busy)await this.persist(r,r.head.record);return r;
+    const r=await this.read();if(r.state&&!this.busy&&JSON.stringify(messageData(r.head.message).stat_data?.shenghao)!==JSON.stringify(r.state))await this.persist(r,r.head.record);return r;
   });}
   operate(operation,expectedLineage) {return this.serial(async()=>{
     requireRule(!this.busy,'GENERATION_BUSY');const r=await this.read();
-    requireRule(r.state&&r.lineage===expectedLineage,'STALE_SOURCE');
+    requireRule(!this.busy,'GENERATION_BUSY');requireRule(r.state&&r.lineage===expectedLineage,'STALE_SOURCE');
     const state=applyOperation(r.state,operation,r.head.anchor);
     if(r.head.record.operations?.some(x=>x.operation.operationId===operation.operationId))return r;
     const record={...r.head.record,operations:[...(r.head.record.operations || []),{baseLineage:r.lineage,operation:clone(operation)}]};
     const next={...r,state,lineage:await digest(r.lineage+':'+operation.operationId)};
-    return this.persist(next,record);
+    requireRule(!this.busy,'GENERATION_BUSY');return this.persist(next,record);
   });}
 }

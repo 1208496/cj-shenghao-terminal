@@ -226,7 +226,7 @@ export function applyEnvelope(state,envelope,anchor,sourceText) {
   for(let i=0;i<envelope.events.length;i++) {
     const e=envelope.events[i];requireRule(e && typeof e==='object','INVALID_EVENT');
     const ordinal=integer(e.ordinal,0,100);requireRule(!ordinals.has(ordinal),'DUPLICATE_ORDINAL');ordinals.add(ordinal);
-    const evidence=text(e.evidence,360);requireRule(typeof sourceText==='string'&&sourceText.includes(evidence),'EVIDENCE_NOT_IN_SOURCE');
+    const evidence=text(e.evidence,360);requireRule(hasEvidence(sourceText,evidence),'EVIDENCE_NOT_IN_SOURCE');
     const eventKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,ordinal,e.type,e.personRef || '');
     if(s.operationHistory[eventKey])continue;
     if(e.factId && Object.hasOwn(s.facts,id(e.factId)))continue;
@@ -234,6 +234,17 @@ export function applyEnvelope(state,envelope,anchor,sourceText) {
     applyEvent(s,e,eventKey,anchor);s.operationHistory[eventKey]={type:e.type,status:'COMMITTED',revision:s.meta.revision+1};
   }
   s.meta.revision++;s.meta.sourceAnchor=clone(anchor);assertState(s);return s;
+}
+export function hasEvidence(source,evidence) {
+  if(typeof source!=='string'||typeof evidence!=='string')return false;
+  if(source.includes(evidence))return true;
+  // A quote may join several verbatim sentences from one scene. Each fragment must
+  // still occur in source order; no fuzzy matching or invented replacement text.
+  const parts=evidence.match(/[^。！？!?]+[。！？!?]?/g)||[];
+  if(parts.length<2||parts.length>8)return false;
+  let from=0;
+  for(const part of parts){const p=part.trim();if(p.length<6)return false;const at=source.indexOf(p,from);if(at<0)return false;from=at+p.length;}
+  return true;
 }
 export function canWithdraw(s,cid) { const c=s.characters[cid];return !!(c&&tracked(c)&&!c.withdrawal&&c.affection>=90); }
 export function applyOperation(state,op,anchor) {
@@ -254,7 +265,8 @@ export function applyOperation(state,op,anchor) {
     } else if(op.type==='PLAYER_HIDE') {
       c.trackingState='HIDDEN';s.scene.presentCharacterIds=s.scene.presentCharacterIds.filter(x=>x!==c.id);
     } else if(op.type==='PLAYER_RESTORE') {
-      c.trackingState='RECORDED'; // Never infer physical presence from restoring tracking.
+      c.trackingState='RECORDED';
+      if(op.restorePresent===true&&!s.scene.presentCharacterIds.includes(c.id))s.scene.presentCharacterIds.push(c.id);
     } else throw new RuleError('UNKNOWN_OPERATION');
   }
   s.meta.revision++;s.meta.sourceAnchor=clone(anchor);s.operationHistory[op.operationId]={type:op.type,status:'COMMITTED',revision:s.meta.revision,result};

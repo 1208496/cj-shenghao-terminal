@@ -1,6 +1,6 @@
 import {cents,validateDraft,PROFILE_KEYS,PROFILE_LABELS,poolParts,totals,stage,canWithdraw} from '../core/engine.js';
 const $=id=>document.getElementById(id);
-const esc=v=>String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=v=>String(v ?? '').replace(/[&<>"']/g,c=>String.fromCharCode(38)+({'&':'amp;','<':'lt;','>':'gt;','"':'quot;',"'":'#39;'}[c]));
 const yuan=n=>'¥'+new Intl.NumberFormat('zh-CN',{minimumFractionDigits:n%100?2:0,maximumFractionDigits:2}).format(n/100);
 const uid=()=>crypto.randomUUID();
 const setup=document.body.dataset.surface==='setup';
@@ -121,5 +121,6 @@ async function start(){for(let n=0;n<100;n++){try{api=window.parent.__CJ_SHENGHA
   if(!api){$('app').innerHTML='<div class="setup narrative"><h2>终端暂未就绪</h2><p>请启用酒馆助手中的角色卡脚本，然后重新打开这条消息。</p></div>';return;}
   unsubscribe=api.subscribe(receive);
 }
-window.addEventListener('pagehide',()=>{unsubscribe?.();clearTimeout(toastTimer);clearTimeout(fxTimer);clearTimeout(dragCancel);});
+const bridgeTimer=setInterval(()=>{try{const next=window.parent.__CJ_SHENGHAO_V2__;if(next&&api&&next!==api){unsubscribe?.();api=next;lastSignature='';unsubscribe=api.subscribe(receive);}}catch{}},600);
+window.addEventListener('pagehide',()=>{unsubscribe?.();clearInterval(bridgeTimer);clearTimeout(toastTimer);clearTimeout(fxTimer);clearTimeout(dragCancel);});
 start();
