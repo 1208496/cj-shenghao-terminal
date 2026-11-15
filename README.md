@@ -2,6 +2,8 @@
 
 当前为作者开发测试工程，**上传GitHub和切换测试更新指针不代表已向玩家正式发行**。用户未明确发行前，可直接改删旧字段，不做旧存档兼容层。有效规则见 [AGENTS.md](AGENTS.md)。
 
+最新作者测试版为 **rc.8**：[固定加载器整卡](dist/2.0.0-rc.8/神豪终端.json)。已包含四套完整开局预设、现金四选一、居住自由填写、字段建议扩充与下拉重弹修复，见 [开局修订](docs/opening-presets.md) 和 [测试发布回执](evidence/rc8-github-test-release.md)。开局契约已更新，请用新整卡测试。下方rc.7/rc.6描述保留为历史。
+
 当前开发版rc.7加入简易档案、手动九类建档与锁定、字号与缩放修复、开局预设和熟人编辑。已推送GitHub并切换作者测试指针，使用 [rc.7固定加载器整卡](dist/2.0.0-rc.7/神豪终端.json)。另保留 [rc.7本地checkpoint](dist/2.0.0-rc.7-checkpoint/神豪终端.json)。最新发布事实见 [PROJECT_STATE](PROJECT_STATE.md)。
 
 rc.6固定加载器方案已发布：[完整角色卡JSON](dist/2.0.0-rc.6/神豪终端.json)。自有Supabase已配置，149项离线检查、CDN核对及酒馆更新/回退/保底/停用验证完成。结果见[专项验收](evidence/hot-update-acceptance.md)、[交接文档](PROJECT_STATE.md)和[热更新说明](docs/hot-update.md)。历史rc.5保留，不作为本次交付。
