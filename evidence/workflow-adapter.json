@@ -1,0 +1,14 @@
+{
+  "schemaVersion":1,
+  "profile":"project.json",
+  "source":"src",
+  "output":"dist/<project.version>",
+  "validation":"node scripts/check.mjs",
+  "test":"node --test tests/*.test.mjs",
+  "build":"node scripts/build.mjs",
+  "dryRun":"node scripts/build.mjs --dry-run",
+  "releasePolicy":"explicit task-authorized new artifact; real-host gates recorded separately",
+  "route":{"id":"sillytavern-card-pipeline","snapshotVersion":"2026-08-18","loaded":["ST-A0","ST-A2","ST-D1","ST-D4"],"candidates":[]},
+  "writeBoundary":"E:/CJBAOJISHENHAOZD only; E:/SHZD read-only reference",
+  "checks":["positive cash/ledger invariant","sealed pool immutable","single event reducer","selected swipe lineage","ordinary fields empty","worldbook attachment/version parity","embedded runtime/regex presence","source-artifact/hash parity"]
+}

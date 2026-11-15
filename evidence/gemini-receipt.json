@@ -1,0 +1,22 @@
+{
+  "status": "generated",
+  "task": "custom",
+  "generatedAt": "2026-11-15T15:59:59.027689+00:00",
+  "modelRequested": "pg-gemini-4-argon",
+  "modelReturned": "pg-gemini-4-argon",
+  "fallbackUsed": false,
+  "fallbackModel": null,
+  "primaryError": null,
+  "responseId": "2e7a720a-7613-4252-bc06-0ec72b28ef87",
+  "finishReason": "stop",
+  "usage": {
+    "prompt_tokens": 1069,
+    "completion_tokens": 2226,
+    "total_tokens": 3295
+  },
+  "inputSha256": "9ecf09ff626c15d1e576f909378865f70da8d491e0e648a56829350345f549e5",
+  "temperature": 1.0,
+  "maxTokens": 6500,
+  "authority": "proposed-only",
+  "review": "Integrated only after checking SHEJI constraints; author-process labels removed from model-facing bodies."
+}

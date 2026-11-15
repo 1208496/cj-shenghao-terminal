@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "projectId": "cj-shenghao-terminal-v2",
+  "version": "2.0.0-alpha.1",
+  "gate": "offline-candidate",
+  "files": {
+    "神豪终端.json": {
+      "sha256": "ae31d00f49f0c1116d0b94b0407501b7a1df3e86a6b6475a60305f72ec88e5a8",
+      "bytes": 215838
+    },
+    "worldbook.json": {
+      "sha256": "f635ef422abff8283d0abdbd8e1b2bf59cba472b9768e14b800c6741009d3d5b",
+      "bytes": 18075
+    },
+    "runtime.js": {
+      "sha256": "c18c9d8f84d61cb31e6ac25694e498e35e572ba120d43e5a6e2d0c0713573951",
+      "bytes": 112129
+    },
+    "opening.html": {
+      "sha256": "f98a1069d3fe39064a36d7f6f943ff736bc8a0e4aad6069d0f01b1c526100a8c",
+      "bytes": 68697
+    },
+    "phone.html": {
+      "sha256": "5a4db63c88743135a2e201b7791c9e4f64b2a5124b60d997134c79080290586e",
+      "bytes": 68697
+    }
+  }
+}
