@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.7",
+  "version": "2.0.0-rc.8",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "7577ff8c237077837001c44a81a814cfba4358c8a792659b7c0c32fb1ee4d9b8",
-  "sha256": "444414974b544a096dda9af9f7489186de42b8f349b34154fade2336d82ea256",
-  "notes": "简易档案、手动九类建档、锁定发送与个人资料。"
+  "worldbookHash": "dd2fbc3f8a58cf5cf909d3a6ff262802f7df8f3bb6b73277fd687bce2b6fa8e2",
+  "sha256": "d40b0dccd32038642a23ba636ed3c6e4b847807f5d9ed9d1bb96a976322ebc9b",
+  "notes": "四套完整开局预设、现金四选一、下拉收起修复与选项扩充。"
 }

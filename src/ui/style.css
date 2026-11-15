@@ -156,3 +156,5 @@ button{cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var
 .setup-field-options{position:fixed;z-index:10000;overflow-y:auto;overscroll-behavior:contain;padding:4px;border:1px solid var(--line);border-radius:11px;background:var(--paper);box-shadow:0 8px 24px #24342c24;color:var(--ink)}.setup-field-options button{display:block;width:100%;text-align:left;white-space:normal;overflow-wrap:anywhere;border:0;border-radius:7px;background:transparent;color:inherit;padding:10px 12px;line-height:1.55}.setup-field-options button:hover,.setup-field-options [aria-selected=true]{background:var(--paper2);outline:1px solid var(--accent)}
 
 .wizard .person-preview{flex-wrap:wrap}.wizard .person-preview .choice-row{flex-shrink:0}
+
+.opening-presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}.opening-presets button{text-align:left;white-space:normal}.opening-presets b,.opening-presets small{display:block}.opening-presets small{margin-top:3px;color:var(--muted)}.opening-presets .selected{border-color:var(--accent);background:var(--paper2)}

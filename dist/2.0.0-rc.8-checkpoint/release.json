@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.8",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "dd2fbc3f8a58cf5cf909d3a6ff262802f7df8f3bb6b73277fd687bce2b6fa8e2",
+  "sha256": "d40b0dccd32038642a23ba636ed3c6e4b847807f5d9ed9d1bb96a976322ebc9b",
+  "notes": "四套完整开局预设、现金四选一、下拉收起修复与选项扩充。"
+}
