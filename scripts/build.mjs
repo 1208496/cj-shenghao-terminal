@@ -10,7 +10,8 @@ const read=async p=>JSON.parse(await fs.readFile(path.join(root,p),'utf8'));
 const cfg=await read('project.json');
 const releaseConfig=await read('release/loader.config.json'),coreOnly=process.argv.includes('--core-only');
 if(!coreOnly&&!process.argv.includes('--dry-run'))assertPublicConfig(releaseConfig);
-const output=path.join(root,'dist',cfg.version);
+const checkpoint=process.argv.includes('--checkpoint');
+const output=path.join(root,'dist',cfg.version+(checkpoint?'-checkpoint':''));
 const targets=['神豪终端.json','worldbook.json','runtime.js','bootstrap-loader.js','release.json','schema.js','mvu-domestic.js','mvu-global.js','opening.html','phone.html','artifact-manifest.json'];
 if(process.argv.includes('--dry-run')){console.log(JSON.stringify({root,version:cfg.version,writes:targets.map(x=>path.join(output,x)),policy:'New isolated project; no writes outside workspace.'},null,2));process.exit(0);}
 await fs.mkdir(output,{recursive:true});
@@ -21,19 +22,19 @@ const html=async surface=>(await fs.readFile(path.join(root,'src/ui',surface+'.t
 const opening=await html('setup'),phone=await html('phone');
 // Only generated intermediate within the workspace, excluded from source authority.
 await fs.writeFile(path.join(root,'src/ui/phone.html'),phone);
-const worldbookHash=crypto.createHash('sha256').update((await fs.readFile(path.join(root,'src/content/literary.json'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema-entry.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/mvu-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/script-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/update/release-contract.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/ui/setup.template.html'),'utf8')).replaceAll('\r\n','\n')).update(String(cfg.cardContractRevision||1)).update(JSON.stringify(nativeDisplayRegexes())).update('mvu:d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc').digest('hex');
+const worldbookHash=crypto.createHash('sha256').update((await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/literary.json'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema-entry.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/mvu-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/script-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/update/release-contract.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/ui/setup.template.html'),'utf8')).replaceAll('\r\n','\n')).update(String(cfg.cardContractRevision||1)).update(JSON.stringify(nativeDisplayRegexes())).update('mvu:d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc').digest('hex');
 const runtime=await build({entryPoints:[path.join(root,'src/runtime/host.js')],bundle:true,write:false,format:'esm',target:'es2022',loader:{'.html':'text','.txt':'text'},define:{__BOOK_HASH__:JSON.stringify(worldbookHash)},minify:true});
 const script='// CJ_SHENGHAO_TERMINAL_CORE\n;(async()=>{\n'+runtime.outputFiles[0].text+'\n})();\n';
 const releaseMetadata={schemaVersion:2,projectId:cfg.id,repository:cfg.repository,version:cfg.version,runtimeFile:'dist/terminal.js',mark:'CJ_SHENGHAO_TERMINAL_CORE',worldbookHash,sha256:crypto.createHash('sha256').update(script).digest('hex'),notes:cfg.releaseNotes||''};
 await fs.writeFile(path.join(root,'dist/terminal.js'),script);await fs.writeFile(path.join(root,'dist/release.json'),JSON.stringify(releaseMetadata,null,2)+'\n');
 if(coreOnly){console.log('CORE_PREPARED_NOT_PUBLISHED '+cfg.version);process.exit(0);}
-const fallbackMetadata=JSON.parse(execFileSync('git',['show',releaseConfig.fallbackRef+':dist/release.json'],{cwd:root,encoding:'utf8',maxBuffer:50000}));
-if(fallbackMetadata.worldbookHash!==worldbookHash)throw Error('保底提交不兼容当前世界书/正则/结构，请先发布并验证本体，再更新fallbackRef');
-const bootstrapBuild=await build({entryPoints:[path.join(root,'src/runtime/script-loader.js')],bundle:true,write:false,format:'esm',target:'es2022',minify:true,define:{__RELEASE_CONFIG__:JSON.stringify(releaseConfig),__BOOK_HASH__:JSON.stringify(worldbookHash)}});
-const bootstrap='// CJ_SHENGHAO_STABLE_LOADER\n;(async()=>{\n'+bootstrapBuild.outputFiles[0].text+'\n})().catch(e=>{console.log("[神豪终端 加载器] "+e.message);try{toastr.error("终端加载器未能启动，请检查配置与网络。","神豪终端");}catch{}});\n';
+const fallbackMetadata=checkpoint?null:JSON.parse(execFileSync('git',['show',releaseConfig.fallbackRef+':dist/release.json'],{cwd:root,encoding:'utf8',maxBuffer:50000}));
+if(!checkpoint&&fallbackMetadata.worldbookHash!==worldbookHash)throw Error('保底提交不兼容当前世界书/正则/结构，请先发布并验证本体，再更新fallbackRef');
+const bootstrapBuild=checkpoint?null:await build({entryPoints:[path.join(root,'src/runtime/script-loader.js')],bundle:true,write:false,format:'esm',target:'es2022',minify:true,define:{__RELEASE_CONFIG__:JSON.stringify(releaseConfig),__BOOK_HASH__:JSON.stringify(worldbookHash)}});
+const bootstrap=checkpoint?script:'// CJ_SHENGHAO_STABLE_LOADER\n;(async()=>{\n'+bootstrapBuild.outputFiles[0].text+'\n})().catch(e=>{console.log("[神豪终端 加载器] "+e.message);try{toastr.error("终端加载器未能启动，请检查配置与网络。","神豪终端");}catch{}});\n';
 const prose=await read('src/content/literary.json');
 const protocol=await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8');
-const bodies=[...prose.entries.map(b=>({...b,title:'[mvu_plot] '+b.title})),{id:'protocol',title:'[mvu_update] 原生变量与结算事实协议',body:protocol},{id:'initvar',title:'[InitVar]',body:'{"shenghao":null}',disabled:true},{id:'config',title:'[config_override]',body:JSON.stringify({兼容性:{更新到聊天变量:false}}),disabled:true}];
+const bodies=[{id:'state-context',title:'当前人物与现场资料',body:await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')},...prose.entries.map(b=>({...b,title:'[mvu_plot] '+b.title})),{id:'protocol',title:'[mvu_update] 原生变量与结算事实协议',body:protocol},{id:'initvar',title:'[InitVar]',body:'{"shenghao":null}',disabled:true},{id:'config',title:'[config_override]',body:JSON.stringify({兼容性:{更新到聊天变量:false}}),disabled:true}];
 const book={name:'神豪终端 · v'+cfg.version,description:'原生MVU/Zod · 当代都市、人物自主、时间日历与专属奖池',scan_depth:2,recursive_scanning:false,
   extensions:{project_id:cfg.id,version:cfg.version,scan_depth:2,recursive_scanning:false},
   entries:bodies.map((b,i)=>({id:i+1,keys:[],secondary_keys:[],comment:b.title,content:b.body,constant:true,selective:false,enabled:!b.disabled,
@@ -60,6 +61,11 @@ const data={name:cfg.name,description:'',personality:'',scenario:'',first_mes:pr
     ],variables:{}}}};
 
 const card={spec:'chara_card_v3',spec_version:'3.0',data};
+if(checkpoint){
+  data.creator_notes='本地验收整卡 v'+cfg.version+'：内嵌当前本体，不连接线上更新指针。需新聊天、酒馆助手与原生MVU/Zod，远程MVU依赖保持原固定版本。正式热更新发布需另走release流程。';
+  data.extensions.cj_shenghao.update_delivery='embedded-checkpoint';
+  Object.assign(data.extensions.tavern_helper.scripts[3],{name:'神豪终端 · 本地验收本体',info:'仅用于本次本地验收；内嵌当前本体，不读取Supabase指针。'});
+}
 await Promise.all([fs.writeFile(path.join(output,'神豪终端.json'),JSON.stringify(card,null,2)+'\n'),fs.writeFile(path.join(output,'worldbook.json'),JSON.stringify(book,null,2)+'\n'),fs.writeFile(path.join(output,'runtime.js'),script),fs.writeFile(path.join(output,'bootstrap-loader.js'),bootstrap),fs.writeFile(path.join(output,'release.json'),JSON.stringify(releaseMetadata,null,2)+'\n'),fs.writeFile(path.join(output,'schema.js'),schemaScript),fs.writeFile(path.join(output,'mvu-domestic.js'),domestic),fs.writeFile(path.join(output,'mvu-global.js'),globalLoader),fs.writeFile(path.join(output,'opening.html'),opening),fs.writeFile(path.join(output,'phone.html'),phone)]);
 const hashes={};for(const f of targets.filter(x=>x!=='artifact-manifest.json')){const b=await fs.readFile(path.join(output,f));hashes[f]={sha256:crypto.createHash('sha256').update(b).digest('hex'),bytes:b.length};}
 await fs.writeFile(path.join(output,'artifact-manifest.json'),JSON.stringify({schemaVersion:1,projectId:cfg.id,version:cfg.version,gate:'offline-candidate',files:hashes},null,2)+'\n');

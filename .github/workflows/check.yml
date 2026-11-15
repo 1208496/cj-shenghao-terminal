@@ -13,13 +13,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run build:core
-      - run: node --check dist/terminal.js
-      - name: Verify complete card after a fallback commit is available
-        run: |
-          if [ "$(node -p "Boolean(require('./release/loader.config.json').fallbackRef)")" = "true" ]; then
-            npm run build
-            npm run check
-          else
-            echo "Bootstrap core commit: complete card follows after CDN verification."
-          fi
+      - name: Build complete development checkpoint without deployment
+        run: node scripts/build.mjs --checkpoint
+      - run: node scripts/check.mjs --checkpoint

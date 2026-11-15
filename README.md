@@ -1,5 +1,9 @@
 # 神豪终端 v2
 
+当前为作者开发测试工程，**上传GitHub和切换测试更新指针不代表已向玩家正式发行**。用户未明确发行前，可直接改删旧字段，不做旧存档兼容层。有效规则见 [AGENTS.md](AGENTS.md)。
+
+当前开发版rc.7加入简易档案、手动九类建档与锁定、字号与缩放修复、开局预设和熟人编辑。本地验收整卡在 [rc.7 checkpoint](dist/2.0.0-rc.7-checkpoint/神豪终端.json)，正常固定加载器整卡由发布流程生成到 `dist/2.0.0-rc.7/神豪终端.json`。最新发布事实见 [PROJECT_STATE](PROJECT_STATE.md)。
+
 rc.6固定加载器方案已发布：[完整角色卡JSON](dist/2.0.0-rc.6/神豪终端.json)。自有Supabase已配置，149项离线检查、CDN核对及酒馆更新/回退/保底/停用验证完成。结果见[专项验收](evidence/hot-update-acceptance.md)、[交接文档](PROJECT_STATE.md)和[热更新说明](docs/hot-update.md)。历史rc.5保留，不作为本次交付。
 
 以 `SHEJI/神豪终端_v2_超级设计总纲.md`、修正版交互原型与修复说明为设计依据的独立 SillyTavern 角色卡工程。与旧版仓库没有 Git 历史或产物继承关系。

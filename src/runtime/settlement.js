@@ -1,4 +1,4 @@
-import {clone,applyEnvelope,applyOperation,poolParts,assertState,hasEvidence,projection,requireRule} from '../core/engine.js';
+import {clone,applyEnvelope,applyOperation,poolParts,assertState,hasEvidence,projection,requireRule,completeBasicProfile} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -25,11 +25,12 @@ export function settleNative(before,candidate,anchor,source,schemas){
   // These fields are written only by deterministic settlement or a confirmed player operation.
   for(const k of ['schemaVersion','finance','rewardEvents','operationHistory','notifications','facts','hiddenTemporary','identityMap'])s[k]=clone(before[k]);
   s.meta=clone(before.meta);s.meta.branchKey=anchor.branchKey;
-  for(const k of ['id','name','age','gender','appearance','occupation','background','housingMode','residenceDescription','workLifeDescription','initialCashCents','cashCents'])s.user[k]=clone(before.user[k]);
+  for(const k of ['id','name','age','gender','appearance','body','occupation','background','housingMode','residenceDescription','workLifeDescription','initialCashCents','cashCents'])s.user[k]=clone(before.user[k]);
   for(const [cid,prior] of Object.entries(before.characters)){
     const proposed=s.characters[cid];
     if(!proposed||prior.trackingState==='HIDDEN'){s.characters[cid]=clone(prior);continue;}
-    for(const k of ['id','name','age','profileFixed','aliases','rewardBaseCents','withdrawal','trackingState','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+    for(const k of ['id','name','age','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu','profileFixed','profileLocked','aliases','rewardBaseCents','withdrawal','trackingState','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+    if(proposed.knownFacts!==prior.knownFacts&&!hasEvidence(body,proposed.knownFactsEvidence)){proposed.knownFacts=prior.knownFacts;}
     if(Math.abs(proposed.affection-prior.affection)>12){proposed.affection=prior.affection;diagnostics.push({person:cid,code:'AFFECTION_JUMP'});}
     if(proposed.relationshipLabel!==prior.relationshipLabel&&!hasEvidence(body,proposed.relationshipEvidence)){
       proposed.relationshipLabel=prior.relationshipLabel;proposed.relationshipNotes=prior.relationshipNotes;diagnostics.push({person:cid,code:'RELATIONSHIP_EVIDENCE_MISSING'});
@@ -40,7 +41,8 @@ export function settleNative(before,candidate,anchor,source,schemas){
     if(c.id!==cid||c.age<18||c.contactConfirmed!==true||!hasEvidence(body,c.firstContactEvidence)){
       delete s.characters[cid];diagnostics.push({person:cid,code:'CONTACT_NOT_CONFIRMED'});continue;
     }
-    c.rewardBaseCents=1000000;c.withdrawal=null;c.trackingState='RECORDED';
+    try{completeBasicProfile(c);}catch{delete s.characters[cid];diagnostics.push({person:cid,code:'PROFILE_INCOMPLETE'});continue;}
+    c.profileFixed=null;c.profileLocked=false;c.rewardBaseCents=1000000;c.withdrawal=null;c.trackingState='RECORDED';
     c.avatarRef=null;c.portraitRef=null;
     const matched=s.scene.temporaryActors.find(t=>t.name===c.name);
     if(matched)s.identityMap[matched.tempId]=cid;
@@ -82,6 +84,10 @@ export function allowModelCommand(command,before,{trustedInitialization=false}={
   const relative=path.slice('shenghao.'.length);
   if(relative.startsWith('world.')||relative==='world'||relative.startsWith('scene.')||relative==='scene'||relative.startsWith('calendar.')||relative==='calendar'||relative==='pendingEvents'||relative.startsWith('pendingEvents[')||relative.startsWith('pendingEvents.'))return true;
   if(relative.startsWith('user.'))return /^user\.(?:location|city|currentClothes|currentPose|currentAction)$/.test(relative);
-  if(relative.startsWith('characters.')||relative==='characters'&&command.type==='insert')return true;
+  if(relative.startsWith('characters.')||relative==='characters'&&command.type==='insert') {
+    const fields=relative.split('.');
+    if(fields.length>=3&&['profileFixed','profileLocked'].includes(fields[2]))return false;
+    return true;
+  }
   return false;
 }

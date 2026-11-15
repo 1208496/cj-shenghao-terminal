@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.6",
+  "version": "2.0.0-rc.7",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -41,6 +41,6 @@
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "固定加载器、Supabase版本指针与jsDelivr提交号分发。",
-  "cardContractRevision": 1
+  "releaseNotes": "简易档案、手动九类建档、锁定发送与个人资料。",
+  "cardContractRevision": 3
 }

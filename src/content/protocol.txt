@@ -7,17 +7,16 @@
 </JSONPatch>
 </UpdateVariable>
 
-当前变量表：
-{{get_message_variable::stat_data.shenghao._context}}
+当前变量表由“当前人物与现场资料”条目提供，不重复输出。
 
 更新字段与时机：
 1. world.date为YYYY-MM-DD，world.time为24小时HH:mm，world.weather天气。对话通常推进数分钟，出行按距离、睡眠跨日。严格继承上轮日期；不按真实电脑时钟跳跃。正文与变量的时间必须一致。跨午夜必须一并更新日期。scene.timeHint由脚本从日期时间生成。
 2. scene.location与scene.sceneId：实际换场时更新。scene.presentCharacterIds为实际在场的已归档人物ID完整数组；scene.temporaryActors为尚未正式认识的成年女性列表，每项{tempId,name,description,adultConfirmed}。电话、回忆、提名、约见但未抵达都不算在场。真实入离场或换场后必须给新的完整名单，不让旧人物滞留。临时人物沿用tempId，正式认识后从临时名单移出并用正式ID。
-3. user.currentClothes/currentPose/currentAction：正文出现的新穿着、姿态和动作必须同步；人物用characters.<id>.currentClothes/currentPose/currentAction/currentExpression。可更新职业的现实发展，但不得随意改长期身份。
-4. affection为0–100整数，通常每轮-12至12，无互动不强行上涨；关系标签relationshipLabel（最多12字）独立于好感，不自动变恋人。更换标签时同时给relationshipNotes和relationshipEvidence，后者必须摘录本轮明确双方关系的原文。隐藏人物不更新。
-5. 首次真实双向交流或重要直接互动且明确成年后，用op:add插入/生效的完整人物：path为/shenghao/characters/char_稳定ID。value包括{id,name,age,aliases:[],occupation,affection,relationshipLabel,relationshipNotes,contactConfirmed:true,firstContactEvidence:"本轮正式相识原文",profileFixed:{identity,appearance,body,personality,habits,style,family,career,social},currentClothes,currentPose,currentAction,currentExpression}。九类各50至130字，第一次完整建档，不能只建名字与好感。rewardBaseCents、withdrawal等字段由脚本补齐。保持原ID不重复建档、不改隐藏状态。初始熟人已存在，不能重复新增。
+3. user.currentClothes/currentPose/currentAction：正文出现的新穿着、姿态和动作必须同步；人物用characters.<id>.currentClothes/currentPose/currentAction/currentExpression/currentMood/currentCondition/currentItems。心情、身体状态、随身物品只根据剧情记录，没有依据不编造。可更新职业的现实发展，但不得随意改长期身份。
+4. affection为0–100整数，通常每轮-12至12，无互动不强行上涨；关系标签relationshipLabel（最多12字）独立于好感，不自动变恋人。更换标签时同时给relationshipNotes和relationshipEvidence，后者必须摘录本轮明确双方关系的原文。隐藏人物不更新。knownFacts可保留既有事实并补充本轮确认的重要经历，同时用knownFactsEvidence逐字摘录本轮依据，不得杜撰背景。
+5. 首次真实双向交流或重要直接互动且明确成年后，用op:add插入/生效的完整人物：path为/shenghao/characters/char_稳定ID。value包括{id,name,age,aliases:[],occupation,affection,relationshipLabel,relationshipNotes,contactConfirmed:true,firstContactEvidence:"本轮正式相识原文",personalityTags,appearance,body,heightCm,weightKg,bustCm,waistCm,hipCm,shoeSizeEu,knownFacts,profileFixed:null,profileLocked:false,currentClothes,currentPose,currentAction,currentExpression}。只生成简易资料：personalityTags为1至6个简短性格标签；外貌和身材为非空简短文本；体重weightKg为KG数字；身高、胸腰臀围均为厘米数字，鞋码为欧码数字，已有事实优先。knownFacts为已知设定与确认经历的简短记录。禁止自动生成九大档案，只有玩家点击建档才能生成。rewardBaseCents、withdrawal等字段由脚本补齐。保持原ID不重复建档、不改隐藏状态。初始熟人已存在，不能重复新增。
 6. calendar.appointments存储已确定约定，键为稳定appt_ID，每项{id,title,date,time,location,participants:[人物ID],status:"PLANNED"|"COMPLETED"|"CANCELLED",notes}。只有双方明确约定或玩家手动登记才出现。仅查看日历、选择日期不会推进时间；到点不自动赴约、消费或强迫剧情。完成/取消后同步状态；本轮明确跨日时更新日期。
-7. 金钱、资产、行为评分只通过pendingEvents传递本轮新事实，使用op:replace替换/shenghao/pendingEvents为完整数组。金额结算、现金、奖池和通知由脚本计算后存回同一个MVU根。禁止直接写finance/rewardEvents/facts/meta、user.cashCents和initialCashCents、人物rewardBaseCents/withdrawal/trackingState/profileFixed。不得提现、隐藏、恢复人物。这些只能玩家点击。
+7. 金钱、资产、行为评分只通过pendingEvents传递本轮新事实，使用op:replace替换/shenghao/pendingEvents为完整数组。金额结算、现金、奖池和通知由脚本计算后存回同一个MVU根。禁止直接写finance/rewardEvents/facts/meta、user.cashCents和initialCashCents、人物rewardBaseCents/withdrawal/trackingState/profileFixed/profileLocked。不得提现、隐藏、恢复人物。这些只能玩家点击。
 
 pendingEvents格式：每项type、factId（稳定ASCII唯一事实ID）、evidence（本轮正文逐字原文1–360字）及对应字段。不使用ordinal，由脚本按数组编号。先发生并写入正文，再给事实；承诺不算付款，重复事实沿用ID，参照recentFacts避免重记。隐藏或已提现人物正常支出仍记账，奖池由脚本冻结。所有金额是整数分，不是元。
 CASH_TRANSACTION：factId，direction:OUT或IN，amountCents，payer:USER或外部付款者，completed:true，kind，memo，allocations:[{personRef,amountCents}]。OUT的kind限SHOPPING/DINING/TRAVEL/GIFT/TRANSFER_OUT/PROPERTY_PURCHASE/VEHICLE_PURCHASE；IN限SALARY/BUSINESS_INCOME/OTHER_INCOME/TRANSFER_IN/ASSET_SALE。分摊总和不超实付，隐藏人物真实支出仍正常记账但不计奖。自用购买allocations为空。购买持有房车必须同时给asset:{assetId,kind:HOUSE|CAR|LUXURY|OTHER,name,ownerId:USER或受赠女性ID,bookValueCents,locationNote}；贵重其他资产亦用同样结构。不得单独扣房车钱不登记资产。自有房车不得再次提名新增。ASSET_SALE必须有assetId，与出售收入一次处理。

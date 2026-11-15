@@ -25,6 +25,13 @@ export function reward(score) {
 export function stage(n) {
   integer(n,0,100); return n === 100 ? '极致倾心' : n >= 95 ? '极深羁绊' : n >= 90 ? '高度投入' : n >= 80 ? '深厚情感' : n >= 70 ? '恋爱发展' : n >= 60 ? '亲近与好感' : n >= 40 ? '朋友与信任' : n >= 20 ? '初步熟悉' : '陌生与戒备';
 }
+export function basicProfile(c) {
+  requireRule(Array.isArray(c.personalityTags??[])&&(c.personalityTags??[]).length<=6,'INVALID_BASIC_PROFILE');
+  const result={personalityTags:(c.personalityTags??[]).map(v=>text(v,12)),appearance:text(c.appearance ?? '',500,true),body:text(c.body ?? '',500,true)};
+  for(const [k,min,max] of [['heightCm',100,230],['weightKg',25,250],['bustCm',40,200],['waistCm',30,200],['hipCm',40,200],['shoeSizeEu',25,55]]) {const v=c[k]??null;requireRule(v===null||typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max,'INVALID_BASIC_PROFILE');result[k]=v;}
+  return result;
+}
+export function completeBasicProfile(c){const b=basicProfile(c);requireRule(b.appearance&&b.body&&b.personalityTags.length>0&&['heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu'].every(k=>b[k]!==null),'PROFILE_INCOMPLETE');return b;}
 export function profile(p) {
   requireRule(p && !Array.isArray(p) && typeof p === 'object', 'PROFILE_INCOMPLETE');
   const result = {}; for (const k of PROFILE_KEYS) result[k] = text(p[k],750); return result;
@@ -34,13 +41,13 @@ function character(c) {
   return {id:id(c.id), aliases:(c.aliases || []).map(x => text(x,50)).slice(0,20), name, age,
     occupation:text(c.occupation ?? '',100,true), affection:integer(c.affection ?? 20,0,100),
     relationshipLabel:text(c.relationshipLabel || '熟人',12), relationshipNotes:text(c.relationshipNotes ?? '',300,true),
-    profileFixed:profile(c.profileFixed), trackingState:'RECORDED', rewardBaseCents:1000000,
+    ...basicProfile(c),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:c.profileFixed?profile(c.profileFixed):null,profileLocked:false, trackingState:'RECORDED', rewardBaseCents:1000000,
     withdrawal:null, currentClothes:'',currentPose:'',currentExpression:'', avatarRef:null,portraitRef:null};
 }
 export function validateDraft(d) {
   requireRule(d && typeof d === 'object', 'INVALID_DRAFT');
   const user = {id:'USER', name:text(d.name,50),age:integer(d.age,18,120),gender:text(d.gender ?? '',40,true),
-    appearance:text(d.appearance ?? '',500,true),occupation:text(d.occupation ?? '',100,true),background:text(d.background ?? '',1200,true),
+    appearance:text(d.appearance ?? '',500,true),body:text(d.body ?? '',500,true),occupation:text(d.occupation ?? '',100,true),background:text(d.background ?? '',1200,true),
     city:text(d.city,100),location:text(d.currentLocation,150),housingMode:text(d.housingMode,30),residenceDescription:text(d.residenceDescription ?? '',600,true),
     workLifeDescription:text(d.workLifeDescription ?? '',600,true),cashCents:integer(d.initialCashCents),initialCashCents:d.initialCashCents,
     currentClothes:'',currentPose:'',currentAction:''};
@@ -48,7 +55,7 @@ export function validateDraft(d) {
   const assets = d.initialAssets.map(a => ({assetId:id(a.assetId),kind:assetKind(a.kind),name:text(a.name,120),ownerId:'USER',
     bookValueCents:integer(a.bookValueCents),basisCents:null,status:'OWNED',acquisitionEventId:'INITIAL',acquisitionIsInitial:true,
     locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
-  const contacts = d.contacts.map(c => ({...c,id:id(c.id),name:text(c.name,50),age:integer(c.age,18,120),
+  const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,18,120),
     affection:integer(c.affection,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
     notes:text(c.notes ?? '',1200,true),present:c.present === true}));
   requireRule(new Set(assets.map(a=>a.assetId)).size === assets.length && new Set(contacts.map(c=>c.id)).size === contacts.length,'DUPLICATE_ID');
@@ -58,7 +65,7 @@ export function initialize(draft, completedProfiles, initKey, branchKey) {
   const {user,assets,contacts} = validateDraft(draft);
   requireRule(completedProfiles && Object.keys(completedProfiles).length === contacts.length,'PROFILE_INCOMPLETE');
   const chars = {};
-  for (const c of contacts) chars[c.id] = character({...c,profileFixed:completedProfiles[c.id]});
+  for (const c of contacts) {const basics=completeBasicProfile({...c,...completedProfiles[c.id]});chars[c.id] = character({...c,...basics,profileFixed:null});}
   const state = {schemaVersion:2,meta:{initialized:true,initKey:id(initKey),branchKey:text(branchKey,300),revision:0,sourceAnchor:null},user,
     scene:{sceneId:'initial',location:user.location,timeHint:'故事开始',presentCharacterIds:contacts.filter(c=>c.present).map(c=>c.id),temporaryActors:[],sceneRevision:0},
     characters:chars,identityMap:{},hiddenTemporary:{},finance:{ledger:{},assets:Object.fromEntries(assets.map(a=>[a.assetId,a]))},
@@ -98,7 +105,7 @@ export function assertState(s) {
   integer(s.user.cashCents);integer(s.meta.revision);
   const t=totals(s);requireRule(s.user.cashCents === add(s.user.initialCashCents,add(t.income,-t.expense)),'LEDGER_MISMATCH');
   for (const c of Object.values(s.characters)) {
-    integer(c.affection,0,100);requireRule(c.rewardBaseCents===1000000,'INVALID_BASE');profile(c.profileFixed);
+    integer(c.affection,0,100);requireRule(c.rewardBaseCents===1000000,'INVALID_BASE');if(c.profileFixed)profile(c.profileFixed);basicProfile(c);
     const p=poolParts(s,c.id);integer(p.total);integer(p.spend);integer(p.crit);
     if(c.withdrawal) requireRule(c.withdrawal.amountCents===p.total,'SEALED_POOL_CHANGED');
   }
@@ -269,6 +276,10 @@ export function applyOperation(state,op,anchor) {
       s.user.cashCents=add(s.user.cashCents,amount);
       addLedger(s,op.operationId,{factId:op.operationId,kind:'WITHDRAWAL_REWARD',direction:'IN',amountCents:amount,payer:'TERMINAL',personRef:c.id,memo:c.name+' · 奖池提现'},anchor);
       result={amountCents:amount,personRef:c.id};
+    } else if(op.type==='PLAYER_BUILD_PROFILE') {
+      requireRule(tracked(c)&&!c.profileFixed,'PROFILE_ALREADY_BUILT');c.profileFixed=profile(op.profileFixed);c.profileLocked=false;
+    } else if(op.type==='PLAYER_LOCK_PROFILE') {
+      requireRule(tracked(c)&&c.profileFixed,'PROFILE_INCOMPLETE');requireRule(typeof op.locked==='boolean','INVALID_DRAFT');c.profileLocked=op.locked;
     } else if(op.type==='PLAYER_HIDE') {
       c.trackingState='HIDDEN';s.scene.presentCharacterIds=s.scene.presentCharacterIds.filter(x=>x!==c.id);
     } else if(op.type==='PLAYER_RESTORE') {
@@ -288,9 +299,8 @@ export function parseEnvelope(source) {
 }
 export function narrative(source) {return source.replace(/<SH_EVENTS>[\s\S]*?<\/SH_EVENTS>/g,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function projection(s) {
-  const people=Object.values(s.characters).map(c=>({id:c.id,name:c.name,age:c.age,occupation:c.occupation,
-    affection:c.affection,relationship:c.relationshipLabel,hidden:!tracked(c),withdrawn:!!c.withdrawal,
-    ...(s.scene.presentCharacterIds.includes(c.id)?{personality:c.profileFixed.personality,habits:c.profileFixed.habits}: {})}));
+  const people=Object.values(s.characters).map(c=>({id:c.id,name:c.name,aliases:c.aliases,hidden:!tracked(c),
+    ...(tracked(c)&&s.scene.presentCharacterIds.includes(c.id)?{age:c.age,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationship:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})}: {})}));
   return {schemaVersion:2,revision:s.meta.revision,user:s.user,scene:s.scene,people,
     assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind})),
     recentFacts:Object.keys(s.facts).slice(-60),rule:'只提出新事实，不直接写现金、奖池或提现。已列factId不得再次入账。'};

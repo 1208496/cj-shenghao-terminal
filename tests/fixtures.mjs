@@ -1,8 +1,8 @@
 import {initialize,PROFILE_KEYS} from '../src/core/engine.js';
 export const profiles=()=>Object.fromEntries(PROFILE_KEYS.map(k=>[k,'一位有独立生活、明确职业目标和稳定价值观的成年人物；'+k]));
-export const contact=(id='char_a',extra={})=>({id,name:id==='char_a'?'顾青禾':'陆晚晴',age:26,affection:90,occupation:'建筑师',relationshipLabel:'朋友',notes:'既有设定',present:true,...extra});
+export const contact=(id='char_a',extra={})=>({id,name:id==='char_a'?'顾青禾':'陆晚晴',age:26,affection:90,occupation:'建筑师',relationshipLabel:'朋友',personalityTags:['独立','温和'],appearance:'黑色长发',body:'身形匀称',heightCm:168,weightKg:52,bustCm:86,waistCm:62,hipCm:89,shoeSizeEu:38,notes:'既有设定',present:true,...extra});
 export const draft=(extra={})=>({name:'测试玩家',age:25,gender:'男',appearance:'',occupation:'自由职业',background:'',initialCashCents:10000000,city:'云澜市',currentLocation:'江畔公寓',housingMode:'自有',residenceDescription:'江畔公寓',workLifeDescription:'',initialAssets:[],contacts:[contact()],...extra});
-export const fresh=(extra={})=>{const d=draft(extra);return initialize(d,Object.fromEntries(d.contacts.map(c=>[c.id,profiles()])),'test_init','test:branch');};
+export const fresh=(extra={})=>{const d=draft(extra);return initialize(d,Object.fromEntries(d.contacts.map(c=>[c.id,{...c}])),'test_init','test:branch');};
 export const anchor=(messageId=2,swipeId=0)=>({branchKey:'test:branch',messageId,swipeId,fingerprint:'fp_'+messageId+'_'+swipeId});
 export const event=(type,extra={})=>({ordinal:0,type,evidence:'确实已经发生',...extra});
 export const envelope=(...events)=>({schemaVersion:2,events});
