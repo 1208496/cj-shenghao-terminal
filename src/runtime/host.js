@@ -6,7 +6,7 @@ import config from '../../project.json';
 import uiHTML from '../ui/phone.html';
 
 const win=window.parent,SLOT='__CJ_SHENGHAO_V2__';win[SLOT]?.destroy?.();
-const names=['getChatMessages','setChatMessages','createChatMessages','getVariables','generateRaw','triggerSlash','getCharWorldbookNames','getWorldbook','injectPrompts','updateScriptTreesWith','getTavernVersion','getTavernHelperVersion'];
+const names=['getChatMessages','setChatMessages','createChatMessages','getVariables','generateRaw','triggerSlash','getCharWorldbookNames','getWorldbook','injectPrompts','getTavernVersion','getTavernHelperVersion'];
 const H=Object.fromEntries(names.map(n=>[n,globalThis[n]||win.TavernHelper?.[n]]));
 const st=()=>win.SillyTavern.getContext(),branch=()=>String(st().characterId)+':'+String(st().chatId||st().getCurrentChatId());
 const textOf=m=>m?.swipes?.[m.swipe_id]??m?.message??'';
@@ -23,7 +23,7 @@ function native(){return win.Mvu;}
 function busy(){return generating||setupBusy||mvuBusy||native()?.isDuringExtraAnalysis?.()===true;}
 function configuredMode(){return modeOverride??(st().extensionSettings?.mvu_settings?.更新方式==='额外模型解析'?'extra':'inline');}
 function stateView(){return {state:current?.state?clone(current.state):null,lineage:current?.lineage||'',busy:busy(),prefs:clone(prefs),mode:configuredMode(),version:config.version,error:api.error||(diagnostics.length?'部分变化尚未记录，可在 MVU 面板重试本次更新。':''),pending:diagnostics.length>0,chatKey:branch(),nativeReady:!!(native()&&schemas())};}
-function publish(){const view=stateView();const colors={sage:['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'],gold:['#fff8ed','#4d3823','#7e6a53','#e7d7c1','#99703b'],purple:['#231c34','#f6efff','#d3c3e8','#544464','#be9cf6']}[prefs.theme]||['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'];['bg','ink','sub','line','accent'].forEach((k,i)=>win.document.documentElement.style.setProperty('--cj-fold-'+k,colors[i]));if(phone)phone.style.display=view.state?'block':'none';for(const fn of listeners){try{fn(view);}catch(e){console.warn('[神豪终端] 页面更新失败',e.message);}}}
+function publish(){const view=stateView();const colors={sage:['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'],gold:['#fff8ed','#4d3823','#7e6a53','#e7d7c1','#99703b'],purple:['#231c34','#f6efff','#d3c3e8','#544464','#be9cf6']}[prefs.theme]||['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'];['bg','ink','sub','line','accent'].forEach((k,i)=>win.document.documentElement.style.setProperty('--cj-fold-'+k,colors[i]));if(phone)phone.style.display=view.state?'block':'none';for(const fn of listeners){try{fn(view);}catch(e){console.log('[神豪终端] 页面更新失败',e.message);}}}
 async function anchorOf(m){return {branchKey:branch(),messageId:m.message_id,swipeId:m.swipe_id??0,fingerprint:await digest(clean(textOf(m)))};}
 function messageList(){return H.getChatMessages('0-{{lastMessageId}}',{include_swipes:true});}
 async function readCurrent(){
@@ -38,7 +38,7 @@ async function readCurrent(){
   current=found;publish();return found;
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(()=>readCurrent().catch(fail),70);}
-function fail(error){console.warn('[神豪终端]',error.message);api.error='本次记录未完成，请稍后重试。';publish();}
+function fail(error){console.log('[神豪终端]',error.message);api.error='本次记录未完成，请稍后重试。';publish();}
 function on(event,fn){if(event&&typeof globalThis.eventOn==='function')stops.push(eventOn(event,fn).stop);}
 async function sourceContext(source){
   const rows=messageList(),normalized=clean(source);const message=[...rows].reverse().find(row=>clean(textOf(row))===normalized);
@@ -73,11 +73,11 @@ function bindMvu(){
         for(const command of journal.items)vars.stat_data.shenghao=replayPlayerCommand(vars.stat_data.shenghao,command,context.anchor,schemas());
         refreshContext(vars.stat_data.shenghao);vars.cj_native_operations=clone(journal);
       }
-    }catch(error){const existing=context.message.swipes_data?.[context.message.swipe_id]?.stat_data?.shenghao;vars.stat_data.shenghao=clone(existing??oldVars.stat_data?.shenghao??null);diagnostics=[{code:error.message}];console.warn('[神豪终端] MVU 提案未提交',error.message);}
+    }catch(error){const existing=context.message.swipes_data?.[context.message.swipe_id]?.stat_data?.shenghao;vars.stat_data.shenghao=clone(existing??oldVars.stat_data?.shenghao??null);diagnostics=[{code:error.message}];console.log('[神豪终端] MVU 提案未提交',error.message);}
   });
   on(M.events.BEFORE_MESSAGE_UPDATE,()=>{mvuBusy=false;schedule();});
   on(M.events.VARIABLE_INITIALIZED,()=>{mvuBusy=false;schedule();});
-  console.info('[神豪终端] 已连接原生 MVU 生命周期');schedule();return true;
+  console.log('[神豪终端] 已连接原生 MVU 生命周期');schedule();return true;
 }
 async function generateProfile(contact,user,requestKey){
   const result=await H.generateRaw({generation_id:requestKey,should_stream:false,should_silence:true,ordered_prompts:[
@@ -122,13 +122,11 @@ const api={error:'',read:stateView,subscribe(fn){listeners.add(fn);fn(stateView(
   async appointment(value,lineage){return mutateState({kind:'appointment',value,operationId:crypto.randomUUID()},lineage);},
   async prepareAppointment(id){const item=current?.state.calendar.appointments[id];requireRule(item&&item.status==='PLANNED','APPOINTMENT_UNAVAILABLE');return '我想处理约定「'+item.title+'」（'+item.date+' '+item.time+'，'+item.location+'）。请从当前地点接续，先由我决定是否出发，不要自动赴约或消费。';},
   preferences(patch){prefs={...prefs,...patch};persistPrefs();publish();},
-  async checkUpdate(){const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),8000);try{
-    const response=await fetch('https://raw.githubusercontent.com/'+config.repository+'/main/updates/latest.json?t='+Date.now(),{cache:'no-store',signal:controller.signal});requireRule(response.ok,'UPDATE_UNAVAILABLE');
-    const raw=await response.text();requireRule(raw.length<30000,'UPDATE_INVALID');const item=JSON.parse(raw),runtime=item.runtime;
-    requireRule(item.projectId===config.id&&item.schemaVersion===1,'UPDATE_INVALID');requireRule(runtime?.url==='https://raw.githubusercontent.com/'+config.repository+'/main/dist/'+item.version+'/runtime.js'&&/^[a-f0-9]{64}$/.test(runtime.sha256),'UPDATE_INVALID');
-    return {current:config.version,version:item.version,url:item.url,newer:compareVersion(item.version,config.version)>0,runtime,canApply:item.worldbookHash===__BOOK_HASH__,notes:item.notes||'修复与体验改进'};
-  }finally{clearTimeout(deadline);}},
-  async applyUpdate(reviewed){requireRule(!busy()&&reviewed?.newer&&reviewed.canApply,'UPDATE_REIMPORT_REQUIRED');const latest=await api.checkUpdate();requireRule(latest.runtime.sha256===reviewed.runtime.sha256&&latest.canApply,'UPDATE_CHANGED');const response=await fetch(latest.runtime.url);requireRule(response.ok,'UPDATE_UNAVAILABLE');const content=await response.text();requireRule(content.length<3000000&&await digest(content)===latest.runtime.sha256,'UPDATE_HASH_MISMATCH');await H.updateScriptTreesWith(items=>items.map(s=>s.id==='e3b93f04-34ca-4287-b69c-928148cf88f6'?{...s,content}:s),{type:'character'});},
+  async checkUpdate(){const loader=win.__CJ_SHENGHAO_SCRIPT_LOADER__;requireRule(loader,'UPDATE_LOADER_MISSING');const release=await loader.check(),loaded=loader.inspect();
+    if(release.off)return {current:config.version,version:config.version,url:'https://github.com/'+config.repository,newer:false,paused:true,canApply:false,notes:release.off};
+    const item=release.metadata;return {current:config.version,version:item.version,url:'https://github.com/'+config.repository+'/tree/'+release.ref+'/dist',ref:release.ref,sha256:item.sha256,newer:release.ref!==loaded.runningRef,rollback:compareVersion(item.version,config.version)<0,canApply:item.worldbookHash===__BOOK_HASH__,notes:item.notes||'重新打开角色卡即可自动使用发布版本。'};
+  },
+  async applyUpdate(reviewed){requireRule(!busy()&&reviewed?.newer&&reviewed.canApply,'UPDATE_REIMPORT_REQUIRED');const latest=await api.checkUpdate();requireRule(latest.ref===reviewed.ref&&latest.sha256===reviewed.sha256&&latest.canApply,'UPDATE_CHANGED');await win.__CJ_SHENGHAO_SCRIPT_LOADER__.reload();},
   inspect(){return {native:!!native(),schema:!!schemas(),diagnostics:clone(diagnostics),floor:current?.message.message_id,mode:configuredMode()};},versions(){return {tavern:H.getTavernVersion?.(),helper:H.getTavernHelperVersion?.()};},
   destroy(){if(disposed)return;disposed=true;epoch++;clearTimeout(timer);clearInterval(readyTimer);dragCleanup?.();guidanceStop?.();stops.forEach(stop=>{try{stop();}catch{}});listeners.clear();phone?.remove();displayStyle.remove();if(win[SLOT]===api)delete win[SLOT];}
 };

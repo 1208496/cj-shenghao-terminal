@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.5",
+  "version": "2.0.0-rc.6",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -41,5 +41,6 @@
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "更新检查改用公开静态清单，支持匿名获取；保留原生MVU、变量折叠框、日历与原型手机。"
+  "releaseNotes": "固定加载器、Supabase版本指针与jsDelivr提交号分发。",
+  "cardContractRevision": 1
 }

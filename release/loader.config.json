@@ -1,0 +1,13 @@
+{
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "file": "dist/terminal.js",
+  "metadataFile": "dist/release.json",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "supabaseUrl": "https://yiddoiqeaunsupkjtrbe.supabase.co",
+  "table": "cj_shenghao_script_config",
+  "publishableKey": "sb_publishable_WaYw9KgoMcmNsaK1RQAJhA_EEhktw-O",
+  "refKey": "cj_shenghao_terminal_v2_ref",
+  "offKey": "cj_shenghao_terminal_v2_off",
+  "fallbackRef": ""
+}
