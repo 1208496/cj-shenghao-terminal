@@ -1,16 +1,57 @@
 {
   "schemaVersion": 1,
-  "observedHost": {"sillytavern":"1.19.0","helper":"4.12.0","browser":"EGO Lite 0.6.3.14","url":"http://127.0.0.1:8000/"},
-  "declarationSnapshot": {"repository":"https://github.com/N0VI028/JS-Slash-Runner","commit":"4b3ab7a5396369b15f4a1d9e5b2ced4aee84ec85","version":"4.12.1","confidence":"version-adjacent; runtime probes required"},
-  "mvuSnapshot":{"repository":"https://github.com/MagicalAstrogy/MagVarUpdate","commit":"d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc","role":"optional protected-subtree compatibility"},
-  "symbols":[
-    {"name":"getChatMessages/setChatMessages/createChatMessages","path":"@types/function/chat_message.d.ts","use":"selected swipes and normal user-message creation"},
-    {"name":"updateVariablesWith/getVariables","path":"@types/function/variables.d.ts","use":"message-scoped protected subtree"},
-    {"name":"injectPrompts/uninjectPrompts","path":"@types/function/inject.d.ts","use":"concise state, no full historical dossiers"},
-    {"name":"generateRaw","path":"@types/function/generate.d.ts","use":"bounded complete-profile generation and optional extra extraction"},
-    {"name":"triggerSlash","path":"@types/function/slash.d.ts","use":"/trigger after real user message"},
-    {"name":"eventOn/tavern_events","path":"@types/iframe/event.d.ts","use":"swipe/edit/delete/chat/generation lifecycle"},
-    {"name":"updateScriptTreesWith","path":"@types/function/script.d.ts","use":"confirmed hash-verified update of only this character-local script"},
-    {"name":"Mvu.events.VARIABLE_UPDATE_ENDED/BEFORE_MESSAGE_UPDATE","path":"src/variable_def.ts","use":"optional protection and refresh; never independent money calculation"}
-  ]
+  "observedHost": {
+    "sillytavern": "1.19.0",
+    "helper": "4.12.0",
+    "browser": "EGO Lite 0.6.3.14",
+    "url": "http://127.0.0.1:8000/"
+  },
+  "declarationSnapshot": {
+    "repository": "https://github.com/N0VI028/JS-Slash-Runner",
+    "commit": "4b3ab7a5396369b15f4a1d9e5b2ced4aee84ec85",
+    "version": "4.12.1",
+    "confidence": "version-adjacent; runtime probes required"
+  },
+  "mvuSnapshot": {
+    "repository": "https://github.com/MagicalAstrogy/MagVarUpdate",
+    "commit": "d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc",
+    "role": "required native MVU; pinned loader"
+  },
+  "symbols": [
+    {
+      "name": "getChatMessages/setChatMessages/createChatMessages",
+      "path": "@types/function/chat_message.d.ts",
+      "use": "selected swipes and normal user-message creation"
+    },
+    {
+      "name": "generateRaw",
+      "path": "@types/function/generate.d.ts",
+      "use": "complete initial profiles only; native extra model is owned by MVU"
+    },
+    {
+      "name": "triggerSlash",
+      "path": "@types/function/slash.d.ts",
+      "use": "/trigger after real user message"
+    },
+    {
+      "name": "eventOn/tavern_events",
+      "path": "@types/iframe/event.d.ts",
+      "use": "swipe/edit/delete/chat/generation lifecycle"
+    },
+    {
+      "name": "updateScriptTreesWith",
+      "path": "@types/function/script.d.ts",
+      "use": "confirmed hash-verified update of only this character-local script"
+    },
+    {
+      "name": "Mvu.events.VARIABLE_UPDATE_ENDED/BEFORE_MESSAGE_UPDATE",
+      "path": "src/variable_def.ts",
+      "use": "required native lifecycle: protected deterministic settlement and floor refresh"
+    }
+  ],
+  "schemaSnapshot": {
+    "repository": "https://github.com/StageDog/tavern_resource",
+    "commit": "290eb3b610b6c3cab2cd437e0f111bcc23c4bf53",
+    "use": "registerMvuSchema with host Zod4"
+  }
 }

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "projectId": "cj-shenghao-terminal-v2",
-  "version": "2.0.0-rc.1",
-  "url": "https://github.com/1208496/cj-shenghao-terminal/tree/main/dist/2.0.0-rc.1",
+  "version": "2.0.0-rc.2",
+  "url": "https://github.com/1208496/cj-shenghao-terminal/tree/main/dist/2.0.0-rc.2",
   "visibility": "public",
-  "worldbookHash": "3e965e6b51e5befaab4ec13bc511e3fec65614a2d7db1d071bb803ad5efb6b45",
+  "worldbookHash": "102a28501c710902f2fdd31e5f0eb750305b79277e1d609216aa0d680e43471e",
   "runtime": {
-    "url": "https://raw.githubusercontent.com/1208496/cj-shenghao-terminal/main/dist/2.0.0-rc.1/runtime.js",
-    "sha256": "3a1e0eae99c16a255f262a42209e8dd654a5d825a87dad35f85c520418491627"
+    "url": "https://raw.githubusercontent.com/1208496/cj-shenghao-terminal/main/dist/2.0.0-rc.2/runtime.js",
+    "sha256": "ab597f49b510f7fb9ed2eebae9f8df8bdeb2b9fdcf1e547cee5257eaec060a7c"
   }
 }

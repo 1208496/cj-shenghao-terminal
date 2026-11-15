@@ -1,8 +1,8 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.1",
-  "cardType": "hybrid",
+  "version": "2.0.0-rc.2",
+  "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
   "sourceAuthority": "SHEJI/神豪终端_v2_超级设计总纲.md",
@@ -10,11 +10,35 @@
   "oldWorkspacePolicy": "E:/SHZD is read-only reference, never a build target or git source",
   "rewardTableVersion": "v2-test-baseline-1",
   "rewardTiers": [
-    { "minScore": 0, "amountCents": 0, "label": "未触发" },
-    { "minScore": 40, "amountCents": 50000, "label": "微光暴击" },
-    { "minScore": 60, "amountCents": 200000, "label": "心动暴击" },
-    { "minScore": 75, "amountCents": 800000, "label": "强力暴击" },
-    { "minScore": 90, "amountCents": 3000000, "label": "超凡暴击" },
-    { "minScore": 98, "amountCents": 10000000, "label": "传说暴击" }
+    {
+      "minScore": 0,
+      "amountCents": 0,
+      "label": "未触发"
+    },
+    {
+      "minScore": 40,
+      "amountCents": 50000,
+      "label": "微光暴击"
+    },
+    {
+      "minScore": 60,
+      "amountCents": 200000,
+      "label": "心动暴击"
+    },
+    {
+      "minScore": 75,
+      "amountCents": 800000,
+      "label": "强力暴击"
+    },
+    {
+      "minScore": 90,
+      "amountCents": 3000000,
+      "label": "超凡暴击"
+    },
+    {
+      "minScore": 98,
+      "amountCents": 10000000,
+      "label": "传说暴击"
+    }
   ]
 }

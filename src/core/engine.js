@@ -238,6 +238,11 @@ export function applyEnvelope(state,envelope,anchor,sourceText) {
 export function hasEvidence(source,evidence) {
   if(typeof source!=='string'||typeof evidence!=='string')return false;
   if(source.includes(evidence))return true;
+  // Ignore layout whitespace only; omitted passages require explicit ellipses and retain order.
+  const normalized=source.replace(/\s+/g,''),quote=evidence.replace(/\s+/g,'');
+  if(quote.length>=6&&normalized.includes(quote))return true;
+  const excerpts=quote.split(/…+|\.{3,}/);
+  if(excerpts.length>1&&excerpts.length<=8){let cursor=0;return excerpts.every(p=>{if(p.length<6)return false;const at=normalized.indexOf(p,cursor);if(at<0)return false;cursor=at+p.length;return true;});}
   // A quote may join several verbatim sentences from one scene. Each fragment must
   // still occur in source order; no fuzzy matching or invented replacement text.
   const parts=evidence.match(/[^。！？!?]+[。！？!?]?/g)||[];

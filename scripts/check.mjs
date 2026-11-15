@@ -8,13 +8,18 @@ const must=(v,s)=>{if(!v)throw Error(s);};
 must(card.spec==='chara_card_v3'&&d.name===cfg.name,'card identity');
 for(const k of ['description','personality','scenario','mes_example','system_prompt','post_history_instructions'])must(d[k]==='','unexpected traditional field '+k);
 must(d.first_mes.includes('<section')||d.first_mes.includes('data-surface="setup"'),'opening carrier');
-must(d.character_book.entries.length===5,'substantive worldbook');
+must(d.character_book.entries.length>=11,'substantive worldbook');
 must(d.extensions.world===d.character_book.name&&d.character_version===d.character_book.extensions.version,'book version alignment');
-for(const e of d.character_book.entries){must(e.content.length>150&&e.enabled&&e.constant,'entry substantive');must(e.extensions.scan_depth===2&&e.extensions.exclude_recursion&&e.extensions.prevent_recursion,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
-must(d.extensions.tavern_helper.scripts.length===1&&d.extensions.tavern_helper.scripts[0].enabled,'embedded runtime');
-for(const r of d.extensions.regex_scripts){const m=r.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);new RegExp(m[1],m[2]);must(r.placement.length===1&&r.placement[0]===2,'regex placement');}
-const display=d.extensions.regex_scripts[0],m=display.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);must('前文<SH_EVENTS>{}</SH_EVENTS>后文'.replace(new RegExp(m[1],m[2]),'')==='前文后文','regex surrounding text');
-const packed=await fs.readFile(path.join(out,'runtime.js'),'utf8');must(packed===d.extensions.tavern_helper.scripts[0].content,'runtime parity');
+for(const e of d.character_book.entries){if(['[InitVar]','[config_override]'].includes(e.comment)){must(!e.enabled,'native metadata must not enter prompt');JSON.parse(e.content);}else{must(e.content.length>150&&(e.enabled||e.extensions.stable_id==='extra-boundary')&&e.constant,'entry substantive');}must(e.extensions.scan_depth===2&&e.extensions.exclude_recursion&&e.extensions.prevent_recursion,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
+const scripts=d.extensions.tavern_helper.scripts;
+must(scripts.length===4&&scripts.filter(s=>s.enabled).length===3,'native runtime dependency count');
+must(scripts[0].content.includes('registerMvuSchema')&&scripts[1].enabled&&!scripts[2].enabled,'schema and mutually exclusive regional loaders');
+must(d.extensions.cj_shenghao.card_type==='mvu_zod','required MVU/Zod type');
+for(const r of d.extensions.regex_scripts){const m=r.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);new RegExp(m[1],m[2]);must(r.placement.every(p=>[1,2].includes(p)),'regex placement');}
+const display=d.extensions.regex_scripts[0],m=display.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);must('前文<UpdateVariable><JSONPatch>[]</JSONPatch></UpdateVariable>后文'.replace(new RegExp(m[1],m[2]),'')==='前文后文','regex surrounding text');
+const packed=await fs.readFile(path.join(out,'runtime.js'),'utf8');must(packed===scripts[3].content,'runtime parity');
+for(const [i,file] of ['schema.js','mvu-domestic.js','mvu-global.js'].entries())must(await fs.readFile(path.join(out,file),'utf8')===scripts[i].content,'dependency parity '+file);
+const protocol=await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8');must(protocol.includes('<JSONPatch>')&&protocol.includes('get_message_variable::stat_data.shenghao._context'),'native output and state macro');
 must(!/import\s*['"]https?:/.test(packed),'unlisted remote runtime');
 const manifest=JSON.parse(await fs.readFile(path.join(out,'artifact-manifest.json'),'utf8'));
 for(const [f,meta] of Object.entries(manifest.files)){const b=await fs.readFile(path.join(out,f));must(b.length===meta.bytes&&crypto.createHash('sha256').update(b).digest('hex')===meta.sha256,'hash '+f);}
