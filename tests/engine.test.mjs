@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialize,validateDraft,applyEnvelope,applyOperation,poolParts,totals,reward,stage,canWithdraw,cents,parseEnvelope,unwrapMvu,assertState} from '../src/core/engine.js';
+import {initialize,validateDraft,applyEnvelope,applyOperation,poolParts,totals,reward,stage,canWithdraw,cents,parseEnvelope,unwrapMvu,assertState,hasEvidence} from '../src/core/engine.js';
 import {fresh,draft,contact,profiles,anchor,event,envelope,source,payment,score} from './fixtures.mjs';
 const run=(s,...ev)=>applyEnvelope(s,envelope(...ev),anchor(),source);
 const op=(s,type='PLAYER_WITHDRAW',extra={})=>applyOperation(s,{operationId:'operation_1',type,personRef:'char_a',expectedRevision:s.meta.revision,...extra},anchor());
@@ -42,3 +42,4 @@ test('整组最后事件失败不会留下之前的扣款',()=>{const s=fresh();
 test('无证据、旧分支、重复ordinal均被拒绝',()=>{assert.throws(()=>run(fresh(),payment({evidence:'没有发生'})));assert.throws(()=>applyEnvelope(fresh(),envelope(payment()),{...anchor(),branchKey:'other'},source));assert.throws(()=>run(fresh(),payment(),score()));});
 test('候选只能是JSON，拒绝危险键与多块，不执行代码',()=>{assert.equal(parseEnvelope('正文'),null);assert.throws(()=>parseEnvelope('<SH_EVENTS>{"__proto__":1}</SH_EVENTS>'));assert.throws(()=>parseEnvelope('<SH_EVENTS>{}</SH_EVENTS><SH_EVENTS>{}</SH_EVENTS>'));assert.throws(()=>parseEnvelope('<SH_EVENTS>alert(1)</SH_EVENTS>'));});
 test('MVU带描述值只在适配层解包，非数字不伪装为零',()=>{assert.equal(unwrapMvu([90,'当前好感']),90);assert.deepEqual(unwrapMvu([1,2]),[1,2]);assert.throws(()=>reward(unwrapMvu(['90','说明'])));});
+test('分句引文只能取同一正文中按顺序存在的逐字证据',()=>{const src='你已经当场付款。店员整理了一下包装。她接受了这份礼物。';assert.equal(hasEvidence(src,'你已经当场付款。她接受了这份礼物。'),true);assert.equal(hasEvidence(src,'她接受了这份礼物。你已经当场付款。'),false);assert.equal(hasEvidence(src,'你已经当场付款。她当场表示爱你。'),false);});
