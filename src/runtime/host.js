@@ -123,7 +123,7 @@ const api={error:'',read:stateView,subscribe(fn){listeners.add(fn);fn(stateView(
   async prepareAppointment(id){const item=current?.state.calendar.appointments[id];requireRule(item&&item.status==='PLANNED','APPOINTMENT_UNAVAILABLE');return '我想处理约定「'+item.title+'」（'+item.date+' '+item.time+'，'+item.location+'）。请从当前地点接续，先由我决定是否出发，不要自动赴约或消费。';},
   preferences(patch){prefs={...prefs,...patch};persistPrefs();publish();},
   async checkUpdate(){const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),8000);try{
-    const response=await fetch('https://api.github.com/repos/'+config.repository+'/contents/updates/latest.json?ref=main',{cache:'no-store',signal:controller.signal,headers:{Accept:'application/vnd.github.raw+json'}});requireRule(response.ok,'UPDATE_UNAVAILABLE');
+    const response=await fetch('https://raw.githubusercontent.com/'+config.repository+'/main/updates/latest.json?t='+Date.now(),{cache:'no-store',signal:controller.signal});requireRule(response.ok,'UPDATE_UNAVAILABLE');
     const raw=await response.text();requireRule(raw.length<30000,'UPDATE_INVALID');const item=JSON.parse(raw),runtime=item.runtime;
     requireRule(item.projectId===config.id&&item.schemaVersion===1,'UPDATE_INVALID');requireRule(runtime?.url==='https://raw.githubusercontent.com/'+config.repository+'/main/dist/'+item.version+'/runtime.js'&&/^[a-f0-9]{64}$/.test(runtime.sha256),'UPDATE_INVALID');
     return {current:config.version,version:item.version,url:item.url,newer:compareVersion(item.version,config.version)>0,runtime,canApply:item.worldbookHash===__BOOK_HASH__,notes:item.notes||'修复与体验改进'};
