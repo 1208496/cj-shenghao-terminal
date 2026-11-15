@@ -253,7 +253,9 @@ export function applyOperation(state,op,anchor) {
   requireRule(op.expectedRevision===state.meta.revision,'STALE_REVISION');
   const s=clone(state);let result={};
   if(op.type==='PLAYER_HIDE_TEMP') {
-    id(op.tempId);s.hiddenTemporary[op.tempId]=true;s.scene.temporaryActors=s.scene.temporaryActors.filter(t=>t.tempId!==op.tempId);
+    id(op.tempId);const temp=s.scene.temporaryActors.find(t=>t.tempId===op.tempId);requireRule(temp,'UNKNOWN_PERSON');s.hiddenTemporary[op.tempId]=clone(temp);s.scene.temporaryActors=s.scene.temporaryActors.filter(t=>t.tempId!==op.tempId);
+  } else if(op.type==='PLAYER_RESTORE_TEMP') {
+    id(op.tempId);requireRule(s.hiddenTemporary[op.tempId],'UNKNOWN_PERSON');delete s.hiddenTemporary[op.tempId];
   } else {
     const c=active(s,op.personRef);
     if(op.type==='PLAYER_WITHDRAW') {

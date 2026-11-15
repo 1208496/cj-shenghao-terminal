@@ -5,24 +5,24 @@
   "gate": "offline-candidate",
   "files": {
     "神豪终端.json": {
-      "sha256": "cbf654e69a438bea5084d0457087c89e70895670be79d263eb8da4b5c3f917eb",
-      "bytes": 217181
+      "sha256": "80172f618c88f85a3cb49fc589fd64f9cc131f301e936b493241138b8dd88c5d",
+      "bytes": 221374
     },
     "worldbook.json": {
-      "sha256": "cd413f44533b6dc2ce05342fbdbc3b17add33b046fc3220288cc9b8391d8dc48",
-      "bytes": 18075
+      "sha256": "8f75062ed57d04f77f511f45a4f62c2ce9ed2328b97b75ff8de2a1c11059b6d0",
+      "bytes": 18449
     },
     "runtime.js": {
-      "sha256": "5512a9e3e115392508e4234c4cdfe1da2e9bdf1ac9721bb09cdb9534315902e2",
-      "bytes": 113272
+      "sha256": "134283a98f0a97e880248c665a6d51ba79bac2d54cf690a9690d2bbcbe99b876",
+      "bytes": 115785
     },
     "opening.html": {
-      "sha256": "545b6f2aeec2782d7e48c6dcd534787758fad3aaa401d3c7c018b62cedea5ce5",
-      "bytes": 68871
+      "sha256": "647b8e411a174126001a0b5d3db41c8bb11b7529ec38826fe4a248ae08847b4d",
+      "bytes": 69824
     },
     "phone.html": {
-      "sha256": "86f55933603a915f54eb70e71828e22b1f9326900a13899d122af06648bff16a",
-      "bytes": 68871
+      "sha256": "877832b08404c0ff1448a140e12e7b854e621c65f80ef3ae9fe56be14389ecb9",
+      "bytes": 69824
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-rc.1",
   "cardType": "hybrid",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,

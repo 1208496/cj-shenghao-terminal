@@ -9,14 +9,14 @@ const output=path.join(root,'dist',cfg.version);
 const targets=['神豪终端.json','worldbook.json','runtime.js','opening.html','phone.html','artifact-manifest.json'];
 if(process.argv.includes('--dry-run')){console.log(JSON.stringify({root,version:cfg.version,writes:targets.map(x=>path.join(output,x)),policy:'New isolated project; no writes outside workspace.'},null,2));process.exit(0);}
 await fs.mkdir(output,{recursive:true});
-const css=await fs.readFile(path.join(root,'src/ui/style.css'),'utf8');
+const css=(await fs.readFile(path.join(root,'src/ui/style.css'),'utf8')).replaceAll('\r\n','\n');
 const ui=await build({entryPoints:[path.join(root,'src/ui/app.js')],bundle:true,write:false,format:'iife',target:'es2022',minify:true});
 const app=ui.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
 const html=async surface=>(await fs.readFile(path.join(root,'src/ui',surface+'.template.html'),'utf8')).replace('__STYLE__',css).replace('__APP__',app);
 const opening=await html('setup'),phone=await html('phone');
 // Only generated intermediate within the workspace, excluded from source authority.
 await fs.writeFile(path.join(root,'src/ui/phone.html'),phone);
-const worldbookHash=crypto.createHash('sha256').update(await fs.readFile(path.join(root,'src/content/literary.json'))).update(await fs.readFile(path.join(root,'src/content/protocol.txt'))).digest('hex');
+const worldbookHash=crypto.createHash('sha256').update((await fs.readFile(path.join(root,'src/content/literary.json'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8')).replaceAll('\r\n','\n')).digest('hex');
 const runtime=await build({entryPoints:[path.join(root,'src/runtime/host.js')],bundle:true,write:false,format:'esm',target:'es2022',loader:{'.html':'text','.txt':'text'},define:{__BOOK_HASH__:JSON.stringify(worldbookHash)},minify:true});
 const script=runtime.outputFiles[0].text;
 const prose=await read('src/content/literary.json');

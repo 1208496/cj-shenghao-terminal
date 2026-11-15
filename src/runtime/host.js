@@ -3,6 +3,7 @@ import {validateDraft,initialize,profile,projection,clone,requireRule,parseEnvel
 import uiHTML from '../ui/phone.html';
 import config from '../../project.json';
 import protocol from '../content/protocol.txt';
+import {compareVersion} from '../core/update.js';
 
 const SLOT='__CJ_SHENGHAO_V2__';
 const topWindow=window.parent;
@@ -14,7 +15,7 @@ const st=()=>topWindow.SillyTavern.getContext();
 const branch=()=>String(st().characterId)+':'+String(st().chatId || st().getCurrentChatId());
 const mode=()=>settings.mode || 'inline';
 const prefsKey=()=> 'cj-shenghao:v2:'+branch();
-let settings={},uiPrefs={},listeners=new Set(),disposers=[],timer=null,phone=null,destroyed=false,current=null,setupBusy=false,extraBusy=false,epoch=0;
+let settings={},uiPrefs={},listeners=new Set(),disposers=[],timer=null,extraTimer=null,phone=null,destroyed=false,current=null,setupBusy=false,extraBusy=false,epoch=0;
 const coordinator=new Coordinator({branch,messages:()=>helper.getChatMessages('0-{{lastMessageId}}',{include_swipes:true}),mode,
   write:(message_id,fn)=>helper.updateVariablesWith(fn,{type:'message',message_id})});
 function loadPrefs(){try{const p=JSON.parse(topWindow.localStorage.getItem(prefsKey())||'{}');settings=p.settings||{};uiPrefs=p.ui||{};}catch{settings={};uiPrefs={};}}
@@ -39,9 +40,10 @@ function schedule(){clearTimeout(timer);timer=setTimeout(update,90);}
 function listen(ev,fn){if(ev&&typeof globalThis.eventOn==='function')disposers.push(eventOn(ev,fn).stop);}
 async function modelJSON(system,user,jobId) {
   requireRule(typeof helper.generateRaw==='function','GENERATION_UNAVAILABLE');
-  const result=await Promise.race([helper.generateRaw({generation_id:jobId,should_stream:false,should_silence:true,
+  let deadline;let result;
+  try{result=await Promise.race([helper.generateRaw({generation_id:jobId,should_stream:false,should_silence:true,
     ordered_prompts:[{role:'system',content:system},{role:'user',content:user}]}),
-    new Promise((_,reject)=>{const t=setTimeout(()=>{helper.stopGenerationById?.(jobId);reject(new Error('MODEL_TIMEOUT'));},90000);disposers.push(()=>clearTimeout(t));})]);
+    new Promise((_,reject)=>{deadline=setTimeout(()=>{helper.stopGenerationById?.(jobId);reject(new Error('MODEL_TIMEOUT'));},90000);})]);}finally{clearTimeout(deadline);}
   requireRule(typeof result==='string','MODEL_RESULT_INVALID');
   return JSON.parse(result.trim().replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,''));
 }
@@ -74,18 +76,20 @@ async function submit(draft) {
 async function extract(messageId) {
   if(extraBusy||mode()!=='extra')return;
   const m=helper.getChatMessages(messageId,{include_swipes:true})[0];if(!m||m.role!=='assistant')return;
+  if(parseEnvelope(cleanSource(messageText(m))))return;
   const frozenBranch=branch(),hash=await digest(cleanSource(messageText(m))),swipe=m.swipe_id,requestEpoch=epoch;
   if(messageData(m).cj_shenghao?.extraHash===hash)return;
   const before=await coordinator.read();if(!before.state)return;
   extraBusy=true;publish();
+  let extractionError=null;
   try {
     const candidate=await modelJSON(protocol+'\n只返回schemaVersion:2与events数组组成的JSON对象，不带SH_EVENTS标签，只从这次正文抽取有逐字证据的新事实。',JSON.stringify({state:projection(before.state),story:narrative(messageText(m))}),'cj-extract-'+crypto.randomUUID());
     requireRule(frozenBranch===branch()&&requestEpoch===epoch,'STALE_CHAT');
     const live=helper.getChatMessages(-1,{include_swipes:true})[0];
     requireRule(live.message_id===messageId&&live.swipe_id===swipe&&await digest(cleanSource(messageText(live)))===hash,'STALE_SOURCE');
-    await coordinator.serial(()=>helper.updateVariablesWith(v=>({...v,cj_shenghao:{...(v.cj_shenghao||{}),extraEnvelope:candidate,extraHash:hash}}),{type:'message',message_id:messageId}));
-  }catch(e){console.warn('[神豪终端] 额外提取未完成',e.message);api.error='本次记录尚未完成，可以稍后重试。';}
-  finally{extraBusy=false;await update();}
+    await coordinator.serial(()=>helper.updateVariablesWith(v=>({...v,cj_shenghao:{...(v.cj_shenghao?.sourceHash===hash?v.cj_shenghao:{}),sourceHash:hash,parseMode:'extra',extraEnvelope:candidate,extraHash:hash}}),{type:'message',message_id:messageId}));
+  }catch(e){console.warn('[神豪终端] 额外提取未完成',e.message);extractionError=e.message;}
+  finally{extraBusy=false;await update();if(extractionError){api.lastExtractionError=extractionError;api.error='本次记录尚未完成，可以稍后重试。';publish();}}
 }
 const api={error:'',read:()=>view(),subscribe(f){listeners.add(f);f(view());return()=>listeners.delete(f);},
   async submit(d){return submit(d);},
@@ -109,7 +113,7 @@ const api={error:'',read:()=>view(),subscribe(f){listeners.add(f);f(view());retu
       requireRule(typeof d.url==='string'&&d.url.startsWith('https://github.com/'+config.repository+'/'),'UPDATE_INVALID');
       const runtime=d.runtime;
       requireRule(runtime&&typeof runtime.sha256==='string'&&/^[a-f0-9]{64}$/.test(runtime.sha256)&&runtime.url==='https://raw.githubusercontent.com/'+config.repository+'/main/dist/'+d.version+'/runtime.js','UPDATE_INVALID');
-      return {current:config.version,version:d.version,url:d.url,newer:d.version!==config.version,runtime,worldbookHash:d.worldbookHash,
+      return {current:config.version,version:d.version,url:d.url,newer:compareVersion(d.version,config.version)>0,runtime,worldbookHash:d.worldbookHash,
         canApply:d.worldbookHash===__BOOK_HASH__};
     } finally{clearTimeout(timeout);}
   },
@@ -129,11 +133,11 @@ const api={error:'',read:()=>view(),subscribe(f){listeners.add(f);f(view());retu
     }finally{clearTimeout(timeout);}
   },
   versions(){return {helper:helper.getTavernHelperVersion?.(),tavern:helper.getTavernVersion?.()};},
-  destroy(){destroyed=true;epoch++;coordinator.disposed=true;clearTimeout(timer);disposers.forEach(fn=>{try{fn();}catch{}});listeners.clear();phone?.remove();helper.uninjectPrompts?.(['cj-shenghao-state','cj-shenghao-extra']);if(topWindow[SLOT]===api)delete topWindow[SLOT];}
+  destroy(){destroyed=true;epoch++;coordinator.disposed=true;clearTimeout(timer);clearTimeout(extraTimer);disposers.forEach(fn=>{try{fn();}catch{}});listeners.clear();phone?.remove();helper.uninjectPrompts?.(['cj-shenghao-state','cj-shenghao-extra']);if(topWindow[SLOT]===api)delete topWindow[SLOT];}
 };
 topWindow[SLOT]=api;loadPrefs();
 phone=topWindow.document.createElement('iframe');phone.id='cj-shenghao-phone-frame';phone.title='神豪终端';
-phone.setAttribute('sandbox','allow-scripts allow-same-origin');phone.style.cssText='position:fixed;right:10px;bottom:10px;width:74px;height:108px;border:0;z-index:2147483000;background:transparent;color-scheme:normal;';
+phone.setAttribute('sandbox','allow-scripts allow-same-origin');phone.style.cssText='position:fixed;right:10px;bottom:10px;width:74px;height:108px;border:0;z-index:3000;background:transparent;color-scheme:normal;';
 phone.srcdoc=uiHTML;topWindow.document.body.append(phone);
 api.geometry=({width,height,left,top})=>{
   const w=Math.min(Math.max(60,width),topWindow.innerWidth-8),h=Math.min(Math.max(90,height),topWindow.innerHeight-8);
@@ -147,7 +151,10 @@ for(const name of ['MESSAGE_SWIPED','MESSAGE_EDITED','MESSAGE_UPDATED','MESSAGE_
 listen(ev.CHAT_CHANGED,()=>{epoch++;current=null;loadPrefs();publish();schedule();});
 listen(ev.GENERATION_STARTED,(_type,_options,dryRun)=>{if(!dryRun){coordinator.busy=true;publish();}});
 listen(ev.GENERATION_STOPPED,()=>{coordinator.busy=false;schedule();});
-listen(ev.GENERATION_ENDED,async mid=>{coordinator.busy=false;await update();if(mode()==='extra')await extract(mid);});
+listen(ev.GENERATION_ENDED,()=>{coordinator.busy=false;publish();clearTimeout(extraTimer);
+  // Release SillyTavern's awaited generation event before requesting a second pass.
+  extraTimer=setTimeout(async()=>{if(destroyed)return;await update();const head=helper.getChatMessages(-1)[0];if(mode()==='extra'&&head?.role==='assistant')await extract(head.message_id);},150);
+});
 listen(ev.GENERATION_AFTER_COMMANDS,()=>inject());
 // MVU may deliver parsed data later. Restore this card's protected subtree; it never owns cash calculation.
 function bindMvu(){

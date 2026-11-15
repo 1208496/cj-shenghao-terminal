@@ -13,25 +13,36 @@ export async function replay(messages,branchKey,mode='inline') {
   let state=null,lineage='',baselineIndex=-1;const diagnostics=[];let head=null;
   for(const m of messages) {
     const source=cleanSource(messageText(m));const fingerprint=await digest(source);const data=messageData(m);
-    const record=data.cj_shenghao || {};const anchor={branchKey,messageId:m.message_id,swipeId:m.swipe_id,fingerprint};
-    if(!state && record.baseline && record.sourceHash===fingerprint) {
+    const stored=data.cj_shenghao || {};
+    const record=stored.sourceHash===fingerprint?clone(stored):{};
+    if(m.role!=='user')delete record.baseline;
+    const anchor={branchKey,messageId:m.message_id,swipeId:m.swipe_id,fingerprint};
+    if(!state && m.role==='user' && record.baseline && record.sourceHash===fingerprint) {
       assertState(record.baseline);state=clone(record.baseline);state.meta.branchKey=branchKey;
       baselineIndex=m.message_id;lineage=await digest('BASE:'+state.meta.initKey+':'+fingerprint);
     } else if(state) {
       lineage=await digest(lineage+':'+m.message_id+':'+m.swipe_id+':'+fingerprint);
       if(m.role==='assistant') {
         try {
-          const envelope=mode==='extra' ? (record.extraHash===fingerprint ? record.extraEnvelope : null) : parseEnvelope(source);
+          const inline=parseEnvelope(source);
+          const selectedMode=record.parseMode || (inline?'inline':mode);
+          const envelope=selectedMode==='extra' ? (record.extraHash===fingerprint ? record.extraEnvelope : null) : inline;
           if(envelope)state=applyEnvelope(state,envelope,anchor,narrative(source));
         } catch(e) { diagnostics.push({messageId:m.message_id,code:e.message}); }
       }
     }
     if(state) {
+      const ownedOperations=[];
       for(const saved of record.operations || []) {
+        // Helper versions may copy the previous floor's entire variable table.
+        // A previously committed operation is inherited data, never a new request.
+        if(state.operationHistory[saved.operation.operationId])continue;
+        ownedOperations.push(saved);
         if(saved.baseLineage!==lineage) {diagnostics.push({messageId:m.message_id,code:'STALE_OPERATION'});continue;}
         try {state=applyOperation(state,{...saved.operation,expectedRevision:state.meta.revision},anchor);lineage=await digest(lineage+':'+saved.operation.operationId);}
         catch(e){diagnostics.push({messageId:m.message_id,code:e.message});}
       }
+      if(record.operations)record.operations=ownedOperations;
       state.meta.sourceAnchor=anchor;
     }
     head={message:m,record,anchor};
@@ -64,7 +75,7 @@ export class Coordinator {
     this.last=result;return result;
   }
   refresh() {return this.serial(async()=>{
-    const r=await this.read();if(r.state&&!this.busy&&JSON.stringify(messageData(r.head.message).stat_data?.shenghao)!==JSON.stringify(r.state))await this.persist(r,r.head.record);return r;
+    const r=await this.read();if(r.state&&!this.busy&&(JSON.stringify(messageData(r.head.message).stat_data?.shenghao)!==JSON.stringify(r.state)||JSON.stringify(messageData(r.head.message).cj_shenghao||{})!==JSON.stringify(r.head.record)))await this.persist(r,r.head.record);return r;
   });}
   operate(operation,expectedLineage) {return this.serial(async()=>{
     requireRule(!this.busy,'GENERATION_BUSY');const r=await this.read();
