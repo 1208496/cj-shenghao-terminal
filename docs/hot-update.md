@@ -1,5 +1,9 @@
 # 固定加载器与版本指针
 
+## 当前作者测试发布：rc.7（2026-11-16）
+
+用户明确要求推送GitHub并更换指针以便自己测试，**这不等于向玩家正式发行**。本体/测试ref/fallback均为 `d83b4055f10e43e133e12275bc640e3d00c438e6`；整卡提交 `3665d61e2b2bdbf42f80c93ea47a500bb3edfea6`，off为空。160项测试、CDN逐字核对、正式整卡构建/check和公开指针读取通过。使用 `dist/2.0.0-rc.7/神豪终端.json`，具体证据见 [rc.7测试发布](../evidence/rc7-github-test-release.md)。只有用户明确已向玩家发行才考虑旧字段/存档兼容，规则见根AGENTS.md。下方rc.6内容保留为历史配置与流程说明。
+
 rc.6已于2026-11-16完成构建、公开仓库推送、CDN核对、Supabase指针上线和专项实机验证。用户“配置好就发布，测试”已解除此前暂停。见 [专项验收](../evidence/hot-update-acceptance.md)和 [PROJECT_STATE](../PROJECT_STATE.md)。
 
 ## 结构与当前配置
