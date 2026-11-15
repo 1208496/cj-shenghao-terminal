@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
   "projectId": "cj-shenghao-terminal-v2",
-  "version": "2.0.0-rc.2",
-  "url": "https://github.com/1208496/cj-shenghao-terminal/tree/main/dist/2.0.0-rc.2",
+  "version": "2.0.0-rc.3",
+  "url": "https://github.com/1208496/cj-shenghao-terminal/tree/main/dist/2.0.0-rc.3",
   "visibility": "public",
   "worldbookHash": "102a28501c710902f2fdd31e5f0eb750305b79277e1d609216aa0d680e43471e",
+  "notes": "原生MVU、日历与原型手机修正版；变量折叠框增加收起提示，更新弹窗显示版本说明。",
   "runtime": {
-    "url": "https://raw.githubusercontent.com/1208496/cj-shenghao-terminal/main/dist/2.0.0-rc.2/runtime.js",
-    "sha256": "ab597f49b510f7fb9ed2eebae9f8df8bdeb2b9fdcf1e547cee5257eaec060a7c"
+    "url": "https://raw.githubusercontent.com/1208496/cj-shenghao-terminal/main/dist/2.0.0-rc.3/runtime.js",
+    "sha256": "33f5fbf0708cdde5f10917b9b7bcafd9961ffe1e67fe0bb97493b3baa85288b4"
   }
 }
