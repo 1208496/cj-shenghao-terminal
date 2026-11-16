@@ -1,0 +1,15 @@
+{
+  "noBridge": true,
+  "identityName": "加载验收玩家",
+  "step2": "02 · 设定起点",
+  "step3": "03 · 已有关系",
+  "preview": "确认你的起点",
+  "submitBlocked": true,
+  "messageCount": 1,
+  "savedDraft": {
+    "name": "加载验收玩家",
+    "step": 2,
+    "assets": 1,
+    "contacts": 1
+  }
+}

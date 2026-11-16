@@ -64,6 +64,9 @@ function bindMvu(){
     });context.commandCount=safe.length;contexts.set(vars,{...context,before,initial});commands.splice(0,commands.length,...safe);
   });
   on(M.events.VARIABLE_UPDATE_ENDED,(vars,oldVars)=>{
+    // Greeting initialization and parseMessage emit STARTED/ENDED without a
+    // BEFORE_MESSAGE_UPDATE. Release their lock at the paired end event too.
+    mvuBusy=false;schedule();
     const context=contexts.get(vars);if(!context)return;
     try{
       requireRule(context.anchor.branchKey===branch(),'STALE_CHAT');

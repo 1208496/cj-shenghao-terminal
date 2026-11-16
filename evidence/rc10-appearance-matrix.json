@@ -1,0 +1,75 @@
+{
+  "themes": [
+    {
+      "theme": "sage",
+      "active": "",
+      "rootScheme": "light",
+      "frameClip": "inset(0px round 40px)"
+    },
+    {
+      "theme": "gold",
+      "active": "theme-gold",
+      "rootScheme": "light",
+      "frameClip": "inset(0px round 40px)"
+    },
+    {
+      "theme": "purple",
+      "active": "theme-purple",
+      "rootScheme": "light",
+      "frameClip": "inset(0px round 40px)"
+    }
+  ],
+  "sizes": [
+    {
+      "size": "standard",
+      "font": "small",
+      "actual": "small",
+      "scale": "1"
+    },
+    {
+      "size": "standard",
+      "font": "medium",
+      "actual": "medium",
+      "scale": "1.15"
+    },
+    {
+      "size": "standard",
+      "font": "large",
+      "actual": "large",
+      "scale": "1.3"
+    },
+    {
+      "size": "compact",
+      "font": "small",
+      "actual": "small",
+      "scale": "1"
+    },
+    {
+      "size": "compact",
+      "font": "medium",
+      "actual": "medium",
+      "scale": "1.15"
+    },
+    {
+      "size": "compact",
+      "font": "large",
+      "actual": "large",
+      "scale": "1.3"
+    }
+  ],
+  "sections": [
+    {
+      "name": "assets",
+      "open": false
+    },
+    {
+      "name": "ledger",
+      "open": false
+    }
+  ],
+  "categoryPreserved": true,
+  "hasCarDescription": true,
+  "folded": true,
+  "reopened": true,
+  "scenePlayer": "云\n云澜验收玩家 见习·十倍\n颜值 95/100\n云澜市 · 江城区·临江大平层\n家族企业项目负责人"
+}

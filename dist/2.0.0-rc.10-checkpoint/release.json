@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.10",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "ed1195df8eaa9b4684fe7b0dec8bc317605b9d6a38521d2a298834c209282c26",
+  "sha256": "20fc796b814cf8a38b38f95584e81172db732074d7870263641358704a96a750",
+  "notes": "云澜中型世界书扩写，城市社会生态与场景细化，开局固定云澜。"
+}

@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.9",
+  "version": "2.0.0-rc.11",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "e28b378b64cd672561a81c42e75f368b9afd5638aee9296e936c65f85801fef0",
-  "sha256": "8332c4202312de1270da2282efd8321d02dbfbe4267cd6fdbcefe1053cef9736",
-  "notes": "反复提现与现金等级倍率、颜值好感修正、人物消费明细和自由都市事件。"
+  "worldbookHash": "adb918fea3dd2886b9067e9681f60bd07afa8744b941a3b58ead762905ee826e",
+  "sha256": "c99ad1b15277fce5c1fd342c76646bcb84aca50107b77f85272ff64c87d2ef9c",
+  "notes": "开局表单本地即时显示、后台连接，短消息载体与聊天隔离草稿，保留rc.10世界书和经济规则。"
 }

@@ -1,0 +1,43 @@
+{
+  "busy": false,
+  "ready": true,
+  "name": "键盘加载验收",
+  "step": "01 · 塑造身份",
+  "messages": 1,
+  "firstMesParity": true,
+  "scriptParity": true,
+  "regexParity": true,
+  "rawMessageBytes": 342,
+  "promptClean": true,
+  "noState": true,
+  "messageParity": true,
+  "scriptChecks": [
+    {
+      "id": "40fb64d6-582e-4cdc-bd9f-c6c0427e0c0e",
+      "content": true,
+      "enabled": true
+    },
+    {
+      "id": "c533f64c-f4cf-49f7-a420-f136a457a7ae",
+      "content": true,
+      "enabled": true
+    },
+    {
+      "id": "c533f64c-f4cf-49f7-a420-f136a457a7af",
+      "content": true,
+      "enabled": true
+    },
+    {
+      "id": "e3b93f04-34ca-4287-b69c-928148cf88f6",
+      "content": true,
+      "enabled": true
+    }
+  ],
+  "storedCarrierNote": {
+    "storedFirstLength": 132,
+    "expectedLength": 130,
+    "firstMessages": 0,
+    "normalizedFirstParity": true,
+    "suffix": "，窗外云澜市的车水马龙正要铺开画卷。当你填好起点信息，推门走入这座城市的那一刻，属于你的真实人生便正式开始。\r\n\r\n<CJ_SHENGHAO_OPENING/>"
+  }
+}

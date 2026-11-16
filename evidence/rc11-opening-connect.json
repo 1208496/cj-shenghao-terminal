@@ -1,0 +1,18 @@
+{
+  "sameInput": true,
+  "focusRetained": true,
+  "selection": [
+    2,
+    4
+  ],
+  "draftName": "键盘加载验收",
+  "busy": false,
+  "nativeReady": true,
+  "noVariableWrite": true,
+  "messageCount": 1,
+  "promptClean": true,
+  "versions": {
+    "tavern": "1.19.0",
+    "helper": "4.12.0"
+  }
+}

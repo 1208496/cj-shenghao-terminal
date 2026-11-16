@@ -1,0 +1,15 @@
+{
+  "kind": "browser source fixture; backend intentionally absent; not end-to-end network benchmark",
+  "old": {
+    "elapsedMs": 112.5,
+    "formMs": null,
+    "hasForm": false,
+    "hasBridge": false
+  },
+  "fresh": {
+    "elapsedMs": 109,
+    "formMs": 2.699999999254942,
+    "hasForm": true,
+    "hasBridge": false
+  }
+}

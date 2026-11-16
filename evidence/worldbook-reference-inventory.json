@@ -1,0 +1,336 @@
+{
+  "sourceFile": "都市神豪之我爱装逼托马斯版V1.5.10.json",
+  "sourceSha256": "b0126abda8e68048d2993f1c3e9c32b85b1dd750f089b2f0ddf49860c85b2acd",
+  "mode": "read-only JSON inventory; no embedded instructions executed",
+  "entries": [
+    {
+      "id": "0",
+      "title": "怀孕通知触发",
+      "disabled": false,
+      "constant": true,
+      "characters": 630
+    },
+    {
+      "id": "1",
+      "title": "打脸与装逼机制",
+      "disabled": false,
+      "constant": true,
+      "characters": 2083
+    },
+    {
+      "id": "2",
+      "title": "[InitVar]变量（勿动）",
+      "disabled": true,
+      "constant": false,
+      "characters": 1385
+    },
+    {
+      "id": "3",
+      "title": "动态NPC",
+      "disabled": false,
+      "constant": true,
+      "characters": 2013
+    },
+    {
+      "id": "4",
+      "title": "基础世界观",
+      "disabled": false,
+      "constant": true,
+      "characters": 1776
+    },
+    {
+      "id": "5",
+      "title": "播报强调",
+      "disabled": true,
+      "constant": false,
+      "characters": 296
+    },
+    {
+      "id": "6",
+      "title": "奢侈品",
+      "disabled": false,
+      "constant": true,
+      "characters": 730
+    },
+    {
+      "id": "7",
+      "title": "神豪系统（带神豪商店）",
+      "disabled": false,
+      "constant": true,
+      "characters": 3773
+    },
+    {
+      "id": "8",
+      "title": "[mvu_update]变量更新规则",
+      "disabled": false,
+      "constant": true,
+      "characters": 22410
+    },
+    {
+      "id": "9",
+      "title": "变量列表",
+      "disabled": false,
+      "constant": true,
+      "characters": 89
+    },
+    {
+      "id": "10",
+      "title": "[mvu_update]变量输出格式",
+      "disabled": false,
+      "constant": true,
+      "characters": 3776
+    },
+    {
+      "id": "11",
+      "title": "任务生成规则",
+      "disabled": false,
+      "constant": true,
+      "characters": 3845
+    },
+    {
+      "id": "12",
+      "title": "反全知与刻板约束",
+      "disabled": false,
+      "constant": true,
+      "characters": 1058
+    },
+    {
+      "id": "13",
+      "title": "女性生理周期表现参考",
+      "disabled": false,
+      "constant": false,
+      "characters": 782
+    },
+    {
+      "id": "14",
+      "title": "怀孕与产育表现参考",
+      "disabled": false,
+      "constant": false,
+      "characters": 1852
+    },
+    {
+      "id": "15",
+      "title": "子嗣与家庭关系记录规则",
+      "disabled": false,
+      "constant": false,
+      "characters": 678
+    },
+    {
+      "id": "16",
+      "title": "男性眷属生成规则",
+      "disabled": false,
+      "constant": false,
+      "characters": 1724
+    },
+    {
+      "id": "17",
+      "title": "好感与堕落行为准则",
+      "disabled": false,
+      "constant": true,
+      "characters": 394
+    },
+    {
+      "id": "18",
+      "title": "NPC登场与突发破局律",
+      "disabled": false,
+      "constant": true,
+      "characters": 1837
+    },
+    {
+      "id": "19",
+      "title": "神豪娘 · 人格内核",
+      "disabled": false,
+      "constant": true,
+      "characters": 1402
+    },
+    {
+      "id": "20",
+      "title": "动态世界与戏剧钩子生成引擎",
+      "disabled": false,
+      "constant": true,
+      "characters": 841
+    },
+    {
+      "id": "21",
+      "title": "小手机私信与订单响应协议",
+      "disabled": false,
+      "constant": true,
+      "characters": 3744
+    },
+    {
+      "id": "22",
+      "title": "[cot]正文对话气泡",
+      "disabled": false,
+      "constant": true,
+      "characters": 606
+    },
+    {
+      "id": "23",
+      "title": "[消费观念]阶级分层",
+      "disabled": false,
+      "constant": false,
+      "characters": 988
+    },
+    {
+      "id": "24",
+      "title": "神豪娘 · 性格 · 软糯小棉袄",
+      "disabled": true,
+      "constant": true,
+      "characters": 633
+    },
+    {
+      "id": "25",
+      "title": "神豪娘 · 性格 · 毒舌御姐",
+      "disabled": true,
+      "constant": true,
+      "characters": 636
+    },
+    {
+      "id": "26",
+      "title": "神豪娘 · 性格 · 沙雕损友",
+      "disabled": false,
+      "constant": true,
+      "characters": 605
+    },
+    {
+      "id": "27",
+      "title": "神豪娘 · 性格 · 温柔姐姐",
+      "disabled": true,
+      "constant": true,
+      "characters": 607
+    },
+    {
+      "id": "28",
+      "title": "神豪娘 · 性格 · 病娇痴女",
+      "disabled": true,
+      "constant": true,
+      "characters": 655
+    },
+    {
+      "id": "29",
+      "title": "神豪娘 · 性格 · 冷面军师",
+      "disabled": true,
+      "constant": true,
+      "characters": 643
+    },
+    {
+      "id": "30",
+      "title": "名望与圈层反应律",
+      "disabled": false,
+      "constant": true,
+      "characters": 3192
+    },
+    {
+      "id": "31",
+      "title": "世界运行台账律",
+      "disabled": false,
+      "constant": true,
+      "characters": 3011
+    },
+    {
+      "id": "32",
+      "title": "对手位格与后台律",
+      "disabled": false,
+      "constant": true,
+      "characters": 1697
+    },
+    {
+      "id": "33",
+      "title": "身价榜与对外身价律",
+      "disabled": false,
+      "constant": true,
+      "characters": 1193
+    },
+    {
+      "id": "34",
+      "title": "产业经营律",
+      "disabled": false,
+      "constant": true,
+      "characters": 879
+    },
+    {
+      "id": "35",
+      "title": "班底与组织架构律",
+      "disabled": false,
+      "constant": true,
+      "characters": 1824
+    },
+    {
+      "id": "36",
+      "title": "微信好友机制",
+      "disabled": false,
+      "constant": true,
+      "characters": 650
+    },
+    {
+      "id": "37",
+      "title": "人物关系网规则",
+      "disabled": false,
+      "constant": true,
+      "characters": 1672
+    },
+    {
+      "id": "38",
+      "title": "宿主匿名委派任务",
+      "disabled": false,
+      "constant": true,
+      "characters": 1371
+    },
+    {
+      "id": "39",
+      "title": "资产交易与人物财务",
+      "disabled": false,
+      "constant": true,
+      "characters": 3967
+    },
+    {
+      "id": "1101",
+      "title": "人物关系规则 · 旧版",
+      "disabled": true,
+      "constant": true,
+      "characters": 3479
+    },
+    {
+      "id": "1102",
+      "title": "人物关系规则 · 新版",
+      "disabled": false,
+      "constant": true,
+      "characters": 1396
+    },
+    {
+      "id": "1103",
+      "title": "人物出场规则 · 旧版",
+      "disabled": true,
+      "constant": true,
+      "characters": 93
+    },
+    {
+      "id": "1104",
+      "title": "人物出场规则 · 新版",
+      "disabled": false,
+      "constant": true,
+      "characters": 239
+    },
+    {
+      "id": "1105",
+      "title": "[config_override]",
+      "disabled": true,
+      "constant": false,
+      "characters": 1244
+    },
+    {
+      "id": "1106",
+      "title": "【开局设定】",
+      "disabled": false,
+      "constant": true,
+      "characters": 1246
+    },
+    {
+      "id": "1107",
+      "title": "[人物] 邝美凤",
+      "disabled": false,
+      "constant": false,
+      "characters": 3653
+    }
+  ]
+}

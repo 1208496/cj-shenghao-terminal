@@ -37,6 +37,14 @@ export function basicProfile(c) {
   return result;
 }
 export function completeBasicProfile(c){const b=basicProfile(c);requireRule(b.appearance&&b.body&&b.personalityTags.length>0&&['heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu'].every(k=>b[k]!==null),'PROFILE_INCOMPLETE');return b;}
+export function assetDescription(a){
+  if(typeof a.description==='string'&&a.description.trim())return text(a.description,800);
+  const name=text(a.name,120),where=text(a.locationNote||'',300,true);
+  if(a.kind==='HOUSE'){const large=/大平层|别墅|庄园/.test(name)||(a.bookValueCents??0)>=500000000;return `${name}位于${where||'云澜市江城区的成熟住宅片区'}，建筑面积约${large?220:90}平方米，${large?'四室两厅，带独立书房与宽敞观景客厅，浅色石材和木饰面营造安静舒展的居住氛围':'两室一厅，南向客厅与卧室采光充足，浅木色家具和整洁厨房适合日常居住'}，配有小区停车位。`;}
+  if(a.kind==='CAR'){const sport=/跑车|超跑|911|法拉利|兰博/.test(name),suv=/SUV|越野|卡宴/i.test(name);return `${name}是一辆${sport?'双门运动跑车，搭载高功率动力总成，百公里加速约4秒，低趴车身配深灰金属漆，座舱采用黑色真皮运动座椅与碳纤维饰板':suv?'五座中大型SUV，搭载2.0T涡轮动力与四驱系统，深灰色车身搭配黑色真皮内饰，底盘稳健，兼顾通勤舒适与周末出游':'以中型四门行政轿车设定，搭载2.0T涡轮动力与自动变速箱，银灰色金属漆车身，黑色皮质座椅搭配简洁中控，隔音舒适，动力适合日常通勤与高速巡航'}，平时停放在${where||'住所附近的固定车位'}。`;}
+  if(a.kind==='LUXURY')return `${name}${/表/.test(name)?'采用精钢表壳与自动机械机芯，浅银色表盘配简洁时标，棕色皮革表带，透底可见机芯运转，适合商务与日常佩戴':/包|皮具/.test(name)?'采用细腻小牛皮与金属扣件，线条利落，内部分区清楚，可搭配日常通勤或正式社交穿着':'以细致的材质处理和简洁考究的造型见长，表面质感温润，适合收藏陈列或在正式场合使用'}。`;
+  return `${name}${/电脑|笔记本/.test(name)?'配有14英寸轻薄屏幕、16GB内存与512GB固态硬盘，深灰金属机身，键盘手感清晰，适合日常办公、资料整理与外出携带':'造型简洁，材质结实，维护状态良好，便于日常使用与妥善保管'}，收纳在${where||'玩家住所的常用物品区'}。`;
+}
 export function profile(p) {
   requireRule(p && !Array.isArray(p) && typeof p === 'object', 'PROFILE_INCOMPLETE');
   const result = {}; for (const k of PROFILE_KEYS) result[k] = text(p[k],750); return result;
@@ -53,13 +61,13 @@ export function validateDraft(d) {
   requireRule(d && typeof d === 'object', 'INVALID_DRAFT');
   const user = {id:'USER', name:text(d.name,50),age:integer(d.age,18,120),beautyScore:integer(d.beautyScore,1,100),gender:text(d.gender ?? '',40,true),
     appearance:text(d.appearance ?? '',500,true),body:text(d.body ?? '',500,true),occupation:text(d.occupation ?? '',100,true),background:text(d.background ?? '',1200,true),
-    city:text(d.city,100),location:text(d.currentLocation,150),housingMode:text(d.housingMode,30),residenceDescription:text(d.residenceDescription ?? '',600,true),
+    city:'云澜市',location:text(d.currentLocation,150),housingMode:text(d.housingMode,30),residenceDescription:text(d.residenceDescription ?? '',600,true),
     workLifeDescription:text(d.workLifeDescription ?? '',600,true),cashCents:integer(d.initialCashCents),initialCashCents:d.initialCashCents,
     currentClothes:'',currentPose:'',currentAction:''};
   requireRule(Array.isArray(d.initialAssets) && d.initialAssets.length <= 100 && Array.isArray(d.contacts) && d.contacts.length <= 20, 'DRAFT_LIMIT');
   const assets = d.initialAssets.map(a => ({assetId:id(a.assetId),kind:assetKind(a.kind),name:text(a.name,120),ownerId:'USER',
     bookValueCents:integer(a.bookValueCents),basisCents:null,status:'OWNED',acquisitionEventId:'INITIAL',acquisitionIsInitial:true,
-    locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
+    description:assetDescription(a),locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
   const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,18,120),
     beautyScore:c.beautyScore===undefined?undefined:integer(c.beautyScore,1,100),affection:integer(c.affection,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
     notes:text(c.notes ?? '',1200,true),present:c.present === true}));
@@ -205,7 +213,7 @@ function applyEvent(s,e,eventKey,anchor) {
         requireRule(owner==='USER'||allocations.every(x=>x.personRef===owner),'ASSET_BENEFICIARY_MISMATCH');
         s.finance.assets[a.assetId]={assetId:a.assetId,kind:assetKind(a.kind),name:text(a.name,120),ownerId:owner,
           bookValueCents:integer(a.bookValueCents ?? e.amountCents),basisCents:e.amountCents,status:owner==='USER'?'OWNED':'TRANSFERRED',
-          acquisitionEventId:e.factId,acquisitionIsInitial:false,locationNote:text(a.locationNote ?? '',300,true),ownershipNote:'本人全额所有，无债务'};
+          acquisitionEventId:e.factId,acquisitionIsInitial:false,description:assetDescription({...a,bookValueCents:a.bookValueCents??e.amountCents}),locationNote:text(a.locationNote ?? '',300,true),ownershipNote:'本人全额所有，无债务'};
       } else requireRule(!['PROPERTY_PURCHASE','VEHICLE_PURCHASE'].includes(e.kind),'ASSET_REQUIRED');
       if(e.kind==='ASSET_SALE') {
         const a=s.finance.assets[id(e.assetId)];requireRule(a?.ownerId==='USER'&&a.status==='OWNED','ASSET_NOT_OWNED');a.status='SOLD';a.ownerId='EXTERNAL';
@@ -353,6 +361,6 @@ export function projection(s) {
   const people=Object.values(s.characters).map(c=>({id:c.id,name:c.name,aliases:c.aliases,hidden:!tracked(c),
     ...(tracked(c)&&s.scene.presentCharacterIds.includes(c.id)?{age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationship:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})}: {})}));
   return {schemaVersion:3,revision:s.meta.revision,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,people,
-    assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind})),
+    assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind,description:a.description,locationNote:a.locationNote,ownershipNote:a.ownershipNote,bookValueCents:a.bookValueCents})),
     recentFacts:Object.keys(s.facts).slice(-60),rule:'只提出新事实，不直接写现金、奖池或提现。已列factId不得再次入账。'};
 }

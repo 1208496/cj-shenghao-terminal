@@ -1,0 +1,113 @@
+{
+  "results": [
+    {
+      "preset": "broke",
+      "cash": 0,
+      "name": "云澜验收玩家",
+      "age": 28,
+      "city": "云澜市",
+      "assets": 0,
+      "contacts": 1,
+      "descriptions": true
+    },
+    {
+      "preset": "worker",
+      "cash": 1000000,
+      "name": "云澜验收玩家",
+      "age": 28,
+      "city": "云澜市",
+      "assets": 1,
+      "contacts": 1,
+      "descriptions": true
+    },
+    {
+      "preset": "comfortable",
+      "cash": 10000000,
+      "name": "云澜验收玩家",
+      "age": 28,
+      "city": "云澜市",
+      "assets": 2,
+      "contacts": 2,
+      "descriptions": true
+    },
+    {
+      "preset": "wealthy",
+      "cash": 100000000,
+      "name": "云澜验收玩家",
+      "age": 28,
+      "city": "云澜市",
+      "assets": 3,
+      "contacts": 2,
+      "descriptions": true
+    }
+  ],
+  "beauty": [
+    {
+      "n": 1,
+      "hint": "丑陋无比 · 好感加成 -2",
+      "stored": 1
+    },
+    {
+      "n": 19,
+      "hint": "丑陋无比 · 好感加成 -2",
+      "stored": 19
+    },
+    {
+      "n": 20,
+      "hint": "有点难看的路人 · 好感加成 -1",
+      "stored": 20
+    },
+    {
+      "n": 49,
+      "hint": "有点难看的路人 · 好感加成 -1",
+      "stored": 49
+    },
+    {
+      "n": 50,
+      "hint": "平平无奇的普通人，还算看得过去 · 好感加成 0",
+      "stored": 50
+    },
+    {
+      "n": 69,
+      "hint": "平平无奇的普通人，还算看得过去 · 好感加成 0",
+      "stored": 69
+    },
+    {
+      "n": 70,
+      "hint": "颜值出众，更容易获得好感 · 好感加成 +1",
+      "stored": 70
+    },
+    {
+      "n": 89,
+      "hint": "颜值出众，更容易获得好感 · 好感加成 +1",
+      "stored": 89
+    },
+    {
+      "n": 90,
+      "hint": "倾国倾城，万中无一 · 好感加成 +2",
+      "stored": 90
+    },
+    {
+      "n": 100,
+      "hint": "倾国倾城，万中无一 · 好感加成 +2",
+      "stored": 100
+    }
+  ],
+  "cityInputAbsent": true,
+  "cashChoices": [
+    0,
+    1000000,
+    10000000,
+    100000000
+  ],
+  "assetAdded": true,
+  "assetRemoved": true,
+  "cancelPreserved": true,
+  "stableIds": true,
+  "acquaintancesOptions": 6,
+  "previewHasDescription": false,
+  "noStateYet": true,
+  "bookEntries": 31,
+  "bookConstant": 9,
+  "bookSelective": 20
+}
