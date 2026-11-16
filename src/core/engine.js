@@ -34,6 +34,20 @@ export function stage(n) {
 export function corruptionStage(n) {
   integer(n,0,100); return n >= 90 ? '彻底沉沦' : n >= 75 ? '予取予求' : n >= 60 ? '底线失守' : n >= 40 ? '半推半就' : n >= 20 ? '芳心暗摇' : '矜持自守';
 }
+// Deterministic 28-day cycle from story date + stable id hash. The model never
+// has to count days; an explicitly written non-empty cycle still wins that round.
+export function computeCycle(cid,dateStr,pregnancy='未孕'){
+  if(pregnancy&&pregnancy!=='未孕')return '妊娠期';
+  const ms=Date.parse((dateStr||'2026-01-05')+'T00:00:00Z');
+  const dayIndex=Number.isFinite(ms)?Math.floor(ms/86400000):0;
+  let hash=0;for(const ch of String(cid||''))hash=(hash*31+ch.codePointAt(0))>>>0;
+  const day=((dayIndex+(hash%28))%28+28)%28+1;
+  if(day<=5)return `月经期·第${day}天`;
+  if(day<=11)return '安全期';
+  if(day<=16)return day===14?'排卵日·极易孕':'排卵期·易孕';
+  if(day<=24)return '安全期';
+  return '经前期·敏感';
+}
 export function basicProfile(c) {
   requireRule(Array.isArray(c.personalityTags??[])&&(c.personalityTags??[]).length<=6,'INVALID_BASIC_PROFILE');
   const result={personalityTags:(c.personalityTags??[]).map(v=>text(v,12)),appearance:text(c.appearance ?? '',500,true),body:text(c.body ?? '',500,true),cupSize:text(c.cupSize ?? '',8,true)};
@@ -434,7 +448,9 @@ export function projection(s) {
     return c.starred?{...base,relationshipLabel:c.relationshipLabel,affection:c.affection,corruption:c.corruption??0,starred:true,offscreen:c.offscreen}:base;
   };
   const characters=Object.fromEntries(Object.values(s.characters).map(c=>[c.id,view(c)]));
-  return {schemaVersion:3,revision:s.meta.revision,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,characters,pendingBasicProfiles,
+  // Top-level to-do list so the model cannot miss off-stage starred women.
+  const starredOffscreenIds=Object.values(s.characters).filter(c=>tracked(c)&&c.starred&&!s.scene.presentCharacterIds.includes(c.id)).map(c=>c.id);
+  return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,characters,pendingBasicProfiles,
     assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind,description:a.description,locationNote:a.locationNote,ownershipNote:a.ownershipNote,bookValueCents:a.bookValueCents})),
     recentFacts:Object.entries(s.facts).slice(-60).map(([factId,f])=>{const l=ledgerByFact.get(factId);return {factId,type:f.type,...(l?{kind:l.kind,itemName:l.itemName,amountCents:l.amountCents,assetId:l.assetId,refundOf:l.refundOf}:{})};}),rule:'只提出新事实，不直接写现金、奖池或提现。已列factId不得再次入账；退款的refundOf按交易名称、金额与资产匹配原付款factId，不猜ID。'};
 }

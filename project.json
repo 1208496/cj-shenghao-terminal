@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.22",
+  "version": "2.0.0-rc.23",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -41,6 +41,6 @@
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "rc.22：好感与堕落双轴、提现门槛改为好感70或堕落60、涩涩高分阶梯入协议、暴击奖金全线翻十倍；账本与退款公式不变。",
-  "cardContractRevision": 18
+  "releaseNotes": "rc.23：脚本兜底私密字段（生理周期自动推算、实战自动置非处并补标签、亲密标签自动提炼）与打星离场顶层索引 starredOffscreenIds；协议改为强触发并附全要素示例。",
+  "cardContractRevision": 19
 }

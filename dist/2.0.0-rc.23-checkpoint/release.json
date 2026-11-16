@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.23",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "ad426bafd5cb1970869b8ab5fbd701c7e684e2ab15f4d9ac595b9e81358201c9",
+  "sha256": "b26cb0ad398cb769c69819438bdabe2805f3ba7a8cb8333361c12bc01f6e654e",
+  "notes": "rc.23：脚本兜底私密字段（生理周期自动推算、实战自动置非处并补标签、亲密标签自动提炼）与打星离场顶层索引 starredOffscreenIds；协议改为强触发并附全要素示例。"
+}

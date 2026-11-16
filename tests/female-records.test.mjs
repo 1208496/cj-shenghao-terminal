@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {z} from 'zod';
 import {createSchema} from '../src/runtime/schema.js';
 import {completeInitialState,settleNative,prepareModelCommand} from '../src/runtime/settlement.js';
-import {clone,projection,applyOperation,PROFILE_LABELS,profile,corruptionStage,canWithdraw,poolParts} from '../src/core/engine.js';
+import {clone,projection,applyOperation,PROFILE_LABELS,profile,corruptionStage,canWithdraw,poolParts,computeCycle} from '../src/core/engine.js';
 import {createScreens} from '../src/ui/screens.js';
 import {fresh,contact,anchor,profiles,payment} from './fixtures.mjs';
 const schemas=createSchema(z);
@@ -181,4 +181,54 @@ test('the phone shows both axes and the new withdraw wording',()=>{
   s.characters.char_a.corruption=60;
   ctx.view.state=s;
   assert(screens.detail(s.characters.char_a).includes('✦ 领取本期全部奖励')===false);
+});
+
+test('cycle is derived from story date and stable id, and an explicit value survives the same day',()=>{
+  const start=initial();
+  assert(start.characters.char_a.physiology.cycle.length>0,'initial cycle is filled by the script');
+  const stages=new Set();
+  for(let d=1;d<=28;d+=1)stages.add(computeCycle('char_a','2026-02-'+String(d).padStart(2,'0')));
+  assert(stages.size>=4,'cycle actually varies across a month');
+  assert.equal(computeCycle('char_a','2026-01-05','怀孕两个月'),'妊娠期');
+  const sameDay=clone(start);
+  sameDay.characters.char_a.physiology={...sameDay.characters.char_a.physiology,cycle:'经期第二天'};
+  assert.equal(settleNative(start,sameDay,anchor(),'本轮正文',schemas).state.characters.char_a.physiology.cycle,'经期第二天');
+  const nextDay=clone(start);
+  nextDay.world.date='2026-03-01';
+  assert.equal(settleNative(start,nextDay,anchor(3),'本轮正文',schemas).state.characters.char_a.physiology.cycle,computeCycle('char_a','2026-03-01','未孕'));
+});
+
+test('a 90+ intimate behavior back-fills virgin, tags and count without the model writing those paths',()=>{
+  const before=initial();
+  assert.equal(before.characters.char_a.physiology.virgin,null);
+  const candidate=clone(before);
+  candidate.pendingEvents=[{type:'BEHAVIOR',personRef:'char_a',action:'主卧深吻并发生首次亲密交欢',score:92}];
+  const out=settleNative(before,candidate,anchor(),'本轮正文',schemas).state;
+  assert.equal(out.characters.char_a.physiology.virgin,false);
+  assert(out.characters.char_a.intimacy.withUserCount>=1);
+  for(const tag of ['初夜夺取','深情热吻','鱼水之欢'])assert(out.characters.char_a.intimacy.unlockedTags.includes(tag),tag);
+  assert(out.characters.char_a.intimacy.unlockedTags.length<=24);
+});
+
+test('behaviour tags accept an array or a delimited string and stay de-duplicated',()=>{
+  const before=initial();
+  const candidate=clone(before);
+  candidate.pendingEvents=[
+    {type:'BEHAVIOR',personRef:'char_a',action:'办公室里的丝袜制服亲昵',score:78,tags:'丝袜制服、背德偷欢'},
+    {type:'BEHAVIOR',personRef:'char_b',action:'车内留宿',score:80,tags:['背德偷欢']}
+  ];
+  const out=settleNative(before,candidate,anchor(),'本轮正文',schemas).state;
+  const tags=out.characters.char_a.intimacy.unlockedTags;
+  assert(tags.includes('丝袜制服'));assert(tags.includes('背德偷欢'));
+  assert.equal(tags.filter(t=>t==='背德偷欢').length,1);
+  assert(out.characters.char_b.intimacy.unlockedTags.includes('背德偷欢'));
+});
+
+test('starred off-stage women surface as a top-level todo list',()=>{
+  let s=initial();
+  assert.deepEqual(projection(s).starredOffscreenIds,[]);
+  s=star(s,'char_b');
+  assert.deepEqual(projection(s).starredOffscreenIds,['char_b']);
+  s=star(s,'char_a');
+  assert.deepEqual(projection(s).starredOffscreenIds,['char_b']);
 });

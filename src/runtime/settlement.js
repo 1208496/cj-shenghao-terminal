@@ -1,4 +1,4 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -6,7 +6,8 @@ export function completeInitialState(base,draft){
   const s=clone(base);
   s.world={date:draft.startDate,time:draft.startTime,weather:draft.weather||'晴',timeZone:'Asia/Shanghai'};
   s.calendar={appointments:{}};s.pendingEvents=[];
-  for(const c of Object.values(s.characters)){c.contactConfirmed=true;c.firstContactEvidence='玩家确认的初始熟人';c.relationshipEvidence='';}
+  for(const c of Object.values(s.characters)){c.contactConfirmed=true;c.firstContactEvidence='玩家确认的初始熟人';c.relationshipEvidence='';
+    if(c.physiology&&!c.physiology.cycle)c.physiology.cycle=computeCycle(c.id,s.world.date,c.physiology.pregnancy);}
   refreshContext(s);return s;
 }
 export function replayPlayerCommand(state,command,anchor,schemas){
@@ -67,7 +68,12 @@ export function settleNative(before,candidate,anchor,source,schemas){
   s.scene.sceneRevision=before.scene.sceneRevision+1;s.scene.timeHint=s.world.date+' '+s.world.time;s.user.location=s.scene.location;
   s.pendingEvents=[];
   const result=settleEvents(s,queue,anchor,body,affectionEvents);diagnostics.push(...result.diagnostics);
-  s=schemas.state.parse(result.state);refreshContext(s);
+  s=schemas.state.parse(result.state);
+  // Deterministic back-fill: the model writes the story, the script keeps the
+  // private records consistent even when the model forgets those field paths.
+  syncPrivateRecords(s,before,queue);
+  applyCycles(s,before);
+  s=schemas.state.parse(s);refreshContext(s);
   return {state:s,diagnostics};
 }
 
@@ -83,6 +89,87 @@ function acceptFields(proposal,prior,schema,path,diagnostics){
     else {out[field]=clone(prior[field]);diagnostics.push({field:path+'.'+field,code:'INVALID_FIELD'});}
   }
   return out;
+}
+
+// ----- rc.23 deterministic private-record back-fill -----
+// The model reports story facts; these two passes keep physiology / intimacy
+// consistent from scores, dates and counts so blank fields never reach the UI.
+const REAL_SEX=/交欢|初夜|破处|首次|插入|做爱|内射|中出|本垒|云雨|同床|占有|承欢|留宿/;
+const INTIMATE_TAG_RULES=[
+  [/初夜|破处|首次交欢|第一次/,'初夜夺取'],
+  [/湿吻|热吻|深吻|接吻|亲吻|索吻/,'深情热吻'],
+  [/丝袜|黑丝|白丝|渔网|制服|旗袍|泳装|情趣/,'丝袜制服'],
+  [/口交|口侍|吞吐|含住|唇舌侍奉/,'口唇侍奉'],
+  [/乳交|酥胸|揉胸|埋胸/,'酥胸侍奉'],
+  [/足交|玉足|美足|腿交|脚踝/,'美足把玩'],
+  [/内射|灌满|中出|无套/,'无套内射'],
+  [/后入|骑乘|侧入|抱操|落地窗|对镜/,'解锁新姿'],
+  [/办公室|车内|试衣间|露台|包厢|走廊|半公开/,'背德偷欢'],
+  [/高潮|痉挛|求饶|失神|潮吹/,'极致高潮'],
+  [/交欢|插入|占有|本垒|承欢|云雨|同眠|留宿/,'鱼水之欢'],
+  [/爱抚|揉捏|掀裙|解扣|耳鬓厮磨|敏感带/,'贴身爱抚']
+];
+function addTag(c,tag){
+  if(!c.intimacy)return false;
+  const value=String(tag??'').trim().slice(0,16);if(!value)return false;
+  const list=c.intimacy.unlockedTags=c.intimacy.unlockedTags||[];
+  if(list.includes(value)||list.length>=24)return false;
+  list.push(value);return true;
+}
+// Behaviour tags may arrive as an array or a delimited string; 60+ scores and a
+// changed lastIntimate also feed the keyword table so the tag cloud always fills.
+export function syncPrivateRecords(s,before,queue){
+  const behaviors=new Map();
+  for(const e of Array.isArray(queue)?queue:[]){
+    if(!e||!['BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE'].includes(e.type))continue;
+    const cid=typeof e.personRef==='string'?e.personRef:'';
+    if(!cid)continue;
+    const rec=behaviors.get(cid)||{score:0,text:'',tags:[]};
+    rec.score=Math.max(rec.score,Number(e.score)||0);
+    rec.text+=' '+String(e.action||'');
+    if(Array.isArray(e.tags))rec.tags.push(...e.tags);
+    else if(typeof e.tags==='string'&&e.tags.trim())rec.tags.push(...e.tags.split(/[、,，/／;；·|]/));
+    behaviors.set(cid,rec);
+  }
+  for(const [cid,c] of Object.entries(s.characters)){
+    if(!c||c.trackingState!=='RECORDED')continue;
+    const prior=before?.characters?.[cid]||{};
+    const behavior=behaviors.get(cid)||{score:0,text:'',tags:[]};
+    const last=String(c.intimacy?.lastIntimate||'');
+    const lastChanged=last!==String(prior.intimacy?.lastIntimate||'');
+    const text=`${behavior.text} ${last} ${c.physiology?.traits||''}`;
+    const realSex=behavior.score>=90||(c.intimacy?.withUserCount||0)>0||REAL_SEX.test(last);
+    if(realSex){
+      // Unknown (null) counts as "not yet confirmed", so her first on-screen
+      // consummation is the first night; an explicit false is a known past.
+      const firstNight=c.physiology?.virgin!==false;
+      if(firstNight)c.physiology.virgin=false;
+      if((c.intimacy?.withUserCount||0)<1)c.intimacy.withUserCount=1;
+      if(firstNight)addTag(c,'初夜夺取');
+    }
+    if(behavior.score>=60||lastChanged){
+      for(const [rule,tag] of INTIMATE_TAG_RULES)if(rule.test(text))addTag(c,tag);
+      for(const tag of behavior.tags)addTag(c,tag);
+      if(behavior.score>=75&&!INTIMATE_TAG_RULES.some(([rule])=>rule.test(text))){
+        const label=String(behavior.text).replace(/[，。！？、,.!?；;：:"'“”‘’（）()【】[\]\s]/g,'').slice(0,6);
+        if(label)addTag(c,label);
+      }
+    }
+  }
+  return s;
+}
+// Cycle is date-driven: recompute when it is blank or when the story day moved.
+function applyCycles(s,before){
+  const moved=s.world?.date!==before?.world?.date;
+  for(const [cid,c] of Object.entries(s.characters)){
+    if(!c?.physiology)continue;
+    const prior=before?.characters?.[cid];
+    const current=String(c.physiology.cycle||'').trim();
+    const explicit=current&&current!==String(prior?.physiology?.cycle||'');
+    if(explicit&&!moved)continue;
+    c.physiology.cycle=computeCycle(cid,s.world?.date,c.physiology.pregnancy);
+  }
+  return s;
 }
 
 // A new person needs an id and a name. Missing or malformed body details are
