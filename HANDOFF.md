@@ -62,9 +62,9 @@
   - 发版走**独立历史线**（本仓库新建的 `release` 分支），不改 main、不 rebase、不强推；理由：main 是 GPT 期完整历史，动它就是不可逆操作，而 jsDelivr 按提交号取文件、不看分支。
 - 未决：
   - YG 提到的「一大堆 BUG」具体症状未知（哪一步卡住、报什么错、哪段剧情跑偏）——没症状不猜着改。
-  - **Supabase service_role 密钥给不给**：给，则指针切换由 Agent 一条命令完成；不给，则每次由 YG 在后台跑 `set-pointer.mjs --sql` 打印的 SQL。
   - `release` 分支要不要最终取代 main 成为默认分支（现在是两条独立历史线）。
   - `CREATIVE_AUTHORITY.md`、旧目录里的 `docs/`/`SHEJI/` 要不要同步删掉旧条款表述。
+- ⚠️ 密钥卫生：service_role 密钥已由 YG 提供并落到 `.secrets/supabase-service-key.txt`（被 gitignore）。它曾以明文出现在聊天记录里，若那份记录会被外传，去 Supabase 后台轮换后覆盖该文件即可，脚本无需改动。
 - 已否决路线：把新工作区 graft 到旧 `.git` 上（会产生大量「已删除」噪音、且 `git add -A` 会误删远端历史文件）；直接向 main 推独立历史（会被拒或需要强推，破坏历史）。
 - 授权边界：可读写本工作区、改源码、跑测试与本地构建、写 `dist/`、**git 提交并推送到 `release` 分支**、**更新 Supabase 指针**（YG 2026-11-17 明确授权）。仍需单独确认：强推或改写 main 历史、删除远端文件、切换仓库默认分支、改宿主或全局配置、装软件、清理旧目录。
 
@@ -93,7 +93,7 @@ Node       >= 20（package.json engines）
 | --- | --- | --- |
 | 加载器 | 打包进整卡 / 酒馆助手脚本库 | 不变，玩家不用换 |
 | 脚本本体 | GitHub `dist/terminal.js`，玩家经 jsDelivr 拉 | ✅ 已推到分支 `release`，三个 CDN 节点实测可取、sha256 与 `dist/release.json` 一致 |
-| 版本指针 | Supabase 表 `cj_shenghao_script_config` 里一行，存 40 位提交号 | ⏳ **仍是旧值 `e2f4058…`**。改它需要 service_role 密钥 |
+| 版本指针 | Supabase 表 `cj_shenghao_script_config` 里一行，存 40 位提交号 | ✅ **已切到 `fc7950f`**（`off` 为空），2026-11-17 02:45 |
 
 - **历史线**：本工作区 `git init` 开了一条独立历史，分支 `release`，**没有动 main**。jsDelivr 按提交号取文件、不看分支，所以这条线可以直接当发版源。当前 tip `fc7950f`。
 - **凭据**：本机 Git Credential Manager 里的 GitHub 凭据有效——`git push --dry-run` 通过，随后两次真实推送成功。
@@ -111,10 +111,8 @@ Node       >= 20（package.json engines）
 4. git add -A && git commit -m "..."  &&  git push origin release   → SHA_B=$(git rev-parse HEAD)
 5. node scripts/set-pointer.mjs $SHA_B          （有密钥时）
    或 node scripts/set-pointer.mjs --sql $SHA_B  → 复制到 Supabase SQL Editor 执行
-6. CDN 核对（约 1 分钟后）：
-   https://cdn.jsdelivr.net/gh/1208496/cj-shenghao-terminal@$SHA_B/dist/release.json
-   https://cdn.jsdelivr.net/gh/1208496/cj-shenghao-terminal@$SHA_B/dist/terminal.js
-7. 交付 dist/<version>/神豪终端.json
+6. CDN 核对：`node scripts/verify-release.mjs` —— 按玩家加载路径走一遍（读指针 → 取元数据 → 世界书契约比对 → 三个 CDN 节点取本体并比 sha256），通过输出 `E2E_OK`。也可传提交号核对指定版本。
+7. 交付 `dist/<version>/神豪终端.json`
 ```
 
 - 指针写错或某人误改时，把 `cj_shenghao_terminal_v2_off` 写成一句提示语即可让玩家看到公告并停止加载本体（加载器 `script-loader.js:13` 的逻辑）。
@@ -132,9 +130,11 @@ Node       >= 20（package.json engines）
   - 改动前备份：旧目录里的 `.work/cleanup-backup-20261117-021015/`（本工作区不带 .work，需要回滚时去 `E:\CJBAOJISHENHAOZD` 取）
 - 已完成（2026-11-17 02:26）：新工作区 `E:\SHZDCHOSSS` 建立并**独立验证通过**——复制 `src`/`scripts`/`tests`/`node_modules`/`package*.json`/`project.json`/`release/loader.config.json`/`AGENTS.md`/`HANDOFF.md`，dist 只带 `terminal.js`、`release.json` 与 `2.0.0-rc.20-checkpoint/`。在本目录重跑：`npm test` 256/256、`build --checkpoint`、`check --checkpoint` 全通过，成品 `dist/2.0.0-rc.20-checkpoint/神豪终端.json` 527,175 字节，旧规则扫描零命中。全程未读取旧目录任何文件。
 - 已完成（2026-11-17 02:40）：**发版通道打通**。`git init` 建独立历史线（分支 `release`，未动 main），推送两次成功（`8642f1c` 清扫版基线 → `fc7950f` 正式卡）；`fallbackRef` 改指 `8642f1c` 后**非 checkpoint 构建通过**，正式整卡 `dist/2.0.0-rc.20/神豪终端.json`（276,471 字节）已生成并 `check` 通过；jsDelivr 三个节点实测可取 `dist/release.json` 与 `dist/terminal.js`，本体 sha256 `03c4305f…` 与元数据完全一致。
+- 已完成（2026-11-17 02:45）：**指针已切换并端到端验证**。`cj_shenghao_terminal_v2_ref` 由 `e2f4058…` 改为 `fc7950f36d823c94bee089e101dee9a8174a83c7`，`off` 保持空；`node scripts/verify-release.mjs` 输出 `E2E_OK`：世界书契约 `ce3c787a…` 两边一致、三个 CDN 节点均返回本体 232,617 字节且 sha256 与元数据逐位一致。玩家导入 `dist/2.0.0-rc.20/神豪终端.json` 会直接加载 rc.20，不再弹「请导入新版整卡」。
+- 已完成：service_role 密钥已按约定落到 `.secrets/supabase-service-key.txt`（41 字节，`git check-ignore` 确认被忽略，`git status` 干净），`set-pointer.mjs` 检测到 `sb_secret` 角色并成功写入。
 - 进行中：无后台任务在跑。
-- 未做：**Supabase 指针仍是旧值 `e2f4058…`**（线上玩家拿到的还是旧版，只差一条命令）；BUG 排查（等症状）、真机酒馆导入验收、文档同步、dist 历史卡清理。
-- 未验证：酒馆内实际导入与生成效果（本轮只做源码与产物级验证，没开真实 SillyTavern）；指针更新后的端到端加载（无 service_role 密钥，未执行）。
+- 未做：BUG 排查（等症状）、真机酒馆导入验收、文档同步。
+- 未验证：真实 SillyTavern 里的导入与生成效果（本轮全部验证都在源码、产物与 CDN 层完成，没开酒馆）。
 
 ### 接续动作
 
