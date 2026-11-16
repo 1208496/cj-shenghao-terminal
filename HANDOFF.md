@@ -6,7 +6,48 @@
 
 <!-- SHZD-HANDOFF-BEGIN PH-20261117-SHZD-01 -->
 
-## rc.21 女性人物信息整合（2026-11-17 · 当前最新）
+## rc.22 好感+堕落双轴与十倍暴击（2026-11-17 · 当前最新）
+
+### 本次做了什么
+
+按《神豪终端 rc.22 升级方案》（`C:\Users\Administrator\.gemini\antigravity\brain\46cf9e09-.../corruption_and_economy_plan.md`，同文另存于桌面 `pJSK/`）执行「方案 A + 方案 B1 + 涩涩高分暴击翻十倍」。
+
+1. `project.json`：`rewardTiers` 五档 `amountCents` 全部 ×10（¥5,000 / ¥20,000 / ¥80,000 / ¥300,000 / ¥1,000,000），`version` → `2.0.0-rc.22`，`cardContractRevision` 17 → **18**；`package.json` / `package-lock.json` 同步版本号。
+2. `src/runtime/schema.js`：`character` 在 `affection` 之后新增 `corruption`（0–100，`preprocess` 截断取整、默认 0）。
+3. `src/core/engine.js`：
+   - 新增并导出 `corruptionStage(n)`：90+ 彻底沉沦 / 75+ 予取予求 / 60+ 底线失守 / 40+ 半推半就 / 20+ 芳心暗摇 / 其余 矜持自守。
+   - `character()`、`validateDraft()`（contacts）、`assertEconomy()` 接纳 `corruption`。
+   - `applyEvent` 新增 `CORRUPTION_CHANGE`：不吃颜值加成、单轮限幅 ±12、结果夹在 0–100、每轮每人一条 fact。
+   - `processEvents`：模型在 `pendingEvents` 手写的 `CORRUPTION_CHANGE` 一律忽略（只认差额事件）、并入允许列表、同轮去重。
+   - `canWithdraw` 改为 `affection>=70 || corruption>=60`（底层账本、倍率、退款追回公式一行未动）。
+   - `projection` 的在场人物与打星离场人物都带 `corruption`。
+4. `src/runtime/settlement.js`：直接把 `corruption` 新值转成 `CORRUPTION_CHANGE` 差额事件（与好感同路径），并把 `proposed.corruption` 复位；`newCharacter` 的兜底 base 加 `corruption:0`。
+5. `protocol.txt`（22 行）：第 7 行新人物价值补 `corruption`；第 9 行改为「好感与堕落」双写、各 1~6、重大事件最多 12、只写新值不提事件；第 10 行行为评分改为明确的涩涩高分阶梯（40-59 日常/浅层暧昧 → 60-74 重金解围/热吻隔衣 → 75-89 丝袜制服/手口侍奉/半公开偷欢 → 90-97 实战交欢/无套深入/背德臣服 → 98-100 初夜/多人/受孕里程碑）。
+6. `literary.json`：`terminal-economy` 提现门槛与暂锁文案改 70/60；`score` 新增【堕落度与双轴正交反应】（六阶段 + 四象限张力），并把【重要独立行为评分】改写为带涩涩五分档阶梯；`private-life` 补排卵期/高情动/高堕落的感官白描与「亲密后同步 physiology + intimacy（withUserCount+1、lastIntimate）」。
+7. UI：`screens.js` 此刻页人物行改「♥ 好感 x/100 · ❖ 堕落 y/100」并在展开区显示双进度条（含阶段文案）；她们页提示语与卡片副标题改为「♥ x · ❖ y」；详情页并列双数值与双进度条；提现按钮未解锁文案改为「♥ 好感达70 或 ❖ 堕落达60 解锁提现」。`app.js` 开局熟人表单新增「初始堕落度（0–100）」并在保存时写入 `corruption`；`setup-options.js` 补 `c_corruption` 下拉候选与预设映射；`style.css` 加 `.corruption-number / .corruption-bar / .dual-axis`（暗紫主题单独配色）。
+
+### 实际验证（有效）
+
+- `npm test`：**266 / 266 通过**（rc.21 的 263 + 新增 3 条堕落度用例）。同步改写的常量：五档金额（8,000 → 80,000 等全部 ×10）、提现阈值 90 → 70、`rc9-economy` 的跨级用例改用 `initialCashCents:1`（原 9 亿 + 10 倍暴击后永远降不回见习档，改用 1 分入场仍完整保留「提现前锁倍率 → 到账跨级 → 消费可降级」的语义）。
+- 新增用例：堕落度默认/截断/阶段边界、直接写值转差额事件、单轮 +80 被压到 +12、负向回落、`affection=40 & corruption=60` 可提现、`69/59` 双双锁死、界面双轴与提现文案。
+- `build --checkpoint` → `BUILD_OK dist/2.0.0-rc.22-checkpoint/`；`check --checkpoint` → `CHECK_OK`。
+- 正式发版：`BUILD_OK dist/2.0.0-rc.22/` + `CHECK_OK`；成品 `dist/2.0.0-rc.22/神豪终端.json`。
+- 成品抽查：runtime 里五档为 `5e5/2e6/8e6/3e7/1e8`；schema 含 `corruption`；protocol 22 行且含 `corruption` 与 `98–100` 阶梯；世界书 `terminal-economy` 含「好感≥70或堕落度≥60」、`score` 含「90–97（超凡暴击）」；界面含「好感达70 或 ❖ 堕落达60 解锁提现」「堕落度」。
+- 发版七步：SHA_A `aecb820` → `fallbackRef` 指向它 → 正式构建 → SHA_B `6af00ec` → 指针 `cj_shenghao_terminal_v2_ref = 6af00ecb8d26b371714f8953879575e5e4267c65`（`off` 空）→ `verify-release` 输出 **`E2E_OK`**：世界书契约 `a0764a5b…` 两边一致，三节点均 244,541 字节、sha256 与元数据一致。
+
+### 关键影响
+
+- `worldbookHash` 从 `9cbac7f8…` 变为 `a0764a5b…`：**老玩家的固定加载器会拒绝新本体并提示导入新版整卡**，要吃 rc.22 必须重新导入 `dist/2.0.0-rc.22/神豪终端.json`，只切指针拿不到新世界书。
+- 提现门槛降到 70/60 后，经济侧只放宽了「何时能点提现」这一个判断；倍率仍按点击前现金决定，退款追回仍按原倍率，未改任何账本写入路径。
+- 暴击金额 ×10 之后，单次 90 分行为 = 30 万元入池、按见习十倍可提 300 万元；`rewardTableVersion` 未变（金额表本身没有版本位，改动只体现在数值上）。
+
+### 未验证 / 未做
+
+- 实机酒馆里导入 rc.22、跑一轮含亲密行为的对话、观察 `corruption` 与双进度条的实际更新：**未验证**（上一轮实机脚本因导入匹配模糊打到了另一张同名卡，本轮未继续；`scripts/live-test-ego.mjs` 的卡路径已改指 rc.22）。
+- `state-context.txt` 仍未提及堕落度：它只描述投影结构与知识边界，不列数值字段，按最小改动没动。
+- 方案里「五维权重」与旧评分准则的表述并存（`score` 条目同时保留了五维描述与新的涩涩阶梯），没有删除五维，只是把档位写进记录纪律；如果后续要精简，需要重排整条。
+
+## rc.21 女性人物信息整合（2026-11-17 · 历史记录，已被上方 rc.22 接续）
 
 ### 本次做了什么
 
