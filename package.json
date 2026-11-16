@@ -1,0 +1,22 @@
+{
+  "name": "cj-shenghao-terminal",
+  "version": "2.0.0-rc.20",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:core": "node scripts/build.mjs --core-only",
+    "release": "pwsh -NoProfile -File scripts/release.ps1",
+    "check": "node scripts/check.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "preview": "node scripts/serve.mjs",
+    "verify": "npm run test && npm run build && npm run check"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "zod": "4.6.7"
+  }
+}
