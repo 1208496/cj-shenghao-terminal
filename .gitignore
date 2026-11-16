@@ -7,3 +7,4 @@ node_modules/
 *.log
 evidence/local/
 src/ui/phone.html
+.secrets/
