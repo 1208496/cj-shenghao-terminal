@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.11",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "adb918fea3dd2886b9067e9681f60bd07afa8744b941a3b58ead762905ee826e",
+  "sha256": "c99ad1b15277fce5c1fd342c76646bcb84aca50107b77f85272ff64c87d2ef9c",
+  "notes": "开局表单本地即时显示、后台连接，短消息载体与聊天隔离草稿，保留rc.10世界书和经济规则。"
+}
