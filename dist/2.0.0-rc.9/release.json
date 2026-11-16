@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.9",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "e28b378b64cd672561a81c42e75f368b9afd5638aee9296e936c65f85801fef0",
+  "sha256": "8332c4202312de1270da2282efd8321d02dbfbe4267cd6fdbcefe1053cef9736",
+  "notes": "反复提现与现金等级倍率、颜值好感修正、人物消费明细和自由都市事件。"
+}
