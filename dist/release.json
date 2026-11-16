@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.21",
+  "version": "2.0.0-rc.22",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "9cbac7f8134dd32643169b300367b8e0992e8bf7069870d3918fc2de92835f17",
-  "sha256": "571ac1d2859090dff5d5646b6d0e1e0dfabc98f14bb3914fb3f1e6f1cd42e765",
-  "notes": "女性人物信息整合：罩杯、称呼、印象、特别关注、心声、情动、离场实况、生理与亲密记录；九大档案升级为活人底细；新人物建档不再被漏填身体数据吞掉。"
+  "worldbookHash": "a0764a5b0ed7bbafce576cb1068f000c6f6aab815b6c8357fb3dfecc9cbb2b58",
+  "sha256": "48e90c52eccf3ff36053101e367574540f206ecab536181760310a5e0bbba592",
+  "notes": "rc.22：好感与堕落双轴、提现门槛改为好感70或堕落60、涩涩高分阶梯入协议、暴击奖金全线翻十倍；账本与退款公式不变。"
 }

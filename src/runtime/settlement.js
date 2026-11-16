@@ -43,6 +43,9 @@ export function settleNative(before,candidate,anchor,source,schemas){
     const want=typeof proposed.affection==='number'||typeof proposed.affection==='string'&&proposed.affection.trim()?Number(proposed.affection):NaN;
     if(Number.isSafeInteger(want)&&want!==prior.affection)affectionEvents.push({type:'AFFECTION_CHANGE',personRef:cid,delta:want-prior.affection,auto:true});
     proposed.affection=prior.affection;
+    const wantCorruption=typeof proposed.corruption==='number'||typeof proposed.corruption==='string'&&proposed.corruption.trim()?Number(proposed.corruption):NaN;
+    if(Number.isSafeInteger(wantCorruption)&&wantCorruption!==(prior.corruption??0))affectionEvents.push({type:'CORRUPTION_CHANGE',personRef:cid,delta:wantCorruption-(prior.corruption??0),auto:true});
+    proposed.corruption=prior.corruption??0;
     s.characters[cid]=acceptFields(proposed,prior,schemas.character,'characters.'+cid,diagnostics);
   }
   for(const [cid,value] of Object.entries(s.characters)){
@@ -87,7 +90,7 @@ function acceptFields(proposal,prior,schema,path,diagnostics){
 // can complete it later; only an unusable identity rejects the person.
 function newCharacter(cid,value,schemas){
   const id=typeof value.id==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(value.id)?value.id:cid;
-  const base={id,age:25,beautyScore:null,affection:20,relationshipLabel:'熟人',occupation:''};
+  const base={id,age:25,beautyScore:null,affection:20,corruption:0,relationshipLabel:'熟人',occupation:''};
   const raw={...value,id,name:typeof value.name==='string'?value.name.trim().slice(0,50):''};
   let parsed=schemas.character.safeParse({...base,...raw});
   if(!parsed.success){

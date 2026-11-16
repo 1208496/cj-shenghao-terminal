@@ -18,7 +18,7 @@ test('replacing the native API object does not register duplicate global event l
 });
 test('a repeated ended notification cannot erase already settled affection or behavior rewards',async()=>{
  const h=await hostBinding(options);h.bind();const {vars,oldVars}=await h.run(initial(),{'characters.char_a.affection':53,pendingEvents:[affection,score()]});
- assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,800000);
+ assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,8000000);
  const snapshot=JSON.stringify(vars);await h.bus.emit(events.VARIABLE_UPDATE_ENDED,vars,oldVars);
  assert.equal(JSON.stringify(vars),snapshot);assert.deepEqual(h.diagnostics(),[]);
 });
@@ -27,10 +27,10 @@ test('restarting the terminal leaves only its live callbacks even when the helpe
  const live=await hostBinding({...options,bus});live.bind();
  assert.equal(bus.count(events.COMMAND_PARSED),1);assert.equal(bus.count(events.VARIABLE_UPDATE_ENDED),1);
  const {vars}=await live.run(initial(),{'characters.char_a.affection':53,pendingEvents:[affection,score()]});
- assert.equal(vars.stat_data.shenghao.characters.char_a.affection,53);assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,800000);assert.deepEqual(live.diagnostics(),[]);
+ assert.equal(vars.stat_data.shenghao.characters.char_a.affection,53);assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,8000000);assert.deepEqual(live.diagnostics(),[]);
 });
 test('a new native transaction after an ended notification still processes new events',async()=>{
  const h=await hostBinding(options);h.bind();const first=await h.run(initial(),{'characters.char_a.affection':53,pendingEvents:[affection]});
  const second=await h.run(first.vars.stat_data.shenghao,{pendingEvents:[score()]});
- assert.equal(second.vars.stat_data.shenghao.characters.char_a.affection,53);assert.equal(poolParts(second.vars.stat_data.shenghao,'char_a').crit,800000);assert.deepEqual(h.diagnostics(),[]);
+ assert.equal(second.vars.stat_data.shenghao.characters.char_a.affection,53);assert.equal(poolParts(second.vars.stat_data.shenghao,'char_a').crit,8000000);assert.deepEqual(h.diagnostics(),[]);
 });

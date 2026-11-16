@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {z} from 'zod';
 import {createSchema} from '../src/runtime/schema.js';
 import {completeInitialState,settleNative,prepareModelCommand} from '../src/runtime/settlement.js';
-import {clone,projection,applyOperation,PROFILE_LABELS,profile} from '../src/core/engine.js';
+import {clone,projection,applyOperation,PROFILE_LABELS,profile,corruptionStage,canWithdraw,poolParts} from '../src/core/engine.js';
 import {createScreens} from '../src/ui/screens.js';
-import {fresh,contact,anchor,profiles} from './fixtures.mjs';
+import {fresh,contact,anchor,profiles,payment} from './fixtures.mjs';
 const schemas=createSchema(z);
 const initial=()=>schemas.state.parse(completeInitialState(fresh({contacts:[contact(),contact('char_b',{present:false})]}),{startDate:'2026-01-05',startTime:'09:00'}));
 const star=(s,personRef='char_b')=>applyOperation(s,{type:'PLAYER_STAR',operationId:crypto.randomUUID(),personRef,expectedRevision:s.meta.revision},anchor());
@@ -42,7 +42,7 @@ test('the projection sends private records only for present women and one off-st
   s=star(s);
   s.characters.char_b.offscreen='城南美术馆 · 正在布展';
   view=projection(s).characters.char_b;
-  assert.deepEqual(Object.keys(view).sort(),['affection','aliases','id','name','offscreen','relationshipLabel','starred','trackingState']);
+  assert.deepEqual(Object.keys(view).sort(),['affection','aliases','corruption','id','name','offscreen','relationshipLabel','starred','trackingState']);
   assert.equal(view.offscreen,'城南美术馆 · 正在布展');assert.equal(view.starred,true);
   assert.equal(projection(s).characters.char_b.physiology,undefined);
   assert.equal(star(s).characters.char_b.starred,false);
@@ -135,4 +135,50 @@ test('the phone renders the inner voice, arousal, star switch, off-stage line an
   assert(screens.scene().includes('★ 特别关注 · 异地实况'));
   assert(screens.scene().includes('城南美术馆 · 正在布展'));
   assert(!screens.scene().includes('设计院 · 正在改第三版图纸'));
+});
+
+test('corruption is a second axis: 0–100, +-12 per round, never a beauty modifier',()=>{
+  const before=initial();
+  assert.equal(before.characters.char_a.corruption,0);
+  assert.equal(corruptionStage(0),'矜持自守');assert.equal(corruptionStage(59),'半推半就');assert.equal(corruptionStage(60),'底线失守');assert.equal(corruptionStage(74),'底线失守');
+  assert.equal(corruptionStage(75),'予取予求');assert.equal(corruptionStage(90),'彻底沉沦');
+  const candidate=clone(before);candidate.characters.char_a.corruption=9;
+  const once=settleNative(before,candidate,anchor(),'本轮正文',schemas).state;
+  assert.equal(once.characters.char_a.corruption,9);
+  assert(Object.values(once.facts).some(f=>f.type==='CORRUPTION_CHANGE'&&f.finalDelta===9));
+  const jump=clone(before);jump.characters.char_a.corruption=80;
+  const capped=settleNative(before,jump,anchor(3),'本轮正文',schemas).state;
+  assert.equal(capped.characters.char_a.corruption,12);
+  const down=clone(capped);down.characters.char_a.corruption=0;
+  assert.equal(settleNative(capped,down,anchor(4),'本轮正文',schemas).state.characters.char_a.corruption,0);
+  const schemaScore=schemas.character.parse({id:'c',name:'甲',age:24,beautyScore:60,affection:20,relationshipLabel:'熟人',corruption:250});
+  assert.equal(schemaScore.corruption,100);
+});
+
+test('withdrawing unlocks on affection 70 or corruption 60 and keeps the ledger formulas intact',()=>{
+  const paid=s=>applyOperation(s,{operationId:crypto.randomUUID(),type:'PLAYER_WITHDRAW',personRef:'char_a',expectedRevision:s.meta.revision},anchor());
+  const runPayment=s=>settleNative(s,(()=>{const c=clone(s);c.pendingEvents=[payment()];return c;})(),anchor(),'确实已经发生',schemas).state;
+  const lowAffection=runPayment(schemas.state.parse(completeInitialState(fresh({contacts:[contact('char_a',{affection:40,corruption:60})]}),{startDate:'2026-01-05',startTime:'09:00'})));
+  assert.equal(poolParts(lowAffection,'char_a').total,30000);assert.equal(canWithdraw(lowAffection,'char_a'),true);
+  const result=paid(lowAffection);
+  assert.equal(result.withdrawals[Object.keys(result.withdrawals)[0]].paidCents,300000);
+  const blocked=settleNative(lowAffection,(()=>{const c=clone(lowAffection);c.characters.char_a.corruption=59;c.characters.char_a.affection=69;return c;})(),anchor(5),'本轮正文',schemas).state;
+  assert.equal(canWithdraw(blocked,'char_a'),false);
+});
+
+test('the phone shows both axes and the new withdraw wording',()=>{
+  const s=initial();
+  s.characters.char_a.affection=40;s.characters.char_a.corruption=35;
+  const {ctx,screens}=screensFor(s);
+  const detail=screens.detail(s.characters.char_a);
+  assert(detail.includes('❖ 35'));assert(detail.includes('堕落度 · 芳心暗摇'));
+  assert(detail.includes('♥ 好感达70 或 ❖ 堕落达60 解锁提现'));
+  ctx.expanded.add('char_a');
+  const scene=screens.scene();
+  assert(scene.includes('♥ 好感 40/100 · ❖ 堕落 35/100'));
+  assert(scene.includes('❖ 堕落度：35/100 · 芳心暗摇'));
+  assert(screens.women().includes('♥ 40 · ❖ 35'));
+  s.characters.char_a.corruption=60;
+  ctx.view.state=s;
+  assert(screens.detail(s.characters.char_a).includes('✦ 领取本期全部奖励')===false);
 });

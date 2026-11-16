@@ -8,7 +8,7 @@ const CONFIG = {
   stUrl: "http://127.0.0.1:8000/",
   basicUser: "user",
   basicPass: "98",
-  cardPath: "E:/SHZDCHOSSS/dist/2.0.0-rc.21/神豪终端.json",
+  cardPath: "E:/SHZDCHOSSS/dist/2.0.0-rc.22/神豪终端.json",
   characterMatch: "神豪",
   playerName: "测试员",
   tierText: "小康人家",

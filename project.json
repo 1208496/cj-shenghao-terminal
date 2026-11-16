@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.21",
+  "version": "2.0.0-rc.22",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -17,30 +17,30 @@
     },
     {
       "minScore": 40,
-      "amountCents": 50000,
+      "amountCents": 500000,
       "label": "微光暴击"
     },
     {
       "minScore": 60,
-      "amountCents": 200000,
+      "amountCents": 2000000,
       "label": "心动暴击"
     },
     {
       "minScore": 75,
-      "amountCents": 800000,
+      "amountCents": 8000000,
       "label": "强力暴击"
     },
     {
       "minScore": 90,
-      "amountCents": 3000000,
+      "amountCents": 30000000,
       "label": "超凡暴击"
     },
     {
       "minScore": 98,
-      "amountCents": 10000000,
+      "amountCents": 100000000,
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "女性人物信息整合：罩杯、称呼、印象、特别关注、心声、情动、离场实况、生理与亲密记录；九大档案升级为活人底细；新人物建档不再被漏填身体数据吞掉。",
-  "cardContractRevision": 17
+  "releaseNotes": "rc.22：好感与堕落双轴、提现门槛改为好感70或堕落60、涩涩高分阶梯入协议、暴击奖金全线翻十倍；账本与退款公式不变。",
+  "cardContractRevision": 18
 }

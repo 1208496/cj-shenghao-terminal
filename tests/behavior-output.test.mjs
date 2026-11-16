@@ -16,9 +16,9 @@ function proposed(){return example[1].value.map(e=>({...e,personRef:'char_a'}));
 test('the maintained mixed output example records a behavior reward and affection in one native update',async()=>{
  const h=await hostBinding({body,sourceAnchor:anchor()});h.bind();const {vars,oldVars}=await h.run(initial(),{'characters.char_a.affection':47,pendingEvents:proposed()});
  const state=vars.stat_data.shenghao;assert.deepEqual(h.diagnostics(),[]);
- assert.equal(state.characters.char_a.affection,47);assert.equal(poolParts(state,'char_a').crit,50000);
+ assert.equal(state.characters.char_a.affection,47);assert.equal(poolParts(state,'char_a').crit,500000);
  assert(Object.values(state.facts).some(f=>f.type==='SIGNIFICANT_BEHAVIOR_SCORE'));
- await h.bus.emit(events.VARIABLE_UPDATE_ENDED,vars,oldVars);assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,50000);
+ await h.bus.emit(events.VARIABLE_UPDATE_ENDED,vars,oldVars);assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,500000);
 });
 test('score below the existing award threshold records the fact and grants zero',async()=>{
  const h=await hostBinding({body,sourceAnchor:anchor()});h.bind();const queue=proposed();queue[0].score=20;
@@ -30,10 +30,10 @@ test('duplicate scoring for one person cannot add a second reward',async()=>{
  const refusal='他伸手摸她的头，她避开并说：“别摸我的头。”';
  const h=await hostBinding({body:body+refusal,sourceAnchor:anchor()});h.bind();const queue=proposed();
  queue.push({...queue[0],action:'摸头',consensual:false,evidence:refusal});
- const {vars}=await h.run(initial(),{pendingEvents:queue});assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,50000);
+ const {vars}=await h.run(initial(),{pendingEvents:queue});assert.equal(poolParts(vars.stat_data.shenghao,'char_a').crit,500000);
  assert.deepEqual(h.diagnostics(),[]);
 });
 test('payment and independent behavioral response use separate pools in the same update',async()=>{
  const h=await hostBinding({body,sourceAnchor:anchor()});h.bind();const {vars}=await h.run(initial(),{pendingEvents:[payment({evidence:body}),...proposed()]});
- assert.deepEqual(h.diagnostics(),[]);assert.deepEqual(poolParts(vars.stat_data.shenghao,'char_a'),{spend:30000,crit:50000,total:80000});
+ assert.deepEqual(h.diagnostics(),[]);assert.deepEqual(poolParts(vars.stat_data.shenghao,'char_a'),{spend:30000,crit:500000,total:530000});
 });

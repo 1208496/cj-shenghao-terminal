@@ -30,6 +30,10 @@ export function reward(score) {
 export function stage(n) {
   integer(n,0,100); return n === 100 ? '极致倾心' : n >= 95 ? '极深羁绊' : n >= 90 ? '高度投入' : n >= 80 ? '深厚情感' : n >= 70 ? '恋爱发展' : n >= 60 ? '亲近与好感' : n >= 40 ? '朋友与信任' : n >= 20 ? '初步熟悉' : '陌生与戒备';
 }
+// Second axis: how far her self-restraint and private boundaries have given way.
+export function corruptionStage(n) {
+  integer(n,0,100); return n >= 90 ? '彻底沉沦' : n >= 75 ? '予取予求' : n >= 60 ? '底线失守' : n >= 40 ? '半推半就' : n >= 20 ? '芳心暗摇' : '矜持自守';
+}
 export function basicProfile(c) {
   requireRule(Array.isArray(c.personalityTags??[])&&(c.personalityTags??[]).length<=6,'INVALID_BASIC_PROFILE');
   const result={personalityTags:(c.personalityTags??[]).map(v=>text(v,12)),appearance:text(c.appearance ?? '',500,true),body:text(c.body ?? '',500,true),cupSize:text(c.cupSize ?? '',8,true)};
@@ -56,7 +60,7 @@ function seedRecord(record,seed){if(!record||!seed||typeof seed!=='object')retur
 function character(c) {
   const name = text(c.name,50), age = integer(c.age,1,120);
   return {id:id(c.id), aliases:(c.aliases || []).map(x => text(x,50)).slice(0,20), name, age,
-    occupation:text(c.occupation ?? '',100,true), affection:integer(c.affection ?? 20,0,100),
+    occupation:text(c.occupation ?? '',100,true), affection:integer(c.affection ?? 20,0,100),corruption:integer(c.corruption ?? 0,0,100),
     relationshipLabel:text(c.relationshipLabel || '熟人',12), relationshipNotes:text(c.relationshipNotes ?? '',300,true),
     ...basicProfile(c),beautyScore:c.beautyScore==null?null:integer(c.beautyScore,1,100),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:null,profileLocked:false, trackingState:'RECORDED',
     addressing:text(c.addressing ?? '',20,true),impression:'',starred:false,currentThought:'',arousal:0,offscreen:'',
@@ -75,7 +79,7 @@ export function validateDraft(d) {
     bookValueCents:integer(a.bookValueCents),basisCents:null,status:'OWNED',acquisitionEventId:'INITIAL',acquisitionIsInitial:true,
     description:assetDescription(a),locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
   const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,1,120),
-    beautyScore:c.beautyScore===undefined?undefined:integer(c.beautyScore,1,100),affection:integer(c.affection,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
+    beautyScore:c.beautyScore===undefined?undefined:integer(c.beautyScore,1,100),affection:integer(c.affection,0,100),corruption:integer(c.corruption ?? 0,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
     notes:text(c.notes ?? '',1200,true),present:c.present === true}));
   requireRule(new Set(assets.map(a=>a.assetId)).size === assets.length && new Set(contacts.map(c=>c.id)).size === contacts.length,'DUPLICATE_ID');
   return {user,assets,contacts};
@@ -133,7 +137,7 @@ export function assertEconomy(s) {
   integer(s.user.cashCents);integer(s.user.beautyScore,1,100);integer(s.meta.revision);
   const t=totals(s);requireRule(s.user.cashCents === add(s.user.initialCashCents,add(t.income,-t.expense)),'LEDGER_MISMATCH');
   for (const c of Object.values(s.characters)) {
-    integer(c.affection,0,100);if(c.beautyScore!==null)integer(c.beautyScore,1,100);
+    integer(c.affection,0,100);integer(c.corruption ?? 0,0,100);if(c.beautyScore!==null)integer(c.beautyScore,1,100);
     const p=poolParts(s,c.id);integer(p.total);integer(p.spend);integer(p.crit);
   }
   for(const r of Object.values(s.rewardEvents)){active(s,r.characterId);integer(r.cashbackCents);integer(r.refundedCents,0,r.cashbackCents);integer(r.claimedCents,0,r.cashbackCents);if(r.withdrawalId)requireRule(s.withdrawals[r.withdrawalId]?.allocations[r.eventId]===r.claimedCents,'REWARD_CLAIM_MISMATCH');else requireRule(r.claimedCents===0,'REWARD_CLAIM_MISMATCH');}
@@ -194,6 +198,16 @@ function applyEvent(s,e,eventKey,anchor) {
       const finalDelta=Math.sign(adjusted)*Math.min(Math.abs(adjusted),Math.max(0,limit-spent));
       requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');c.affection=Math.max(0,Math.min(100,prior+finalDelta));
       Object.assign(s.facts[e.factId],{personRef:c.id,baseDelta:delta,finalDelta:c.affection-prior,priorAffection:prior});return;
+    }
+    case 'CORRUPTION_CHANGE': {
+      const c=requirePerson();if(!tracked(c))return;
+      // No beauty modifier on this axis, and the same +-12 per-round cap as affection.
+      const delta=Math.max(-12,Math.min(12,e.delta)),prior=c.corruption??0;
+      const round=Object.values(s.facts).filter(f=>f.type==='CORRUPTION_CHANGE'&&f.personRef===c.id&&key(f.sourceAnchor)===key(anchor));
+      const spent=round.reduce((n,f)=>n+Math.abs(f.finalDelta),0),limit=12;
+      const finalDelta=Math.sign(delta)*Math.min(Math.abs(delta),Math.max(0,limit-spent));
+      requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');c.corruption=Math.max(0,Math.min(100,prior+finalDelta));
+      Object.assign(s.facts[e.factId],{personRef:c.id,baseDelta:delta,finalDelta:c.corruption-prior,priorCorruption:prior});return;
     }
     case 'RELATIONSHIP_CHANGE': {
       const c=requirePerson();if(!tracked(c))return;
@@ -297,11 +311,11 @@ function processEvents(state,events,anchor,sourceText,partial,affectionEvents=[]
     try{
     requireRule(raw&&typeof raw==='object'&&!Array.isArray(raw),'INVALID_EVENT');
     // Only settlement-created changes are trusted; a model-supplied auto flag grants nothing.
-    if(raw.type==='AFFECTION_CHANGE'&&i<events.length)continue;
-    if(partial)requireRule(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND','BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE','AFFECTION_CHANGE'].includes(raw.type),'UNKNOWN_EVENT');
+    if((raw.type==='AFFECTION_CHANGE'||raw.type==='CORRUPTION_CHANGE')&&i<events.length)continue;
+    if(partial)requireRule(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND','BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE','AFFECTION_CHANGE','CORRUPTION_CHANGE'].includes(raw.type),'UNKNOWN_EVENT');
     const e=normalizeEvent(partial?{...raw,ordinal:i}:raw,anchor);
     const ordinal=integer(e.ordinal,0,100);requireRule(!ordinals.has(ordinal),'DUPLICATE_ORDINAL');ordinals.add(ordinal);
-    if(e.type==='AFFECTION_CHANGE'&&Object.values(s.facts).some(f=>f.type===e.type&&f.personRef===e.personRef&&key(f.sourceAnchor)===key(anchor)))continue;
+    if((e.type==='AFFECTION_CHANGE'||e.type==='CORRUPTION_CHANGE')&&Object.values(s.facts).some(f=>f.type===e.type&&f.personRef===e.personRef&&key(f.sourceAnchor)===key(anchor)))continue;
     if(e.type==='SIGNIFICANT_BEHAVIOR_SCORE'){
       if(!s.characters[e.personRef]||s.characters[e.personRef].trackingState!=='RECORDED'||scoreCount>=3||scored.has(e.personRef))continue;
       scored.add(e.personRef);scoreCount++;
@@ -356,7 +370,7 @@ export function hasEvidence(source,evidence) {
   for(const part of parts){const p=part.trim();if(p.length<6)return false;const at=source.indexOf(p,from);if(at<0)return false;from=at+p.length;}
   return true;
 }
-export function canWithdraw(s,cid) { const c=s.characters[cid];return !!(c&&tracked(c)&&c.affection>=90&&poolParts(s,cid).total>0); }
+export function canWithdraw(s,cid) { const c=s.characters[cid];return !!(c&&tracked(c)&&(c.affection>=70||(c.corruption??0)>=60)&&poolParts(s,cid).total>0); }
 export function applyOperation(state,op,anchor) {
   id(op.operationId);requireRule(anchor.branchKey===state.meta.branchKey,'STALE_SOURCE');
   if(state.operationHistory[op.operationId])return clone(state);
@@ -416,8 +430,8 @@ export function projection(s) {
   const view=c=>{
     const base={id:c.id,name:c.name,aliases:c.aliases,trackingState:c.trackingState};
     if(!tracked(c))return base;
-    if(s.scene.presentCharacterIds.includes(c.id))return {...base,age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,addressing:c.addressing,impression:c.impression,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,currentThought:c.currentThought,arousal:c.arousal,...(c.physiology?{physiology:clone(c.physiology)}:{}),...(c.intimacy?{intimacy:clone(c.intimacy)}:{}),...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})};
-    return c.starred?{...base,relationshipLabel:c.relationshipLabel,affection:c.affection,starred:true,offscreen:c.offscreen}:base;
+    if(s.scene.presentCharacterIds.includes(c.id))return {...base,age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,corruption:c.corruption??0,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,addressing:c.addressing,impression:c.impression,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,currentThought:c.currentThought,arousal:c.arousal,...(c.physiology?{physiology:clone(c.physiology)}:{}),...(c.intimacy?{intimacy:clone(c.intimacy)}:{}),...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})};
+    return c.starred?{...base,relationshipLabel:c.relationshipLabel,affection:c.affection,corruption:c.corruption??0,starred:true,offscreen:c.offscreen}:base;
   };
   const characters=Object.fromEntries(Object.values(s.characters).map(c=>[c.id,view(c)]));
   return {schemaVersion:3,revision:s.meta.revision,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,characters,pendingBasicProfiles,

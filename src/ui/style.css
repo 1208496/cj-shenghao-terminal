@@ -193,3 +193,11 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .private-record[open] summary{border-bottom:1px solid var(--ui-line);padding-bottom:7px;margin-bottom:7px}
 .private-record .muted{margin:4px 0}
 .tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+
+/* rc.22 堕落度第二轴 */
+.corruption-number{display:block;margin-top:5px;color:#9c3d72;font-size:calc(16px * var(--cj-font-scale,1))}
+.theme-purple .corruption-number{color:#e8a7cc}
+.corruption-bar>div{background:linear-gradient(90deg,#e0a3c2,#9c3d72)}
+.theme-purple .corruption-bar>div{background:linear-gradient(90deg,#c99ad8,#9c3d72)}
+.dual-axis{margin-top:8px}
+.dual-axis .muted{margin-top:6px}
