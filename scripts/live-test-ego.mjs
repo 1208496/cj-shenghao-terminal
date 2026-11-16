@@ -38,7 +38,7 @@ const record = (step, ok, detail) => {
 // ---------- 空间与页面 ----------
 const existing = CONFIG.spaceId ? (await listTaskSpaces()).find((s) => s.id === CONFIG.spaceId) : null;
 let task;
-if (!existing) task = await taskSpace("实机测试 神豪终端 rc.22");
+if (!existing) task = await taskSpace("实机测试 神豪终端 rc.23 " + Date.now());
 else if (existing.ownership === "agent") task = await taskSpace(existing.id);
 else task = await takeOverTaskSpace(existing.id);
 

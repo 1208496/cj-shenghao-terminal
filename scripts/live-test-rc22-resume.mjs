@@ -1,7 +1,7 @@
 // rc.22 实机续跑：接管已有空间，从开局向导一路测到手机界面断言。
 // 跑法：ego-browser nodejs -e "await import('file:///E:/SHZDCHOSSS/scripts/live-test-rc22-resume.mjs')"
 const CONFIG = {
-  spaceId: 2,
+  spaceId: 3,
   playerName: "测试员",
   tierText: "小康人家",
   waitForReplyMs: 180000,
@@ -20,9 +20,41 @@ const record = (step, ok, detail) => {
   console.log(`[live-test] ${ok ? "OK  " : "FAIL"} ${step}${ok ? "" : ": " + JSON.stringify(detail).slice(0, 400)}`);
 };
 
-const task = await takeOverTaskSpace(CONFIG.spaceId);
+const spaceList = await listTaskSpaces();
+const me = spaceList.find((x) => x.id === CONFIG.spaceId);
+const task = me && me.ownership === 'agent' ? await taskSpace(CONFIG.spaceId) : await takeOverTaskSpace(CONFIG.spaceId);
 const page = (await task.pages())[0];
 record("space", true, { spaceId: task.spaceId });
+// 酒馆助手的脚本 iframe 需要一次完整注入周期才会提供 z / Mvu；
+// 固定等待几秒会偶发「Zod 注册失败 + 加载器报未下载」，这里改成轮询就绪。
+const auth = "Basic " + Buffer.from("user:98", "utf8").toString("base64");
+await page.cdp("Network.enable", {});
+await page.cdp("Network.setExtraHTTPHeaders", { headers: { Authorization: auth } });
+let ready = null;
+for (let i = 0; i < 20; i += 1) {
+  ready = await page.evaluate(() => ({
+    mvu: !!window.Mvu,
+    schema: !!window.__CJ_SHENGHAO_SCHEMA__,
+    host: !!window.__CJ_SHENGHAO_V2__,
+    zod: typeof globalThis.z,
+  }));
+  if (ready.mvu && ready.schema && ready.host) break;
+  await page.evaluate(() => document.getElementById("rightNavDrawerIcon")?.click());
+  await page.waitForTimeout(1200);
+  await page.evaluate(() => {
+    const cards = [...document.querySelectorAll("#rm_print_characters_block .character_select")];
+    const cur = window.SillyTavern?.getContext?.().characterId;
+    (cards.find((c) => c.getAttribute("data-chid") !== cur)?.querySelector(".avatar") ?? cards[0])?.click();
+  });
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => {
+    const cards = [...document.querySelectorAll("#rm_print_characters_block .character_select")];
+    const hit = cards.find((c) => (c.querySelector(".avatar")?.getAttribute("title") || "").includes("神豪终端"));
+    (hit?.querySelector(".avatar") ?? hit)?.click();
+  });
+  await page.waitForTimeout(4000);
+}
+record("scripts-ready", !!(ready && ready.mvu && ready.schema && ready.host), ready);
 
 const dropPopups = async () => {
   const cleared = [];
