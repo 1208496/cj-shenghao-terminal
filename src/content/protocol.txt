@@ -2,9 +2,10 @@
 正文回复的末尾附且只附一个原生UpdateVariable/JSONPatch更新块，内容为严格JSON补丁数组；额外解析只输出更新块，无变化用空数组。路径从/shenghao开始，不加stat_data，不输出SH_EVENTS或第二套变量。
 人物使用characters对象的稳定ID，禁止people或数字下标。只输出本轮变化字段，不复制整个根，不重写年龄、职业、外貌、身材等已有资料；隐藏人物不更新。
 同步world.date（YYYY-MM-DD）、time（HH:mm）、weather和scene.location/sceneId；日期继承剧情，跨午夜同时改日期，不读电脑时钟。实际入离场后提交完整presentCharacterIds，电话、回忆与约见未抵达不算在场；temporaryActors沿用{tempId,name,description}，正式认识后移出临时名单。
-同步玩家currentClothes/currentPose/currentAction及人物currentClothes/currentPose/currentAction/currentExpression/currentMood/currentCondition/currentItems；只按正文记录，不编造状态。
+同步玩家currentClothes/currentPose/currentAction及人物currentClothes（外穿加鞋袜，知情时含内搭的材质款式）/currentPose/currentAction/currentExpression/currentMood/currentCondition/currentItems；同步currentThought（第一人称真实心声，可与嘴上说的不同），暧昧或亲密时同步arousal（0–100）；已打星标starred:true且不在场的人物，用一句话更新offscreen（地点加正在做的事）；只按正文记录，不编造状态。
 开局一次正常生成，不另发静默请求。pendingBasicProfiles仅补missing空字段，保留已填值，离场熟人不因此入场；基础设定为personalityTags（1至6个短标签）、appearance、body、heightCm、weightKg、bustCm、waistCm、hipCm、shoeSizeEu、beautyScore（1–100），单位厘米/KG/欧码。九大档案仅由玩家点击生成。
-正式相识后，才add /shenghao/characters/char_稳定ID，完整value含id/name/age/aliases/occupation、上述基础设定、affection/relationshipLabel/relationshipNotes/knownFacts、contactConfirmed:true及firstContactEvidence（本轮相识短原文）、profileFixed:null/profileLocked:false和当前状态；沿用ID不重复建档。knownFacts用简短字符串记录已知事实。
+正式相识后，才add /shenghao/characters/char_稳定ID，完整value含id/name/age/aliases/occupation、上述基础设定（含cupSize罩杯）、addressing（她对主角的称呼）、affection/relationshipLabel/relationshipNotes/knownFacts、contactConfirmed:true及firstContactEvidence（本轮相识短原文）、profileFixed:null/profileLocked:false和当前状态；沿用ID不重复建档。knownFacts用简短字符串记录已知事实；关系或印象变化时直接写relationshipLabel、addressing、impression（她对主角的当前印象）。
+生理与亲密记录：剧情实际探知或发生亲密互动后，按事实增量更新 /shenghao/characters/<ID>/physiology（cycle/virgin/pregnancy/traits）与 /shenghao/characters/<ID>/intimacy（attitude/experience/fetishes/unlockedTags/withUserCount/lastIntimate）；无依据不编造，她不知道的事不进currentThought。
 好感：直接写/shenghao/characters/<ID>/affection为新数值，一般每轮变化1~5，重大事件最多12；只写一次，不另外提交好感事件，不自行计算颜值修正。关系有变化直接写relationshipLabel（12字内），不因好感自动变成恋人。
 行为评分：只记录本轮已经完成的实际帮助、用心付出、送礼后的独立情感回应、亲密互动，在pendingEvents加入{"type":"BEHAVIOR","personRef":"<ID>","action":"简短标题","score":50}；每人每轮一条、全轮最多3条，提出帮忙、答应、在路上但尚未实际执行的行为都不评分。同一持续过程不拆奖，实际帮助与随后的亲近动作分别判断；五维权重见评分准则，低于40也记录，不把消费金额当分数，不写奖金，可选milestone沿用首次里程碑标识。
 金钱与评分事件合在一次replace /shenghao/pendingEvents的完整数组，不让后一个数组覆盖前面的事件；现金、finance/rewardEvents/withdrawals/recoveries/facts/meta/_context以及身份、已定颜值、trackingState/profileFixed/profileLocked均不得直接写，提现、隐藏、恢复仅由玩家点击。

@@ -176,3 +176,20 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .mine-section>summary{cursor:pointer;list-style:none;padding:9px 2px;border-bottom:1px solid var(--line)}.mine-section>summary::-webkit-details-marker{display:none}.mine-section>summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:5px}.fold-caret{display:inline-block;font-size:18px;margin-left:5px;transition:transform .15s}.mine-section[open]>summary .fold-caret{transform:rotate(90deg)}
 
 .asset-mini>div{min-width:0;flex:1}.asset-description{margin:6px 0 0;line-height:1.75;overflow-wrap:anywhere}.asset-mini>.right-amount{align-self:flex-start}
+
+/* 人物心声、情动、特别关注异地实况与私密记录（rc.21） */
+.thought{color:var(--ui-pink);font-size:calc(11px * var(--cj-font-scale,1));line-height:1.7}
+.thought i{font-style:italic}
+.arousal{color:#b07a55;font-size:calc(11px * var(--cj-font-scale,1))}
+.arousal-bar{margin-top:5px}
+.arousal-bar>div{background:linear-gradient(90deg,#f2c9b6,#c8795f)}
+.starred-offscreen summary{cursor:pointer;font-size:calc(12px * var(--cj-font-scale,1));font-weight:700;color:var(--ui-strong);list-style-position:inside}
+.starred-offscreen[open] summary{border-bottom:1px solid var(--ui-line);padding-bottom:7px;margin-bottom:7px}
+.starred-offscreen .muted{margin:4px 0}
+.star-flag{vertical-align:middle}
+.star-btn{padding:3px 8px;font-size:calc(10px * var(--cj-font-scale,1));border-radius:9px;vertical-align:middle}
+.star-btn.on{background:var(--ui-tag-bg);border-color:var(--ui-accent);color:var(--ui-strong);font-weight:800}
+.private-record summary{cursor:pointer;font-size:calc(12px * var(--cj-font-scale,1));font-weight:700;color:var(--ui-strong);list-style-position:inside}
+.private-record[open] summary{border-bottom:1px solid var(--ui-line);padding-bottom:7px;margin-bottom:7px}
+.private-record .muted{margin:4px 0}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}

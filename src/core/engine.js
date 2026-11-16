@@ -1,7 +1,7 @@
 import config from '../../project.json' with {type:'json'};
 
 export const PROFILE_KEYS = ['identity','appearance','body','personality','habits','style','family','career','social'];
-export const PROFILE_LABELS = ['基础身份','容貌形象','身体特征','性格价值观','兴趣与生活习惯','长期穿衣风格','家庭与成长','事业与人生经历','社交与情感背景'];
+export const PROFILE_LABELS = ['基础身份与学历籍贯','容貌气质与辨识细节','身材体态与私密特征','双面性格与行事做派','日常作息与生活喜好','穿搭审美与私下打扮','原生家庭与成长经历','事业现状与短期目标','情感经历与择偶偏好'];
 export const clone = value => JSON.parse(JSON.stringify(value));
 export class RuleError extends Error { constructor(code,field) { super(code); this.name = 'RuleError'; if(field)this.field=field; } }
 export function requireRule(ok, code) { if (!ok) throw new RuleError(code); }
@@ -32,7 +32,7 @@ export function stage(n) {
 }
 export function basicProfile(c) {
   requireRule(Array.isArray(c.personalityTags??[])&&(c.personalityTags??[]).length<=6,'INVALID_BASIC_PROFILE');
-  const result={personalityTags:(c.personalityTags??[]).map(v=>text(v,12)),appearance:text(c.appearance ?? '',500,true),body:text(c.body ?? '',500,true)};
+  const result={personalityTags:(c.personalityTags??[]).map(v=>text(v,12)),appearance:text(c.appearance ?? '',500,true),body:text(c.body ?? '',500,true),cupSize:text(c.cupSize ?? '',8,true)};
   for(const [k,min,max] of [['heightCm',100,230],['weightKg',25,250],['bustCm',40,200],['waistCm',30,200],['hipCm',40,200],['shoeSizeEu',25,55]]) {const v=c[k]??null;requireRule(v===null||typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max,'INVALID_BASIC_PROFILE');result[k]=v;}
   return result;
 }
@@ -49,12 +49,18 @@ export function profile(p) {
   requireRule(p && !Array.isArray(p) && typeof p === 'object', 'PROFILE_INCOMPLETE');
   const result = {}; for (const k of PROFILE_KEYS) result[k] = text(p[k],750); return result;
 }
+// Dossier build may seed the empty private records from the generated archive.
+// Existing content always wins; only blanks are filled.
+function seedRecord(record,seed){if(!record||!seed||typeof seed!=='object')return;
+  for(const [k,v] of Object.entries(seed)){if(typeof v!=='string'||!v.trim())continue;const current=record[k];if(current===undefined||current===null||current==='')record[k]=v.trim().slice(0,400);}}
 function character(c) {
   const name = text(c.name,50), age = integer(c.age,1,120);
   return {id:id(c.id), aliases:(c.aliases || []).map(x => text(x,50)).slice(0,20), name, age,
     occupation:text(c.occupation ?? '',100,true), affection:integer(c.affection ?? 20,0,100),
     relationshipLabel:text(c.relationshipLabel || '熟人',12), relationshipNotes:text(c.relationshipNotes ?? '',300,true),
     ...basicProfile(c),beautyScore:c.beautyScore==null?null:integer(c.beautyScore,1,100),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:null,profileLocked:false, trackingState:'RECORDED',
+    addressing:text(c.addressing ?? '',20,true),impression:'',starred:false,currentThought:'',arousal:0,offscreen:'',
+    physiology:{cycle:'',pregnancy:'未孕',virgin:null,traits:''},intimacy:{attitude:'',experience:'',fetishes:'',unlockedTags:[],withUserCount:0,lastIntimate:''},
     currentClothes:'',currentPose:'',currentExpression:'', avatarRef:null,portraitRef:null};
 }
 export function validateDraft(d) {
@@ -372,6 +378,8 @@ export function applyOperation(state,op,anchor) {
       result={amountCents:w.paidCents,personRef:c.id,withdrawalId:op.operationId};
     } else if(op.type==='PLAYER_BUILD_PROFILE') {
       requireRule(tracked(c)&&!c.profileFixed,'PROFILE_ALREADY_BUILT');c.profileFixed=profile(op.profileFixed);c.profileLocked=false;
+      c.physiology??={cycle:'',pregnancy:'未孕',virgin:null,traits:''};c.intimacy??={attitude:'',experience:'',fetishes:'',unlockedTags:[],withUserCount:0,lastIntimate:''};
+      seedRecord(c.physiology,op.physiology);seedRecord(c.intimacy,op.intimacy);
     } else if(op.type==='PLAYER_LOCK_PROFILE') {
       requireRule(tracked(c)&&c.profileFixed,'PROFILE_INCOMPLETE');requireRule(typeof op.locked==='boolean','INVALID_DRAFT');c.profileLocked=op.locked;
     } else if(op.type==='PLAYER_HIDE') {
@@ -379,6 +387,9 @@ export function applyOperation(state,op,anchor) {
     } else if(op.type==='PLAYER_RESTORE') {
       c.trackingState='RECORDED';
       if(op.restorePresent===true&&!s.scene.presentCharacterIds.includes(c.id))s.scene.presentCharacterIds.push(c.id);
+    } else if(op.type==='PLAYER_STAR') {
+      // Player-owned switch: starred women keep a one-line off-stage update.
+      c.starred=!c.starred;result={personRef:c.id,starred:c.starred};
     } else throw new RuleError('UNKNOWN_OPERATION');
   }
   s.meta.revision++;s.meta.sourceAnchor=clone(anchor);s.operationHistory[op.operationId]={type:op.type,status:'COMMITTED',revision:s.meta.revision,result};
@@ -399,8 +410,16 @@ export function projection(s) {
     return {id:c.id,name:c.name,age:c.age,occupation:c.occupation,knownFacts:c.knownFacts,...basicProfile(c),beautyScore:c.beautyScore,missing};
   }).filter(c=>c.missing.length);
   // Match persisted character paths so models can copy a stable ID and field name.
-  const characters=Object.fromEntries(Object.values(s.characters).map(c=>[c.id,{id:c.id,name:c.name,aliases:c.aliases,trackingState:c.trackingState,
-    ...(tracked(c)&&s.scene.presentCharacterIds.includes(c.id)?{age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})}: {})}]));
+  // Present women carry full basics, private records and the current thought.
+  // Absent but starred women carry one off-stage line the model may refresh.
+  // Every other absent woman stays a bare identity index.
+  const view=c=>{
+    const base={id:c.id,name:c.name,aliases:c.aliases,trackingState:c.trackingState};
+    if(!tracked(c))return base;
+    if(s.scene.presentCharacterIds.includes(c.id))return {...base,age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,addressing:c.addressing,impression:c.impression,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,currentThought:c.currentThought,arousal:c.arousal,...(c.physiology?{physiology:clone(c.physiology)}:{}),...(c.intimacy?{intimacy:clone(c.intimacy)}:{}),...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})};
+    return c.starred?{...base,relationshipLabel:c.relationshipLabel,affection:c.affection,starred:true,offscreen:c.offscreen}:base;
+  };
+  const characters=Object.fromEntries(Object.values(s.characters).map(c=>[c.id,view(c)]));
   return {schemaVersion:3,revision:s.meta.revision,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,characters,pendingBasicProfiles,
     assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind,description:a.description,locationNote:a.locationNote,ownershipNote:a.ownershipNote,bookValueCents:a.bookValueCents})),
     recentFacts:Object.entries(s.facts).slice(-60).map(([factId,f])=>{const l=ledgerByFact.get(factId);return {factId,type:f.type,...(l?{kind:l.kind,itemName:l.itemName,amountCents:l.amountCents,assetId:l.assetId,refundOf:l.refundOf}:{})};}),rule:'只提出新事实，不直接写现金、奖池或提现。已列factId不得再次入账；退款的refundOf按交易名称、金额与资产匹配原付款factId，不猜ID。'};

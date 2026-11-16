@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.20",
+  "version": "2.0.0-rc.21",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -41,6 +41,6 @@
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "按xiugai简化好感直接写值、四字段行为评分、人物资料容错与金钱专属错误提示；保留经济规则。",
-  "cardContractRevision": 16
+  "releaseNotes": "女性人物信息整合：罩杯、称呼、印象、特别关注、心声、情动、离场实况、生理与亲密记录；九大档案升级为活人底细；新人物建档不再被漏填身体数据吞掉。",
+  "cardContractRevision": 17
 }

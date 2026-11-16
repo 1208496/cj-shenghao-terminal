@@ -1,4 +1,4 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,hasEvidence,projection,requireRule,completeBasicProfile} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -33,7 +33,8 @@ export function settleNative(before,candidate,anchor,source,schemas){
     const proposed=s.characters[cid];
     if(!proposed||prior.trackingState==='HIDDEN'){s.characters[cid]=clone(prior);continue;}
     if(typeof proposed!=='object'||Array.isArray(proposed)){s.characters[cid]=clone(prior);diagnostics.push({person:cid,field:'characters.'+cid,code:'INVALID_FIELD'});continue;}
-    for(const k of ['id','name','age','profileFixed','profileLocked','aliases','trackingState','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+    // starred is a player switch: the mobile UI owns it, the model never does.
+    for(const k of ['id','name','age','profileFixed','profileLocked','aliases','trackingState','starred','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
     // Initial acquaintances may have blanks. A normal story update fills only
     // missing basics; established author/player facts stay immutable.
     for(const k of ['beautyScore','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu']){
@@ -46,13 +47,14 @@ export function settleNative(before,candidate,anchor,source,schemas){
   }
   for(const [cid,value] of Object.entries(s.characters)){
     if(before.characters[cid])continue;
-    const parsed=schemas.character.safeParse(value);
-    if(!parsed.success){delete s.characters[cid];diagnostics.push({person:cid,field:'characters.'+cid,code:'INVALID_FIELD'});continue;}
-    const c=s.characters[cid]=parsed.data;
-    if(c.id!==cid||c.contactConfirmed!==true||!hasEvidence(body,c.firstContactEvidence)){
-      delete s.characters[cid];diagnostics.push({person:cid,code:'CONTACT_NOT_CONFIRMED'});continue;
-    }
-    try{completeBasicProfile(c);}catch{delete s.characters[cid];diagnostics.push({person:cid,code:'PROFILE_INCOMPLETE'});continue;}
+    if(!value||typeof value!=='object'||Array.isArray(value)){delete s.characters[cid];diagnostics.push({person:cid,field:'characters.'+cid,code:'INVALID_FIELD'});continue;}
+    // A new person needs only an id and a name to enter the record. Missing or
+    // malformed body data (and a missing verbatim first-contact quote) must not
+    // delete the whole person; blanks are listed in pendingBasicProfiles and
+    // completed by a later round.
+    const c=newCharacter(cid,value,schemas);
+    if(!c){delete s.characters[cid];diagnostics.push({person:cid,code:'PROFILE_INCOMPLETE'});continue;}
+    s.characters[cid]=c;
     Object.assign(s.characters[cid],{profileFixed:null,profileLocked:false,trackingState:'RECORDED',avatarRef:null,portraitRef:null});
     const matched=s.scene.temporaryActors.find(t=>t.name===c.name);
     if(matched)s.identityMap[matched.tempId]=cid;
@@ -69,11 +71,30 @@ export function settleNative(before,candidate,anchor,source,schemas){
 function acceptFields(proposal,prior,schema,path,diagnostics){
   const out={};
   for(const [field,rule] of Object.entries(schema.shape)){
-    const parsed=rule.safeParse(proposal?.[field]);
+    // A field the model never mentions keeps its stored value. Defaults only
+    // apply to genuinely new records, otherwise an omitted nested record
+    // (physiology / intimacy) would be reset to empty every round.
+    if(proposal?.[field]===undefined){out[field]=clone(prior[field]);continue;}
+    const parsed=rule.safeParse(proposal[field]);
     if(parsed.success)out[field]=parsed.data;
     else {out[field]=clone(prior[field]);diagnostics.push({field:path+'.'+field,code:'INVALID_FIELD'});}
   }
   return out;
+}
+
+// A new person needs an id and a name. Missing or malformed body details are
+// dropped field by field so the record still enters and pendingBasicProfiles
+// can complete it later; only an unusable identity rejects the person.
+function newCharacter(cid,value,schemas){
+  const id=typeof value.id==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(value.id)?value.id:cid;
+  const base={id,age:25,beautyScore:null,affection:20,relationshipLabel:'熟人',occupation:''};
+  const raw={...value,id,name:typeof value.name==='string'?value.name.trim().slice(0,50):''};
+  let parsed=schemas.character.safeParse({...base,...raw});
+  if(!parsed.success){
+    for(const issue of parsed.error.issues){const k=issue.path[0];if(typeof k==='string'&&!['id','name'].includes(k))delete raw[k];}
+    parsed=schemas.character.safeParse({...base,...raw});
+  }
+  return parsed.success?parsed.data:null;
 }
 
 // Drop malformed existing-character fields before the native Zod command handler
@@ -83,12 +104,19 @@ export function prepareModelCommand(command,before,schemas){
   if(parts[0]!=='shenghao'||parts[1]!=='characters'||!before?.characters[parts[2]])return true;
   if(command.type!=='set'||parts.length<3)return true;
   const prior=before.characters[parts[2]];
-  if(parts.length>4)return false;
+  // Four levels reach a character field, five reach physiology.* / intimacy.*.
+  if(parts.length>5)return false;
   const raw=command.args.at(-1),value=typeof raw==='string'?JSON.parse(raw):raw;
-  const parsed=parts.length===3?{success:true,data:acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[])}:schemas.character.shape[parts[3]]?.safeParse(value);
+  const nested=parts.length>3?unwrapSchema(schemas.character.shape[parts[3]]):null;
+  let parsed;
+  if(parts.length===3)parsed={success:true,data:acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[])};
+  // Writing a whole sub-object keeps the untouched siblings instead of wiping them.
+  else if(parts.length===4)parsed=nested?.safeParse(value&&typeof value==='object'&&!Array.isArray(value)?{...(prior[parts[3]]||{}),...value}:value);
+  else parsed=nested?.shape?.[parts[4]]?.safeParse(value);
   if(!parsed?.success){console.log('[神豪终端] 已保留人物字段原值',parts.slice(1).join('.'));return false;}
   command.args[command.args.length-1]=JSON.stringify(parsed.data);return true;
 }
+function unwrapSchema(schema){return schema?._def?.innerType??schema;}
 
 export function commandPath(command){
   let raw=String(command.args?.[0]??'').trim();

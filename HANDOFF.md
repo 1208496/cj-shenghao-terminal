@@ -5,7 +5,45 @@
 > 本文件记录事实，不构成新规则，也不扩大任何授权。未知写「未确认」，没跑过的写「未验证」。
 
 <!-- SHZD-HANDOFF-BEGIN PH-20261117-SHZD-01 -->
-## 神豪终端角色卡 · 硬规则清扫与接续（2026-11-17）
+
+## 实机测试链路打通（2026-11-17 · 当前最新）
+
+### 本次做了什么
+
+- 用 ego lite（0.6.3.14）驱动本机酒馆 `http://127.0.0.1:8000/`（HTTP Basic `user` / `98`），把「过认证 → 连接 API → 导入整卡 → 走开局向导 → 验证 MVU 手机界面」跑通，数据来自 `dist/2.0.0-rc.20/神豪终端.json`。
+- 落地两份可复用物：`tests/live-ego.md`（七步流程、稳定选择器、踩坑清单、已知未验证）与 `scripts/live-test-ego.mjs`（一次跑完上述链路，`node --check` 通过）。
+- 跑法：`ego-browser nodejs -e "await import('file:///E:/SHZDCHOSSS/scripts/live-test-ego.mjs')"`。
+
+### 实际验证（有效）
+
+- 认证：注入 `Authorization` 头绕过原生弹窗，`document.title === "SillyTavern"`，`#send_form` 出现。
+- API：插头 `#API-status-top` 从 `fa-plug-circle-exclamation` 变为 `fa-plug`，无 error toast。配置为自定义（兼容 OpenAI），端点 `https://catiecli.sukaka.top/v1`。
+- 导入：toast「角色已创建：神豪终端19」，列表新增，`chid=27`（同名卡会自动改名加序号，`chid` 每次不同，不可写死）。
+- 三类确认弹窗按序处理：全部导入标签 → 启用内置正则 → 启用酒馆助手嵌入式脚本。
+- 开局：`#TH-message--0--0` iframe 内填 `#f_name=测试员`、选「小康人家」、连点「下一步」至「预览开局」→「开始我的人生」，`#chat .mes` 从 1 变 3，AI 首轮正文 739 字。
+- 数值交叉校验通过：手机「我的」页 总资产 ¥1,700,000 = 现金 ¥100,000 + 资产 ¥1,600,000（公寓 1,500,000 + 车 100,000）；等级「见习·十倍」与正文一致；颜值 60/100 与表单一致；时间 2026-11-16 09:00 与开局设定一致；「此刻」= 站立在玄关门前。判定：MVU 变量写入与界面读取链路是活的。
+
+### 关键发现（需后续判断）
+
+- **ego 的 Chromium 里 jsDelivr 全域与 raw.githubusercontent 均 `Failed to fetch`**，而台面 `Invoke-WebRequest`、浏览器内 unpkg 与 api.github.com 均通。卡的「固定加载器」每次打开都走 jsDelivr 拉 `dist/terminal.js`，因此弹红字「脚本没有下载或启动成功」。**实测不阻塞开局与变量界面**；成因（代理 / DNS / 拦截规则）未确认。
+- `#api_button` 是 `#kobold_api_block` 里的 0×0 隐藏按钮，点它等于没点；自定义 OpenAI 源真正的连接按钮在 `#openai_api` 内，只能按可见文本「连接」定位。
+- ego 的 `page.screenshot()` 只截视口约 0.8 倍，右侧会被裁；手机浮层贴右边缘且有 `transform: matrix(0.82,…)`，需临时挪位再截图（脚本内已封装并还原）。
+
+### 未验证 / 未做
+
+- 刷新页面后重新连接 API 的回归（用户称每次刷新都要重连）——流程同第 2 步，未单独立项验证。
+- 连续多轮对话下变量是否逐轮更新（只看了第一轮）。
+- 「她们」tab 在有在场角色时的渲染。
+- 加载器在 jsDelivr 受阻时能否走 fallback 提交。
+- 本次未改任何源码、未重新构建、未提交 git、未动 Supabase 指针。
+
+### 下一步建议
+
+1. 查 jsDelivr 在 ego 浏览器里被拦的成因（代理配置 / hosts / 拦截规则），它决定卡的热更新是否可靠。
+2. 用同一脚本再跑一轮「刷新 + 重连 API」，把该路径补成已验证。
+3. 推进 2–3 轮对话，核对收支、奖池、好感/行为评分是否按 `project.json` 的 `rewardTiers` 正确结算。
+
+## 神豪终端角色卡 · 硬规则清扫与接续（2026-11-17 · 历史记录，已被上方「实机测试链路打通」接续）
 
 ### 交接区
 
