@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-16",
+  "version": "2.0.0-rc.9",
+  "character": "神豪终端 rc9 独立验收",
+  "chat": "神豪终端 rc9 独立验收 - 2026-11-16@21h28m05s106ms",
+  "tavern": "1.19.0",
+  "helper": "4.12.0",
+  "mode": "inline",
+  "online": "有效的",
+  "cashCents": 10117000,
+  "beautyScore": 95,
+  "withdrawals": [
+    {
+      "basePoolCents": 10000,
+      "multiplier": 10,
+      "paidCents": 100000,
+      "recoveryCents": 0
+    },
+    {
+      "basePoolCents": 5000,
+      "multiplier": 10,
+      "paidCents": 30000,
+      "recoveryCents": 20000
+    }
+  ],
+  "ledgerCount": 5,
+  "diagnostics": [],
+  "themes": [
+    {
+      "theme": "sage",
+      "scrollWidth": 299,
+      "clientWidth": 299,
+      "badge": "见习·十倍"
+    },
+    {
+      "theme": "gold",
+      "scrollWidth": 299,
+      "clientWidth": 299,
+      "badge": "见习·十倍"
+    },
+    {
+      "theme": "purple",
+      "scrollWidth": 299,
+      "clientWidth": 299,
+      "badge": "见习·十倍"
+    }
+  ]
+}

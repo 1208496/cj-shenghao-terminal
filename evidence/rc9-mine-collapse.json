@@ -1,0 +1,39 @@
+{
+  "opened": [
+    {
+      "section": "assets",
+      "open": true,
+      "height": 167.25
+    },
+    {
+      "section": "ledger",
+      "open": true,
+      "height": 535.469970703125
+    }
+  ],
+  "retained": [
+    {
+      "section": "assets",
+      "open": true
+    },
+    {
+      "section": "ledger",
+      "open": true
+    }
+  ],
+  "collapsed": [
+    {
+      "section": "assets",
+      "open": false,
+      "height": 55.53999710083008,
+      "summaryHeight": 46.53999710083008
+    },
+    {
+      "section": "ledger",
+      "open": false,
+      "height": 55.53999710083008,
+      "summaryHeight": 46.53999710083008
+    }
+  ],
+  "method": "Real SillyTavern; DOM summary clicks and keyboard Enter via EGO; asset category stays open."
+}

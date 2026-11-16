@@ -1,4 +1,4 @@
-import {clone,applyEnvelope,applyOperation,poolParts,assertState,hasEvidence,projection,requireRule,completeBasicProfile} from '../core/engine.js';
+import {clone,applyEnvelope,applyOperation,poolParts,withdrawalQuote,assertState,hasEvidence,projection,requireRule,completeBasicProfile} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -12,6 +12,7 @@ export function completeInitialState(base,draft){
 export function replayPlayerCommand(state,command,anchor,schemas){
   if(command.kind==='action'){
     if(command.value.type==='PLAYER_WITHDRAW'&&!state.operationHistory[command.value.operationId]&&command.expectedPoolCents!==undefined)requireRule(poolParts(state,command.value.personRef).total===command.expectedPoolCents,'WITHDRAWAL_REVIEW_REQUIRED');
+    if(command.value.type==='PLAYER_WITHDRAW'&&!state.operationHistory[command.value.operationId]&&command.expectedQuote)requireRule(JSON.stringify(withdrawalQuote(state,command.value.personRef))===JSON.stringify(command.expectedQuote),'WITHDRAWAL_REVIEW_REQUIRED');
     return applyOperation(state,{...command.value,expectedRevision:state.meta.revision},anchor);
   }
   requireRule(command.kind==='appointment','UNKNOWN_PLAYER_COMMAND');
@@ -21,17 +22,18 @@ export function replayPlayerCommand(state,command,anchor,schemas){
 }
 export function settleNative(before,candidate,anchor,source,schemas){
   requireRule(before?.meta.initialized&&candidate,'INVALID_NATIVE_STATE');
-  let s=clone(candidate);const diagnostics=[],body=withoutUpdates(source);
+  let s=clone(candidate);const diagnostics=[],body=withoutUpdates(source),queue=clone(s.pendingEvents||[]);
   // These fields are written only by deterministic settlement or a confirmed player operation.
-  for(const k of ['schemaVersion','finance','rewardEvents','operationHistory','notifications','facts','hiddenTemporary','identityMap'])s[k]=clone(before[k]);
+  for(const k of ['schemaVersion','finance','rewardEvents','withdrawals','recoveries','operationHistory','notifications','facts','hiddenTemporary','identityMap'])s[k]=clone(before[k]);
   s.meta=clone(before.meta);s.meta.branchKey=anchor.branchKey;
-  for(const k of ['id','name','age','gender','appearance','body','occupation','background','housingMode','residenceDescription','workLifeDescription','initialCashCents','cashCents'])s.user[k]=clone(before.user[k]);
+  for(const k of ['id','name','age','beautyScore','gender','appearance','body','occupation','background','housingMode','residenceDescription','workLifeDescription','initialCashCents','cashCents'])s.user[k]=clone(before.user[k]);
   for(const [cid,prior] of Object.entries(before.characters)){
     const proposed=s.characters[cid];
     if(!proposed||prior.trackingState==='HIDDEN'){s.characters[cid]=clone(prior);continue;}
-    for(const k of ['id','name','age','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu','profileFixed','profileLocked','aliases','rewardBaseCents','withdrawal','trackingState','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+    for(const k of ['id','name','age','beautyScore','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu','profileFixed','profileLocked','aliases','trackingState','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
     if(proposed.knownFacts!==prior.knownFacts&&!hasEvidence(body,proposed.knownFactsEvidence)){proposed.knownFacts=prior.knownFacts;}
-    if(Math.abs(proposed.affection-prior.affection)>12){proposed.affection=prior.affection;diagnostics.push({person:cid,code:'AFFECTION_JUMP'});}
+    if(proposed.affection!==prior.affection&&!queue.some(e=>e.type==='AFFECTION_CHANGE'&&e.personRef===cid))queue.push({type:'AFFECTION_CHANGE',personRef:cid,delta:proposed.affection-prior.affection,evidence:proposed.affectionEvidence,meaningfulInteraction:proposed.meaningfulInteraction,majorTurningPoint:proposed.majorTurningPoint});
+    proposed.affection=prior.affection;proposed.affectionEvidence='';proposed.meaningfulInteraction=false;proposed.majorTurningPoint=false;
     if(proposed.relationshipLabel!==prior.relationshipLabel&&!hasEvidence(body,proposed.relationshipEvidence)){
       proposed.relationshipLabel=prior.relationshipLabel;proposed.relationshipNotes=prior.relationshipNotes;diagnostics.push({person:cid,code:'RELATIONSHIP_EVIDENCE_MISSING'});
     }
@@ -42,7 +44,7 @@ export function settleNative(before,candidate,anchor,source,schemas){
       delete s.characters[cid];diagnostics.push({person:cid,code:'CONTACT_NOT_CONFIRMED'});continue;
     }
     try{completeBasicProfile(c);}catch{delete s.characters[cid];diagnostics.push({person:cid,code:'PROFILE_INCOMPLETE'});continue;}
-    c.profileFixed=null;c.profileLocked=false;c.rewardBaseCents=1000000;c.withdrawal=null;c.trackingState='RECORDED';
+    c.profileFixed=null;c.profileLocked=false;c.trackingState='RECORDED';
     c.avatarRef=null;c.portraitRef=null;
     const matched=s.scene.temporaryActors.find(t=>t.name===c.name);
     if(matched)s.identityMap[matched.tempId]=cid;
@@ -50,7 +52,7 @@ export function settleNative(before,candidate,anchor,source,schemas){
   s.scene.presentCharacterIds=[...new Set(s.scene.presentCharacterIds)].filter(cid=>s.characters[cid]?.trackingState==='RECORDED');
   s.scene.temporaryActors=s.scene.temporaryActors.filter(t=>!s.hiddenTemporary[t.tempId]&&!s.identityMap[t.tempId]);
   s.scene.sceneRevision=before.scene.sceneRevision+1;s.scene.timeHint=s.world.date+' '+s.world.time;s.user.location=s.scene.location;
-  const queue=s.pendingEvents||[];s.pendingEvents=[];
+  s.pendingEvents=[];
   // Independent candidate validation does not discard valid scene/person/time changes.
   const excessiveScores=queue.filter(e=>e.type==='SIGNIFICANT_BEHAVIOR_SCORE').length>3;
   for(let i=0;i<queue.length;i++){

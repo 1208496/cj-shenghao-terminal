@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.8",
+  "version": "2.0.0-rc.9",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -41,6 +41,6 @@
       "label": "传说暴击"
     }
   ],
-  "releaseNotes": "四套完整开局预设、现金四选一、下拉收起修复与选项扩充。",
-  "cardContractRevision": 4
+  "releaseNotes": "反复提现与现金等级倍率、颜值好感修正、人物消费明细和自由都市事件。",
+  "cardContractRevision": 5
 }

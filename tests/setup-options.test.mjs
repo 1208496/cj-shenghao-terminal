@@ -10,5 +10,5 @@ test('every editable opening, asset and acquaintance field has bounded preset va
 });
 test('all six optional acquaintances are adult women with valid simple records and no dossier',()=>{
  assert.equal(contactPresets.length,6);assert.equal(new Set(contactPresets.map(p=>p.presetId)).size,6);
- for(const p of contactPresets){assert.equal(p.gender,'女');assert(p.age>=18);assert.equal(p.present,false);assert.equal(p.profileFixed,undefined);completeBasicProfile(p);const state=initialize(draft({contacts:[{...p,id:'test_preset'}]}),{test_preset:p},'init','test');assert.equal(state.characters.test_preset.profileFixed,null);assert.equal(state.characters.test_preset.rewardBaseCents,1000000);assert.equal(contactPresetValues(p).c_weightKg,p.weightKg);}
+ for(const p of contactPresets){assert.equal(p.gender,'女');assert(p.age>=18);assert.equal(p.present,false);assert.equal(p.profileFixed,undefined);completeBasicProfile(p);const state=initialize(draft({contacts:[{...p,id:'test_preset'}]}),{test_preset:p},'init','test');assert.equal(state.characters.test_preset.profileFixed,null);assert.equal(state.characters.test_preset.rewardBaseCents,undefined);assert.equal(contactPresetValues(p).c_weightKg,p.weightKg);}
 });

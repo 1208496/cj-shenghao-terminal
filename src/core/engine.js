@@ -14,9 +14,14 @@ export function integer(n, min = 0, max = Number.MAX_SAFE_INTEGER) {
 }
 export function add(a, b) { const n = a + b; requireRule(Number.isSafeInteger(n), 'MONEY_OVERFLOW'); return n; }
 export function cents(value) {
-  const s = String(value).trim(); requireRule(/^\d{1,13}(\.\d{1,2})?$/.test(s), 'INVALID_MONEY');
-  const [a,b=''] = s.split('.'); return integer(Number(a) * 100 + Number(b.padEnd(2,'0')));
+  const s = String(value).trim(),m=s.match(/^[¥￥]?(\d{1,14})(?:\.(\d{1,2}))?([万亿]?)(?:元)?$/);
+  requireRule(m,'INVALID_MONEY');const n=(BigInt(m[1])*100n+BigInt((m[2]||'').padEnd(2,'0')))*({万:10000n,亿:100000000n}[m[3]]||1n);
+  requireRule(n<=BigInt(Number.MAX_SAFE_INTEGER),'MONEY_OVERFLOW');return Number(n);
 }
+export function multiply(a,b){integer(a);integer(b);const n=BigInt(a)*BigInt(b);requireRule(n<=BigInt(Number.MAX_SAFE_INTEGER),'MONEY_OVERFLOW');return Number(n);}
+export function wealthTier(cash){integer(cash);return cash<1000000000?{id:'trainee',label:'见习·十倍',multiplier:10}:cash<10000000000?{id:'junior',label:'初级·八倍',multiplier:8}:cash<100000000000?{id:'middle',label:'中级·五倍',multiplier:5}:cash<1000000000000?{id:'senior',label:'高级·三倍',multiplier:3}:{id:'max',label:'满级·一倍',multiplier:1};}
+export function beautyTier(score){integer(score,1,100);return score<20?{label:'丑陋无比',modifier:-2}:score<50?{label:'有点难看的路人',modifier:-1}:score<70?{label:'平平无奇的普通人，还算看得过去',modifier:0}:score<90?{label:'颜值出众，更容易获得好感',modifier:1}:{label:'倾国倾城，万中无一',modifier:2};}
+export function sourceId(value){let h=14695981039346656037n;for(const c of value){h^=BigInt(c.codePointAt(0));h=BigInt.asUintN(64,h*1099511628211n);}return 'fact_'+h.toString(16);}
 export function id(value) { requireRule(typeof value === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(value) && !['__proto__','prototype','constructor'].includes(value), 'INVALID_ID'); return value; }
 export const key = (...args) => JSON.stringify(args);
 export function reward(score) {
@@ -41,12 +46,12 @@ function character(c) {
   return {id:id(c.id), aliases:(c.aliases || []).map(x => text(x,50)).slice(0,20), name, age,
     occupation:text(c.occupation ?? '',100,true), affection:integer(c.affection ?? 20,0,100),
     relationshipLabel:text(c.relationshipLabel || '熟人',12), relationshipNotes:text(c.relationshipNotes ?? '',300,true),
-    ...basicProfile(c),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:c.profileFixed?profile(c.profileFixed):null,profileLocked:false, trackingState:'RECORDED', rewardBaseCents:1000000,
-    withdrawal:null, currentClothes:'',currentPose:'',currentExpression:'', avatarRef:null,portraitRef:null};
+    ...basicProfile(c),beautyScore:integer(c.beautyScore,1,100),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:null,profileLocked:false, trackingState:'RECORDED',
+    currentClothes:'',currentPose:'',currentExpression:'', avatarRef:null,portraitRef:null};
 }
 export function validateDraft(d) {
   requireRule(d && typeof d === 'object', 'INVALID_DRAFT');
-  const user = {id:'USER', name:text(d.name,50),age:integer(d.age,18,120),gender:text(d.gender ?? '',40,true),
+  const user = {id:'USER', name:text(d.name,50),age:integer(d.age,18,120),beautyScore:integer(d.beautyScore,1,100),gender:text(d.gender ?? '',40,true),
     appearance:text(d.appearance ?? '',500,true),body:text(d.body ?? '',500,true),occupation:text(d.occupation ?? '',100,true),background:text(d.background ?? '',1200,true),
     city:text(d.city,100),location:text(d.currentLocation,150),housingMode:text(d.housingMode,30),residenceDescription:text(d.residenceDescription ?? '',600,true),
     workLifeDescription:text(d.workLifeDescription ?? '',600,true),cashCents:integer(d.initialCashCents),initialCashCents:d.initialCashCents,
@@ -56,7 +61,7 @@ export function validateDraft(d) {
     bookValueCents:integer(a.bookValueCents),basisCents:null,status:'OWNED',acquisitionEventId:'INITIAL',acquisitionIsInitial:true,
     locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
   const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,18,120),
-    affection:integer(c.affection,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
+    beautyScore:c.beautyScore===undefined?undefined:integer(c.beautyScore,1,100),affection:integer(c.affection,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
     notes:text(c.notes ?? '',1200,true),present:c.present === true}));
   requireRule(new Set(assets.map(a=>a.assetId)).size === assets.length && new Set(contacts.map(c=>c.id)).size === contacts.length,'DUPLICATE_ID');
   return {user,assets,contacts};
@@ -65,11 +70,11 @@ export function initialize(draft, completedProfiles, initKey, branchKey) {
   const {user,assets,contacts} = validateDraft(draft);
   requireRule(completedProfiles && Object.keys(completedProfiles).length === contacts.length,'PROFILE_INCOMPLETE');
   const chars = {};
-  for (const c of contacts) {const basics=completeBasicProfile({...c,...completedProfiles[c.id]});chars[c.id] = character({...c,...basics,profileFixed:null});}
-  const state = {schemaVersion:2,meta:{initialized:true,initKey:id(initKey),branchKey:text(branchKey,300),revision:0,sourceAnchor:null},user,
+  for (const c of contacts) {const basics=completeBasicProfile({...c,...completedProfiles[c.id]});chars[c.id] = character({...c,...basics,beautyScore:c.beautyScore??completedProfiles[c.id].beautyScore,profileFixed:null});}
+  const state = {schemaVersion:3,meta:{initialized:true,initKey:id(initKey),branchKey:text(branchKey,300),revision:0,sourceAnchor:null},user,
     scene:{sceneId:'initial',location:user.location,timeHint:'故事开始',presentCharacterIds:contacts.filter(c=>c.present).map(c=>c.id),temporaryActors:[],sceneRevision:0},
     characters:chars,identityMap:{},hiddenTemporary:{},finance:{ledger:{},assets:Object.fromEntries(assets.map(a=>[a.assetId,a]))},
-    rewardEvents:{},operationHistory:{},notifications:{},facts:{}};
+    rewardEvents:{},withdrawals:{},recoveries:{},operationHistory:{},notifications:{},facts:{}};
   assertState(state); return state;
 }
 function assetKind(k) { requireRule(['HOUSE','CAR','LUXURY','OTHER'].includes(k),'INVALID_ASSET_KIND');return k; }
@@ -80,40 +85,51 @@ function addLedger(s, entryId, e, anchor) {
   s.finance.ledger[entryId] = {entryId,eventId:e.factId,kind:e.kind,direction:e.direction,amountCents:e.amountCents,
     payerId:e.direction === 'OUT' ? 'USER' : text(e.payer || 'EXTERNAL',100),beneficiaryCharacterId:e.personRef || null,
     allocations:clone(e.allocations || []),assetId:e.asset?.assetId || e.assetId || null,status:'CONFIRMED',refundOf:e.refundOf || null,
+    itemName:text(e.itemName||e.asset?.name||'',120,true),merchantOrPlace:text(e.merchantOrPlace||'',150,true),
     sourceAnchor:clone(anchor),memo:text(e.memo || e.evidence,360),recordedAtScene:s.scene.timeHint,createdRevision:s.meta.revision+1};
 }
 function credit(s,cid,amount,eventId,anchor,type='SPEND_CREDIT',extra={}) {
-  const c=active(s,cid);if (!tracked(c) || c.withdrawal || !amount) return;
+  const c=active(s,cid);if (!tracked(c) || !amount) return;
+  requireRule(!s.rewardEvents[eventId],'DUPLICATE_REWARD');
   s.rewardEvents[eventId] = {eventId,characterId:cid,eventType:type,sourceAnchor:clone(anchor),cashbackCents:amount,
-    valid:true,ruleTableVersion:config.rewardTableVersion,createdRevision:s.meta.revision+1,...extra};
+    refundedCents:0,withdrawalId:null,claimedCents:0,valid:true,ruleTableVersion:config.rewardTableVersion,createdRevision:s.meta.revision+1,...extra};
 }
 export function poolParts(s,cid) {
-  const c=active(s,cid);let spend=0,crit=0;
-  for (const e of Object.values(s.rewardEvents)) if (e.characterId === cid && e.valid) {
-    if (e.eventType === 'SPEND_CREDIT') spend=add(spend,e.cashbackCents);else crit=add(crit,e.cashbackCents);
+  active(s,cid);let spend=0,crit=0;
+  for (const e of Object.values(s.rewardEvents)) if (e.characterId === cid && e.valid && !e.withdrawalId) {
+    const net=e.cashbackCents-e.refundedCents;if (e.eventType === 'SPEND_CREDIT') spend=add(spend,net);else crit=add(crit,net);
   }
-  return {base:c.rewardBaseCents,spend,crit,total:add(c.rewardBaseCents,add(spend,crit))};
+  return {spend,crit,total:add(spend,crit)};
 }
+export function recoveryDue(s,cid){return Object.values(s.recoveries).filter(r=>r.characterId===cid).reduce((n,r)=>add(n,r.amountCents-r.settledCents),0);}
+export function withdrawalQuote(s,cid){const p=poolParts(s,cid),tier=wealthTier(s.user.cashCents),gross=multiply(p.total,tier.multiplier),debt=recoveryDue(s,cid);return {...p,tier,gross,recoveryCents:Math.min(gross,debt),paidCents:Math.max(0,gross-debt),debt};}
 export function totals(s) {
   let assets=0,income=0,expense=0;
   for (const a of Object.values(s.finance.assets)) if (a.ownerId === 'USER' && a.status === 'OWNED') assets=add(assets,a.bookValueCents);
-  for (const e of Object.values(s.finance.ledger)) {if(e.direction==='IN') income=add(income,e.amountCents);else expense=add(expense,e.amountCents);}
+  for (const e of Object.values(s.finance.ledger)) {if(e.direction==='IN') income=add(income,e.amountCents);else if(e.direction==='OUT')expense=add(expense,e.amountCents);}
   return {cash:s.user.cashCents,assets,total:add(s.user.cashCents,assets),income,expense};
 }
 export function assertState(s) {
-  requireRule(s?.schemaVersion === 2 && s.meta.initialized,'INVALID_STATE');
-  integer(s.user.cashCents);integer(s.meta.revision);
+  requireRule(s?.schemaVersion === 3 && s.meta.initialized,'INVALID_STATE');
+  integer(s.user.cashCents);integer(s.user.beautyScore,1,100);integer(s.meta.revision);
   const t=totals(s);requireRule(s.user.cashCents === add(s.user.initialCashCents,add(t.income,-t.expense)),'LEDGER_MISMATCH');
   for (const c of Object.values(s.characters)) {
-    integer(c.affection,0,100);requireRule(c.rewardBaseCents===1000000,'INVALID_BASE');if(c.profileFixed)profile(c.profileFixed);basicProfile(c);
+    integer(c.affection,0,100);integer(c.beautyScore,1,100);if(c.profileFixed)profile(c.profileFixed);basicProfile(c);
     const p=poolParts(s,c.id);integer(p.total);integer(p.spend);integer(p.crit);
-    if(c.withdrawal) requireRule(c.withdrawal.amountCents===p.total,'SEALED_POOL_CHANGED');
   }
+  for(const r of Object.values(s.rewardEvents)){active(s,r.characterId);integer(r.cashbackCents);integer(r.refundedCents,0,r.cashbackCents);integer(r.claimedCents,0,r.cashbackCents);if(r.withdrawalId)requireRule(s.withdrawals[r.withdrawalId]?.allocations[r.eventId]===r.claimedCents,'REWARD_CLAIM_MISMATCH');else requireRule(r.claimedCents===0,'REWARD_CLAIM_MISMATCH');}
+  for(const w of Object.values(s.withdrawals)){
+    let total=0;for(const [rid,amount] of Object.entries(w.allocations)){integer(amount,1);const r=s.rewardEvents[rid];requireRule(r?.characterId===w.characterId&&r.withdrawalId===w.withdrawalId&&r.claimedCents===amount,'REWARD_CLAIM_MISMATCH');total=add(total,amount);}
+    requireRule(total===w.basePoolCents&&add(w.spendCents,w.criticalCents)===total&&w.multiplier===wealthTier(w.preCashCents).multiplier&&multiply(total,w.multiplier)===w.grossCents&&add(w.paidCents,w.recoveryCents)===w.grossCents,'WITHDRAWAL_MISMATCH');
+    requireRule(s.finance.ledger[w.withdrawalId]?.amountCents===w.paidCents,'WITHDRAWAL_LEDGER_MISMATCH');
+    requireRule(Object.values(w.recoveryAllocations).reduce((a,b)=>add(a,integer(b)),0)===w.recoveryCents,'RECOVERY_MISMATCH');
+  }
+  for(const r of Object.values(s.recoveries)){const w=s.withdrawals[r.withdrawalId];integer(r.settledCents,0,r.amountCents);requireRule(w?.characterId===r.characterId&&multiply(r.refundedBaseCents,w.multiplier)===r.amountCents,'RECOVERY_MISMATCH');const settled=Object.values(s.withdrawals).reduce((n,w)=>add(n,w.recoveryAllocations[r.recoveryId]||0),0);requireRule(settled===r.settledCents,'RECOVERY_MISMATCH');}
   return true;
 }
 function markFact(s,e,anchor) {
   const fid=id(e.factId); if (Object.hasOwn(s.facts,fid)) return false;
-  s.facts[fid] = {type:e.type,sourceAnchor:clone(anchor)}; return true;
+  s.facts[fid] = {type:e.type,sourceAnchor:clone(anchor),sourceKey:e.sourceKey}; return true;
 }
 function applyEvent(s,e,eventKey,anchor) {
   const requirePerson = () => active(s,e.personRef);
@@ -152,8 +168,16 @@ function applyEvent(s,e,eventKey,anchor) {
     }
     case 'AFFECTION_CHANGE': {
       const c=requirePerson();if(!tracked(c))return;
-      const delta=integer(e.delta,-100,100);requireRule(Math.abs(delta)<=12 || e.majorTurningPoint===true,'AFFECTION_JUMP');
-      c.affection=integer(c.affection+delta,0,100);return;
+      const delta=integer(e.delta,-100,100),prior=c.affection;
+      if(delta>0)requireRule(e.meaningfulInteraction===true,'AFFECTION_INTERACTION_MISSING');
+      const major=e.majorTurningPoint===true;requireRule(!major||e.evidence.replace(/\s/g,'').length>=12,'TURNING_POINT_EVIDENCE_MISSING');
+      const round=Object.values(s.facts).filter(f=>f.type==='AFFECTION_CHANGE'&&f.personRef===c.id&&key(f.sourceAnchor)===key(anchor));
+      const spent=round.reduce((n,f)=>n+Math.abs(f.finalDelta),0),limit=major||round.some(f=>f.majorTurningPoint)?30:12;
+      requireRule(Math.abs(delta)<=limit,'AFFECTION_JUMP');
+      const adjusted=delta>0?Math.max(0,delta+(prior<70?beautyTier(s.user.beautyScore).modifier:0)):delta;
+      const finalDelta=Math.sign(adjusted)*Math.min(Math.abs(adjusted),Math.max(0,limit-spent));
+      requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');c.affection=Math.max(0,Math.min(100,prior+finalDelta));
+      Object.assign(s.facts[e.factId],{personRef:c.id,baseDelta:delta,finalDelta:c.affection-prior,priorAffection:prior,majorTurningPoint:major});return;
     }
     case 'RELATIONSHIP_CHANGE': {
       const c=requirePerson();if(!tracked(c))return;
@@ -161,7 +185,7 @@ function applyEvent(s,e,eventKey,anchor) {
       c.relationshipNotes=text(e.notes || '',300,true);return;
     }
     case 'CASH_TRANSACTION': {
-      requireRule(e.completed===true,'NOT_COMPLETED');integer(e.amountCents,1);requireRule(['IN','OUT'].includes(e.direction),'INVALID_DIRECTION');
+      requireRule(e.completed===true,'NOT_COMPLETED');requireRule(!/(?:打算|将要|准备|计划|承诺|还没|尚未|未付款|未支付)/.test(e.evidence)||/(?:已经|支付成功|付款成功|付清|退款到账|实际支付)/.test(e.evidence),'PAYMENT_NOT_PROVEN');integer(e.amountCents,1);requireRule(['IN','OUT'].includes(e.direction),'INVALID_DIRECTION');
       const out=['SHOPPING','DINING','TRAVEL','GIFT','TRANSFER_OUT','PROPERTY_PURCHASE','VEHICLE_PURCHASE'];
       const incoming=['SALARY','BUSINESS_INCOME','OTHER_INCOME','TRANSFER_IN','ASSET_SALE'];
       requireRule((e.direction==='OUT'?out:incoming).includes(e.kind),'INVALID_TRANSACTION_KIND');
@@ -197,25 +221,41 @@ function applyEvent(s,e,eventKey,anchor) {
       requireRule(a?.ownerId==='USER'&&a.status==='OWNED','ASSET_NOT_OWNED');active(s,e.personRef);
       requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');a.ownerId=e.personRef;a.status='TRANSFERRED';a.transferEventId=e.factId;
       const basis=a.acquisitionIsInitial?0:integer(a.basisCents??0);
-      credit(s,e.personRef,basis,eventKey,anchor,'SPEND_CREDIT',{relatedAssetId:a.assetId,originalCents:basis});return;
+      addLedger(s,eventKey,{...e,kind:'ASSET_TRANSFER',direction:'NONE',amountCents:0,itemName:a.name,allocations:[{personRef:e.personRef,amountCents:basis}]},anchor);
+      credit(s,e.personRef,basis,eventKey,anchor,'SPEND_CREDIT',{relatedLedgerId:eventKey,relatedAssetId:a.assetId,originalCents:basis});return;
     }
     case 'TRANSACTION_REFUND': {
       integer(e.amountCents,1);requireRule(e.completed===true,'NOT_COMPLETED');
       const original=Object.values(s.finance.ledger).find(l=>l.eventId===e.refundOf&&l.direction==='OUT');requireRule(original,'REFUND_SOURCE_MISSING');
       const returned=Object.values(s.finance.ledger).filter(l=>l.refundOf===e.refundOf).reduce((v,l)=>add(v,l.amountCents),0);
       requireRule(add(returned,e.amountCents)<=original.amountCents,'REFUND_EXCEEDS_PAYMENT');
-      const rewards=Object.values(s.rewardEvents).filter(r=>r.relatedLedgerId===original.entryId);
-      for(const r of rewards)requireRule(!s.characters[r.characterId].withdrawal,'REFUND_AFTER_WITHDRAWAL_REVIEW');
-      if(original.assetId){requireRule(returned===0&&e.amountCents===original.amountCents,'ASSET_PARTIAL_REFUND_REVIEW');
-        const a=s.finance.assets[original.assetId];requireRule(a?.status==='OWNED'&&a.ownerId==='USER','ASSET_RETURN_NOT_OWNED');a.status='RETURNED';a.ownerId='EXTERNAL';}
+      const priorRefunds=Object.values(s.finance.ledger).filter(l=>l.refundOf===e.refundOf);
+      const priorAmount=cid=>priorRefunds.reduce((n,l)=>add(n,l.allocations.find(a=>a.personRef===cid)?.amountCents||0),0);
+      const remaining=original.amountCents-returned;
+      let allocations;
+      if(e.refundAllocations!==undefined){
+        requireRule(Array.isArray(e.refundAllocations),'INVALID_ALLOCATION');const seen=new Set();let total=0;
+        allocations=e.refundAllocations.map(a=>{requireRule(!seen.has(a.personRef),'DUPLICATE_ALLOCATION');seen.add(a.personRef);const old=original.allocations.find(x=>x.personRef===a.personRef);requireRule(old,'INVALID_ALLOCATION');integer(a.amountCents,0,old.amountCents-priorAmount(a.personRef));total=add(total,a.amountCents);return clone(a);});
+        requireRule(total<=e.amountCents,'ALLOCATION_EXCEEDS_COST');
+        const remainingAllocated=original.allocations.reduce((n,a)=>add(n,a.amountCents-priorAmount(a.personRef)),0);
+        requireRule(e.amountCents-total<=remaining-remainingAllocated,'REFUND_ALLOCATION_REQUIRED');
+      }else allocations=original.allocations.map(a=>{const prior=priorAmount(a.personRef);const amount=priorRefunds.some(l=>l.targetedRefund)?Number(BigInt(a.amountCents-prior)*BigInt(e.amountCents)/BigInt(remaining)):Number(BigInt(a.amountCents)*BigInt(returned+e.amountCents)/BigInt(original.amountCents))-prior;return {personRef:a.personRef,amountCents:amount};});
+      let transfer=null;
+      if(original.assetId){const a=s.finance.assets[original.assetId];requireRule(a&&['OWNED','TRANSFERRED'].includes(a.status),'ASSET_RETURN_NOT_OWNED');
+        if(a.status==='TRANSFERRED')requireRule(e.receivedBack===true,'ASSET_RETURN_NOT_OWNED');
+        if(returned+e.amountCents===original.amountCents){requireRule(e.returnedAsset===true,'ASSET_RETURN_CONFIRMATION_REQUIRED');a.status='RETURNED';a.ownerId='EXTERNAL';}
+        a.basisCents=original.amountCents-returned-e.amountCents;a.bookValueCents=Math.min(a.bookValueCents,a.basisCents);
+        transfer=Object.values(s.finance.ledger).find(l=>l.kind==='ASSET_TRANSFER'&&l.assetId===original.assetId);
+      }
+      const rewards=Object.values(s.rewardEvents).filter(r=>r.relatedLedgerId===original.entryId||transfer&&r.relatedLedgerId===transfer.entryId);
       requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');
-      // Cumulative rounding avoids drift when a bill is refunded in multiple pieces.
-      for(const r of rewards){const net=original.amountCents-returned-e.amountCents;
-        r.cashbackCents=Number(BigInt(r.originalCents)*BigInt(net)/BigInt(original.amountCents));}
-      s.user.cashCents=add(s.user.cashCents,e.amountCents);addLedger(s,eventKey,{...e,direction:'IN',kind:'REFUND',payer:'EXTERNAL'},anchor);return;
+      for(const r of rewards){const reduction=r.relatedLedgerId===transfer?.entryId?e.amountCents:(allocations.find(a=>a.personRef===r.characterId)?.amountCents||0);integer(reduction,0,r.cashbackCents-r.refundedCents);r.refundedCents=add(r.refundedCents,reduction);
+        if(r.withdrawalId&&reduction){const w=s.withdrawals[r.withdrawalId],rid=key(eventKey,r.eventId);s.recoveries[rid]={recoveryId:rid,characterId:r.characterId,rewardEventId:r.eventId,withdrawalId:w.withdrawalId,refundLedgerId:eventKey,refundedBaseCents:reduction,amountCents:multiply(reduction,w.multiplier),settledCents:0,sourceAnchor:clone(anchor)};}
+      }
+      s.user.cashCents=add(s.user.cashCents,e.amountCents);addLedger(s,eventKey,{...e,allocations,direction:'IN',kind:'REFUND',payer:'EXTERNAL',assetId:original.assetId},anchor);s.finance.ledger[eventKey].targetedRefund=e.refundAllocations!==undefined||priorRefunds.some(l=>l.targetedRefund);return;
     }
     case 'SIGNIFICANT_BEHAVIOR_SCORE': {
-      const c=requirePerson();if(!tracked(c)||c.withdrawal)return;
+      const c=requirePerson();if(!tracked(c))return;
       requireRule(e.completed===true&&e.consensual===true&&e.independent===true,'BEHAVIOR_NOT_ELIGIBLE');
       integer(e.score,0,100);text(e.action,80);text(e.reason,300);
       if(e.milestone) {id(e.milestone);if(Object.values(s.rewardEvents).some(r=>r.characterId===c.id&&r.milestone===e.milestone))return;}
@@ -229,21 +269,30 @@ function applyEvent(s,e,eventKey,anchor) {
 export function applyEnvelope(state,envelope,anchor,sourceText) {
   requireRule(envelope?.schemaVersion===2 && Array.isArray(envelope.events) && envelope.events.length<=40,'INVALID_ENVELOPE');
   requireRule(anchor?.branchKey===state.meta.branchKey && typeof anchor.fingerprint==='string','STALE_SOURCE');
+  requireRule(envelope.events.filter(e=>e.type==='SIGNIFICANT_BEHAVIOR_SCORE').length<=3,'TOO_MANY_CRITICAL_EVENTS');
   const s=clone(state);const ordinals=new Set();let critical=0;
   for(let i=0;i<envelope.events.length;i++) {
-    const e=envelope.events[i];requireRule(e && typeof e==='object','INVALID_EVENT');
+    const e=normalizeEvent(envelope.events[i],anchor);requireRule(e && typeof e==='object','INVALID_EVENT');
     const ordinal=integer(e.ordinal,0,100);requireRule(!ordinals.has(ordinal),'DUPLICATE_ORDINAL');ordinals.add(ordinal);
     const evidence=text(e.evidence,360);requireRule(hasEvidence(sourceText,evidence),'EVIDENCE_NOT_IN_SOURCE');
     const eventKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,ordinal,e.type,e.personRef || '');
     if(s.operationHistory[eventKey])continue;
     if(e.factId && Object.hasOwn(s.facts,id(e.factId)))continue;
+    if(Object.values(s.facts).some(f=>f.sourceKey===e.sourceKey))continue;
     if(e.type==='SIGNIFICANT_BEHAVIOR_SCORE')requireRule(++critical<=3,'TOO_MANY_CRITICAL_EVENTS');
     applyEvent(s,e,eventKey,anchor);s.operationHistory[eventKey]={type:e.type,status:'COMMITTED',revision:s.meta.revision+1};
   }
   s.meta.revision++;s.meta.sourceAnchor=clone(anchor);assertState(s);return s;
 }
+export function normalizeEvent(value,anchor){
+  requireRule(value&&typeof value==='object','INVALID_EVENT');const e=clone(value);
+  const amount=(obj,field='amount')=>{if(obj[field+'Yuan']!==undefined){const n=cents(obj[field+'Yuan']);requireRule(obj[field+'Cents']===undefined||obj[field+'Cents']===n,'AMBIGUOUS_MONEY');obj[field+'Cents']=n;}};
+  amount(e);for(const a of e.allocations||[])amount(a);for(const a of e.refundAllocations||[])amount(a);if(e.asset)amount(e.asset,'bookValue');
+  e.sourceKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,e.type,e.personRef||'',e.evidence,e.amountCents??e.delta??e.assetId??'');
+  e.factId=e.factId||sourceId(e.sourceKey);return e;
+}
 export function hasEvidence(source,evidence) {
-  if(typeof source!=='string'||typeof evidence!=='string')return false;
+  if(typeof source!=='string'||typeof evidence!=='string'||!evidence.trim())return false;
   if(source.includes(evidence))return true;
   // Ignore layout whitespace only; omitted passages require explicit ellipses and retain order.
   const normalized=source.replace(/\s+/g,''),quote=evidence.replace(/\s+/g,'');
@@ -258,7 +307,7 @@ export function hasEvidence(source,evidence) {
   for(const part of parts){const p=part.trim();if(p.length<6)return false;const at=source.indexOf(p,from);if(at<0)return false;from=at+p.length;}
   return true;
 }
-export function canWithdraw(s,cid) { const c=s.characters[cid];return !!(c&&tracked(c)&&!c.withdrawal&&c.affection>=90); }
+export function canWithdraw(s,cid) { const c=s.characters[cid];return !!(c&&tracked(c)&&c.affection>=90&&poolParts(s,cid).total>0); }
 export function applyOperation(state,op,anchor) {
   id(op.operationId);requireRule(anchor.branchKey===state.meta.branchKey,'STALE_SOURCE');
   if(state.operationHistory[op.operationId])return clone(state);
@@ -271,11 +320,13 @@ export function applyOperation(state,op,anchor) {
   } else {
     const c=active(s,op.personRef);
     if(op.type==='PLAYER_WITHDRAW') {
-      requireRule(canWithdraw(s,c.id),'WITHDRAWAL_LOCKED');const amount=poolParts(s,c.id).total;
-      c.withdrawal={status:'COMMITTED',operationId:op.operationId,amountCents:amount,sourceAnchor:clone(anchor)};
-      s.user.cashCents=add(s.user.cashCents,amount);
-      addLedger(s,op.operationId,{factId:op.operationId,kind:'WITHDRAWAL_REWARD',direction:'IN',amountCents:amount,payer:'TERMINAL',personRef:c.id,memo:c.name+' · 奖池提现'},anchor);
-      result={amountCents:amount,personRef:c.id};
+      requireRule(canWithdraw(s,c.id),'WITHDRAWAL_LOCKED');const q=withdrawalQuote(s,c.id),allocations={},recoveryAllocations={};
+      for(const r of Object.values(s.rewardEvents))if(r.characterId===c.id&&r.valid&&!r.withdrawalId&&r.cashbackCents>r.refundedCents){r.withdrawalId=op.operationId;r.claimedCents=r.cashbackCents-r.refundedCents;allocations[r.eventId]=r.claimedCents;}
+      let recovery=q.recoveryCents;for(const r of Object.values(s.recoveries))if(r.characterId===c.id&&recovery){const amount=Math.min(recovery,r.amountCents-r.settledCents);if(amount){recoveryAllocations[r.recoveryId]=amount;r.settledCents=add(r.settledCents,amount);recovery-=amount;}}
+      const w={withdrawalId:op.operationId,characterId:c.id,status:'COMMITTED',basePoolCents:q.total,spendCents:q.spend,criticalCents:q.crit,preCashCents:s.user.cashCents,tierId:q.tier.id,tierLabel:q.tier.label,multiplier:q.tier.multiplier,grossCents:q.gross,paidCents:q.paidCents,recoveryCents:q.recoveryCents,allocations,recoveryAllocations,sourceAnchor:clone(anchor),recordedAtScene:s.scene.timeHint};
+      s.withdrawals[op.operationId]=w;s.user.cashCents=add(s.user.cashCents,w.paidCents);
+      addLedger(s,op.operationId,{factId:op.operationId,kind:'WITHDRAWAL_REWARD',direction:'IN',amountCents:w.paidCents,payer:'TERMINAL',personRef:c.id,memo:c.name+' · '+w.tierLabel+'提现'},anchor);
+      result={amountCents:w.paidCents,personRef:c.id,withdrawalId:op.operationId};
     } else if(op.type==='PLAYER_BUILD_PROFILE') {
       requireRule(tracked(c)&&!c.profileFixed,'PROFILE_ALREADY_BUILT');c.profileFixed=profile(op.profileFixed);c.profileLocked=false;
     } else if(op.type==='PLAYER_LOCK_PROFILE') {
@@ -300,8 +351,8 @@ export function parseEnvelope(source) {
 export function narrative(source) {return source.replace(/<SH_EVENTS>[\s\S]*?<\/SH_EVENTS>/g,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function projection(s) {
   const people=Object.values(s.characters).map(c=>({id:c.id,name:c.name,aliases:c.aliases,hidden:!tracked(c),
-    ...(tracked(c)&&s.scene.presentCharacterIds.includes(c.id)?{age:c.age,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationship:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})}: {})}));
-  return {schemaVersion:2,revision:s.meta.revision,user:s.user,scene:s.scene,people,
+    ...(tracked(c)&&s.scene.presentCharacterIds.includes(c.id)?{age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,relationship:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})}: {})}));
+  return {schemaVersion:3,revision:s.meta.revision,user:{...s.user,wealthTier:wealthTier(s.user.cashCents)},scene:s.scene,people,
     assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind})),
     recentFacts:Object.keys(s.facts).slice(-60),rule:'只提出新事实，不直接写现金、奖池或提现。已列factId不得再次入账。'};
 }

@@ -37,7 +37,7 @@ const protocol=await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf
 const bodies=[{id:'state-context',title:'当前人物与现场资料',body:await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')},...prose.entries.map(b=>({...b,title:'[mvu_plot] '+b.title})),{id:'protocol',title:'[mvu_update] 原生变量与结算事实协议',body:protocol},{id:'initvar',title:'[InitVar]',body:'{"shenghao":null}',disabled:true},{id:'config',title:'[config_override]',body:JSON.stringify({兼容性:{更新到聊天变量:false}}),disabled:true}];
 const book={name:'神豪终端 · v'+cfg.version,description:'原生MVU/Zod · 当代都市、人物自主、时间日历与专属奖池',scan_depth:2,recursive_scanning:false,
   extensions:{project_id:cfg.id,version:cfg.version,scan_depth:2,recursive_scanning:false},
-  entries:bodies.map((b,i)=>({id:i+1,keys:[],secondary_keys:[],comment:b.title,content:b.body,constant:true,selective:false,enabled:!b.disabled,
+  entries:bodies.map((b,i)=>({id:i+1,keys:b.keys||[],secondary_keys:[],comment:b.title,content:b.body,constant:b.constant!==false,selective:false,enabled:!b.disabled,
     insertion_order:100+i*10,position:'before_char',use_regex:false,
     extensions:{position:b.id==='protocol'?4:0,exclude_recursion:true,prevent_recursion:true,scan_depth:2,depth:b.id==='protocol'?0:4,role:0,probability:100,useProbability:true,stable_id:b.id}}))};
 const schemaBuild=await build({entryPoints:[path.join(root,'src/runtime/schema-entry.js')],bundle:true,write:false,format:'esm',target:'es2022',minify:true});

@@ -11,7 +11,7 @@ for(const k of ['description','personality','scenario','mes_example','system_pro
 must(d.first_mes.includes('<section')||d.first_mes.includes('data-surface="setup"'),'opening carrier');
 must(d.character_book.entries.length>=11,'substantive worldbook');
 must(d.extensions.world===d.character_book.name&&d.character_version===d.character_book.extensions.version,'book version alignment');
-for(const e of d.character_book.entries){if(['[InitVar]','[config_override]'].includes(e.comment)){must(!e.enabled,'native metadata must not enter prompt');JSON.parse(e.content);}else{must(e.content.length>150&&(e.enabled||e.extensions.stable_id==='extra-boundary')&&e.constant,'entry substantive');}must(e.extensions.scan_depth===2&&e.extensions.exclude_recursion&&e.extensions.prevent_recursion,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
+for(const e of d.character_book.entries){if(['[InitVar]','[config_override]'].includes(e.comment)){must(!e.enabled,'native metadata must not enter prompt');JSON.parse(e.content);}else{must(e.content.length>150&&(e.enabled||e.extensions.stable_id==='extra-boundary')&&(e.constant||e.keys.length>0),'entry substantive');}must(e.extensions.scan_depth===2&&e.extensions.exclude_recursion&&e.extensions.prevent_recursion,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
 const scripts=d.extensions.tavern_helper.scripts;
 must(scripts.length===4&&scripts.filter(s=>s.enabled).length===3,'native runtime dependency count');
 must(scripts[0].content.includes('registerMvuSchema')&&scripts[1].enabled&&!scripts[2].enabled,'schema and mutually exclusive regional loaders');

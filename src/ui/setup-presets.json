@@ -187,7 +187,8 @@
       "shoeSizeEu": 37,
       "notes": "一年前在社区街角开了一家独立花店，因为经常去买绿植而逐渐熟络。她平时专注于花艺设计与植物养护，闲暇时喜欢研究草本茶饮和园艺摄影，性格温和但对审美有着自己的坚持。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 76
     },
     {
       "presetId": "design_colleague",
@@ -212,7 +213,8 @@
       "shoeSizeEu": 38,
       "notes": "曾在同一个大型项目组里并肩作战过的合作伙伴，工作上配合默契。她平时专注于品牌视觉与数字艺术创作，私下里是个模型收集爱好者，周末常去逛独立艺术展。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 82
     },
     {
       "presetId": "cafe_neighbor",
@@ -237,7 +239,8 @@
       "shoeSizeEu": 36,
       "notes": "公寓楼下精品咖啡馆的老板，因为经常去买手冲咖啡而成为熟客。她对咖啡豆烘焙有着极高的热情，店里还收留了一只橘猫，平时喜欢收集黑胶唱片和尝试研发新式特调饮品。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 79
     },
     {
       "presetId": "uni_alumni",
@@ -262,7 +265,8 @@
       "shoeSizeEu": 38,
       "notes": "曾在一场高校社团开放活动中相识，之后保持联系。她目前在财经期刊负责深度报道，工作干练，业余喜欢读历史著作、听交响乐。交谈时重视事实，也愿意听不同意见。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 84
     },
     {
       "presetId": "gym_coach",
@@ -287,7 +291,8 @@
       "shoeSizeEu": 39,
       "notes": "附近健身房的金牌私教，在办理健身卡体测时认识。她对待体能训练非常严谨认真，生活作息极其规律，除了日常带课和自我训练外，周末喜欢去郊外进行山地骑行或露营。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 78
     },
     {
       "presetId": "startup_partner",
@@ -312,7 +317,8 @@
       "shoeSizeEu": 37,
       "notes": "在一次青年创业沙龙上结识的朋友，彼此在商业理念上颇为投契，曾一起探讨过小型项目的可行性。她目前正忙于经营一家智能硬件初创企业，平时热爱研究前沿科技数码，偶尔通过打壁球解压。",
       "present": false,
-      "gender": "女"
+      "gender": "女",
+      "beautyScore": 81
     }
   ]
 }
