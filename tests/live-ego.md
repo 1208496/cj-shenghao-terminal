@@ -110,12 +110,34 @@ el.dispatchEvent(new win.Event("change", { bubbles: true }));
 
 ## 踩过的坑（按代价排序）
 
+0. **确认弹窗的按钮是 `<div class="popup-button-ok">`，不是 `<button>`**（2026-11-17 rc.22 实机第一次踩到，代价最大）。按「文本找 button」会一个都点不到，于是「内置世界书 / 内置正则 / 酒馆助手嵌入式脚本」三个确认一直挂着：正则没启用 → 开场 `<div data-cj-opening>` 不会被替换成 iframe → `#TH-message--0--0` 不存在 → 看起来完全像「脚本没有加载」。正确做法：循环点所有可见的 `.popup .popup-button-ok`，直到没有 `.popup`，再检查 `#TH-message--0--0`；仍缺失就调用 `SillyTavern.getContext().reloadCurrentChat()` 重渲染一次。脚本里已封装为 `dismissPopups()`。
+0b. **导入卡不能按名字模糊匹配**：`characterMatch: "神豪"` 会 `pop()` 到最后一张同名旧卡（实测打到了「都市神豪之我爱装逼托马斯版」），后面全在测错卡。改成「记录导入前的卡片 title 集合，导入后取差集」，并用 `data-chid` 打开；重复跑时用 `reuseChid` 直接复用已导入的角色。
+0c. **开局前手机 iframe 的 `#app` 是空的，这是正常现象**：`state` 还是 null 时宿主只创建 74×108 的折叠位，界面要等开局提交、MVU 初始化后才渲染。判据要用「开局后 `#cj-shenghao-phone-frame .phone-screen` 有文本」，不要用「iframe 存在」。
 1. **用户一碰 ego 窗口，控制权就判给用户**，我的指令立刻被暂停，报 `Control of this task space is with the user`。这是硬停止，不能自己抢。恢复要 `takeOverTaskSpace(spaceId)`，且必须用户明确说继续。跑长流程前先跟用户说好别点窗口。
 2. **`#api_button` 是隐藏的 kobold 按钮**（0×0）。点它等于没点，插头一直是感叹号。要按可见文本「连接」找。
 3. **ego 的 `page.screenshot()` 只截视口的约 0.8 倍**，右侧会被裁。手机浮层贴右边缘 4px 且有 `transform: matrix(0.82,…)`，截图里直接被切掉。绕法：临时把 `#cj-shenghao-phone-frame` 设成 `position:fixed; left:20px; top:70px; transform:none; z-index:2147483000`，截完还原原 `style` 属性。CDP `Page.captureScreenshot` + `clip` 更差（坐标是文档坐标、输出还按 DPR 1.25 放大）。
 4. **百度搜索结果页会让该 tab 的截图永久超时**（`EGO_PAGE_UNRESPONSIVE`），原始 CDP 也救不回。换 `task.newPage()` 即恢复；不要在同一个 tab 死磕。
-5. **ego 这个 Chromium 里 jsDelivr 全域 + raw.githubusercontent 都是 `Failed to fetch`**，而台面 `Invoke-WebRequest` 能通、unpkg 与 api.github.com 能通。卡的「固定加载器」每次打开都走 jsDelivr 拉 `dist/terminal.js`，会弹红字「脚本没有下载或启动成功」。实测该红字不阻塞开局与变量界面，但**成因未确认**（代理 / DNS / 拦截规则三者之一）。
+5. **ego 这个 Chromium 里 jsDelivr 全域 + raw.githubusercontent 都是 `Failed to fetch`**，而台面 `Invoke-WebRequest` 能通、unpkg 与 api.github.com 能通。卡的「固定加载器」每次打开都走 jsDelivr 拉 `dist/terminal.js`，会弹红字「脚本没有下载或启动成功」。这是 **ego 环境问题，不是卡的问题**（同一张卡用用户自己的浏览器导入就正常）；实测红字不阻塞开局与变量界面。
 6. `page.events()` 是 async 且返回事件名数组，不是 EventEmitter；`waitForEvent` 只支持 `popup` / `download`，没有 screencast。想抓 console 得先 `page.cdp("egoAutomated.disable")` 再 `Runtime.enable`，且拿不到推送回调。
+
+## rc.22 实机验收记录（2026-11-17）
+
+跑法：先 `scripts/live-test-ego.mjs`（导入链路），再 `scripts/live-test-rc22-resume.mjs`（向导 + 界面断言）。
+
+| 断言 | 结果 | 证据 |
+| --- | --- | --- |
+| 导入 rc.22 整卡 | ✅ | 新增卡 `chid 31`「神豪终端」，标签已导入 |
+| 内置世界书 / 正则 / 嵌入式脚本 | ✅ | 按 `.popup-button-ok` 点掉后 `#TH-message--0--0` srcdoc 171,740 字符 |
+| 开局向导 + 两位初始熟人 | ✅ | 表单出现 `f_c_cupSize` / `f_c_corruption`，四人列表（含卡自带的温迎、沈清弦） |
+| 此刻页双轴 | ✅ | 「♥ 好感 43/100 · ❖ 堕落 2/100」，奖池 **¥5,000**（50 分微光暴击 ×10） |
+| 基础档案 | ✅ | 「称呼你：陆总」「三围 86／62／89 CM（C 罩杯）」 |
+| 她们页 | ✅ | 副标题「平面设计师 · 称呼「陆总」 · ♥ 41 · ❖ 0」，提示语「好感满70或堕落满60即可提现」 |
+| 详情页双数值 + 提现文案 | ✅ | 「♥ 41 好感度 · 朋友与信任」「❖ 0 堕落度 · 矜持自守」「♥ 好感达70 或 ❖ 堕落达60 解锁提现」 |
+| 私密与亲密记录卡 | ✅ | 展开后「处子状态：未知 / 孕期：未孕 / 还没有已解锁的亲密体验」 |
+| ★ 特别关注 | ✅ | 点击后按钮变「★ 已关注」，此刻页出现「★ 特别关注 · 异地实况 (1) · 林知夏 · 近况尚未同步」 |
+| 堕落度实机写入 | ✅ | 一轮对话后 `corruption 0 → 2`，facts 出现 `CORRUPTION_CHANGE finalDelta=2`；`currentThought` 同时写入 |
+
+**未验证**：`physiology` / `intimacy` 在真实亲密剧情推进后的实际落盘（本轮只到试探牵手，没有发生亲密行为）；`★` 打星后模型是否真的每轮更新 `offscreen`（本轮显示「近况尚未同步」）。
 
 ## 已知未验证
 
