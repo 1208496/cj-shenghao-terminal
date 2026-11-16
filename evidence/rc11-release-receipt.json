@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0-rc.11",
+  "coreRef": "e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd",
+  "packageCommit": "0ba9c7b068beaab2a324e538d2ca1c2808954f32",
+  "previousRef": "7195a9ac880de135468d22a10da6fcb28307743f",
+  "fallbackRef": "e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd",
+  "pointerReadBack": "e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd",
+  "off": "",
+  "cdnMatched": true,
+  "coreSha256": "c99ad1b15277fce5c1fd342c76646bcb84aca50107b77f85272ff64c87d2ef9c",
+  "completedAt": "2026-11-16T14:55:34.304Z"
+}

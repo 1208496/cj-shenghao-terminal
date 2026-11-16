@@ -1,0 +1,28 @@
+{
+  "testCharacter": "神豪终端 rc11 正式发布验收",
+  "loader": {
+    "runningRef": "e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd",
+    "version": "2.0.0-rc.11",
+    "fallback": false,
+    "pointerAvailable": true,
+    "off": ""
+  },
+  "version": "2.0.0-rc.11",
+  "nativeReady": true,
+  "busy": false,
+  "diagnostics": [],
+  "formCount": 1,
+  "formFields": 6,
+  "blankName": true,
+  "nextEnabled": true,
+  "messageCount": 1,
+  "noInitializedState": true,
+  "firstMessageMatches": true,
+  "regexMatches": true,
+  "scriptsMatch": true,
+  "promptClean": true,
+  "versions": {
+    "tavern": "1.19.0",
+    "helper": "4.12.0"
+  }
+}
