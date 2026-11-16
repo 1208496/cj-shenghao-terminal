@@ -6,7 +6,45 @@
 
 <!-- SHZD-HANDOFF-BEGIN PH-20261117-SHZD-01 -->
 
-## 实机测试链路打通（2026-11-17 · 当前最新）
+## rc.21 女性人物信息整合（2026-11-17 · 当前最新）
+
+### 本次做了什么
+
+按《女性人物信息整合升级方案》（桌面 `cak/female_character_integration_plan.md`）在 `E:\SHZDCHOSSS` 落地，全程遵守「去重原则」：没有新建第二套同义容器，也没有搬 V4.0 拍片模拟器的行业字段（分成、报价、三闸门授权、平台账号、下海动机、曝光风险等一律未引入）。
+
+1. `src/runtime/schema.js`：`character` 增 `cupSize / addressing / impression / starred / currentThought / arousal / offscreen / physiology{cycle,pregnancy,virgin,traits} / intimacy{attitude,experience,fetishes,unlockedTags,withUserCount,lastIntimate}`。子对象用 `z.prefault({})`（Zod 4 的 `.default({})` 不会解析内部默认值，只会返回空对象）；`unlockedTags` 用 `preprocess` 兼容「数组 / 顿号逗号斜杠分隔的字符串」；`arousal` 0–100 截断取整。
+2. `src/runtime/settlement.js`：
+   - **吞人物 BUG 已修**：新人物只要求 `id` + `name`。去掉 `firstContactEvidence` 逐字原文死校验与 `completeBasicProfile` 的整人生删；缺失或越界的单项身体数据逐字段丢弃、其余保留，人物照常入场并进入 `pendingBasicProfiles` 等下一轮补齐。只有身份不可用（无名）才拒绝。
+   - `starred` 进只读保护列表（`proposed.starred = prior.starred`），只由玩家点击切换。
+   - `acceptFields` 改为「模型没提到这个字段 = 保留原值」，避免整条人物被重写时清空 `physiology/intimacy`。
+   - `prepareModelCommand` 路径上限 4 → 5，支持 `/characters/<id>/physiology/cycle`、`/intimacy/unlockedTags`；写整段子对象时与旧值合并再 `safeParse`，不会连带清空兄弟字段。
+3. `src/core/engine.js`：`PROFILE_LABELS` 换成含籍贯学历、双面性格、私密特征、短期目标、择偶偏好的九项；`basicProfile` 放行 `cupSize`；新增玩家操作 `PLAYER_STAR`（切换 ★）；`PLAYER_BUILD_PROFILE` 可用生成的摘要给空的 `physiology/intimacy` 播种（已有内容优先）；`projection` 分三档——在场（含 cupSize/addressing/impression/currentThought/arousal/physiology/intimacy/未锁档案）、打星离场（只发 id/name/别名/关系/好感/starred/offscreen）、普通离场（原极简索引）。
+4. `src/runtime/host.js`：`generateProfile` 提示词按九项新内涵重写，并额外取 `physiology.traits` 与 `intimacy.{attitude,experience,fetishes}` 摘要；`buildProfile` 把摘要随建档操作一起提交（原逐字事实校验保留）。
+5. `src/content/protocol.txt`（21 行）：第 5 行补 `currentClothes` 材质内搭、`currentThought`、`arousal`、打星人物 `offscreen`；第 7 行补 `cupSize/addressing/impression`；新增 1 行生理与亲密记录的增量写路径。
+6. `src/content/literary.json`：`people` 与世界书 `private-life` 各并入约 150 字「活人感 + 双面性格/做派」，条目数仍是 27。
+7. 手机界面：`screens.js` 此刻页加 `💭 心声`、`🌡️ 情动`（>0 才显示）、底部「★ 特别关注 · 异地实况」折叠栏；她们页加 ★ 与「称呼「xx」」；人物详情加 `☆ 特别关注 / ★ 已关注` 开关、基础档案补罩杯/称呼/对你的印象、并在「人物档案」与「九大档案」之间加折叠卡「私密与亲密记录」（生理实况、亲密档案、已解锁体验标签云）。`app.js` 接 `data-star`，开局熟人表单补 `罩杯 / 对你的称呼` 两个选填项；`style.css` 加对应样式；`setup-options.js` 预设值与下拉选项同步。
+
+### 实际验证（有效）
+
+- `npm test`：**263 / 263 通过**（原 256 + 新增 `tests/female-records.test.mjs` 7 条；`tests/native-mvu.test.mjs` 的「缺原文即删人物」旧断言按新规则改写为「保留人物并进入待补」）。
+- `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.21-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
+- 正式发版（非 checkpoint）：`BUILD_OK dist/2.0.0-rc.21/` + `CHECK_OK`，成品 `dist/2.0.0-rc.21/神豪终端.json`。
+- 成品抽查：世界书 31 条（27 条正文 + state-context / protocol / InitVar / config_override）；`protocol` 条目 22 行且含 `physiology`、`currentThought`；`people` 含「活人与双面」；schema 脚本含 `prefault / cupSize / unlockedTags`；界面脚本（esbuild 转义形式）含 `私密与亲密记录`、`基础身份与学历籍贯`、`称呼你`、`★ 已关注`、`异地实况`、`\u{1F4AD} 心声`。
+- 版本：`project.json` / `package.json` / `package-lock.json` 同步 `2.0.0-rc.21`，`cardContractRevision` 16 → **17**；`worldbookHash = 9cbac7f8134d…`（旧版是 `ce3c787a…`）。
+- 发版七步已走完：SHA_A `355cca8`（源码 + rc.21 验收卡）→ `fallbackRef` 指向 SHA_A → 正式构建 → SHA_B `3192ee2` → Supabase 指针 `cj_shenghao_terminal_v2_ref = 3192ee264ee223539efcd116bfb45ca840786563`（`off` 保持空）→ `node scripts/verify-release.mjs` 输出 `E2E_OK`：世界书契约 `9cbac7f8…` 两边一致，三个 CDN 节点均 241,897 字节且 sha256 与元数据一致。
+
+### 关键影响（要看懂这条）
+
+- **世界书/结构变了，所以老玩家的固定加载器会拒绝新本体**并提示导入新版整卡——这是设计内行为，不是故障。要吃到 rc.21 必须重新导入 `dist/2.0.0-rc.21/神豪终端.json`；只切指针拿不到新世界书。
+- 数据模型加字段走的是「有默认值」路线，旧楼层变量仍能 `parse` 通过；但按 `AGENTS.md` 的规则，**未发行阶段不为旧存档做迁移层**。
+
+### 未验证 / 未做
+
+- 真实 SillyTavern 里的导入、建档生成效果、`★` 开关与私密卡片的实际渲染：**未验证**（本轮全部是源码、单测、产物与 CDN 层证据）。
+- 额外模型解析（extra）模式下 pathology/intimacy 二级路径的实际落盘：**未验证**（只做了 host 回调与 `prepareModelCommand` 的单测级验证）。
+- `src/content/state-context.txt` 未改：它描述的仍是「离场只保留极简身份索引」，与新的「打星离场发一句 offscreen」相比措辞偏旧但不算错，本轮按最小改动没动。
+
+## 实机测试链路打通（2026-11-17 · 历史记录，已被上方 rc.21 接续）
 
 ### 本次做了什么
 
