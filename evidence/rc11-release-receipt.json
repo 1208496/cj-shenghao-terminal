@@ -8,5 +8,12 @@
   "off": "",
   "cdnMatched": true,
   "coreSha256": "c99ad1b15277fce5c1fd342c76646bcb84aca50107b77f85272ff64c87d2ef9c",
-  "completedAt": "2026-11-16T14:55:34.304Z"
+  "completedAt": "2026-11-16T14:55:34.304Z",
+  "cardSha256": "417080e7aef33e13d907669feb1f2487ec5927669c70c538ce729b9c08f82f3a",
+  "ci": {
+    "runId": 43890470482,
+    "conclusion": "success",
+    "url": "https://github.com/1208496/cj-shenghao-terminal/actions/runs/43890470482"
+  },
+  "releaseRecovery": "release.ps1 completed test/build/CDN/two pushes, then transport EOF before pointer write. Rechecked CDN and previous pointer; resumed only pointer phase with Node --use-env-proxy. Public read-back matched."
 }

@@ -1,14 +1,21 @@
 # 固定加载器与版本指针
 
-## 当前作者测试发布：rc.9（2026-11-16）
+## 当前作者测试发布：rc.11（2026-11-16）
+
+本体/ref/fallback=e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd，整卡提交=0ba9c7b068beaab2a324e538d2ca1c2808954f32，off为空。226项测试、CDN逐字核对、正式build/check、GitHub Actions均通过。正式整卡 dist/2.0.0-rc.11/神豪终端.json，SHA256 417080e7aef33e13d907669feb1f2487ec5927669c70c538ce729b9c08f82f3a。真实酒馆加载线上ref且fallback=false，表单可用、依赖就绪、busy=false。包含rc.10云澜扩写与资产描述、rc.11开局本地先显示/短载体/忙碌锁修复；须重导新整卡。详见[回执](../evidence/rc11-release-receipt.json)与[实机](../evidence/rc11-release-runtime.json)。这是作者测试，不是向玩家发行。
+
+发布脚本最后读取指针时遇到传输EOF，发生在写操作之前；经现有环境代理重新核对CDN及旧ref后，仅补做指针切换与公开回读成功。Node访问该环境网络需 --use-env-proxy。不输出或入库服务密钥。
+
+
+## 历史作者测试发布：rc.9（2026-11-16）
 
 ref/fallback为 `7195a9ac880de135468d22a10da6fcb28307743f`，整卡提交 `b232a6abbf639c44e8401a1c408c858f1e482699`。215项自动检查、正式构建/check及CDN核对通过，公开ref回读一致、off为空。正式整卡 `dist/2.0.0-rc.9/神豪终端.json`。已在全新验收角色确认加载线上ref且fallback=false。用户随后暂停全功能测试，要求扩写中型云澜世界书；新rc.10源码尚未发布。此发布仍是作者测试，不是向玩家发行。以下发布段落为历史。
 
-## 当前作者测试发布：rc.8（2026-11-16）
+## 历史作者测试发布：rc.8（2026-11-16）
 
 最新ref与fallback均为 `62bbd3ab84f952d2e46c9a3739692d463b411862`，整卡提交 `36f22c76b06208995f0fb75336d24c2c52b11580`，off为空。162项检查及CDN核对通过。使用 `dist/2.0.0-rc.8/神豪终端.json` 测试新的开局界面；这不代表已向玩家发行。详见 [rc.8回执](../evidence/rc8-github-test-release.md)。下面版本均为历史。
 
-## 当前作者测试发布：rc.7（2026-11-16）
+## 历史作者测试发布：rc.7（2026-11-16）
 
 用户明确要求推送GitHub并更换指针以便自己测试，**这不等于向玩家正式发行**。本体/测试ref/fallback均为 `d83b4055f10e43e133e12275bc640e3d00c438e6`；整卡提交 `3665d61e2b2bdbf42f80c93ea47a500bb3edfea6`，off为空。160项测试、CDN逐字核对、正式整卡构建/check和公开指针读取通过。使用 `dist/2.0.0-rc.7/神豪终端.json`，具体证据见 [rc.7测试发布](../evidence/rc7-github-test-release.md)。只有用户明确已向玩家发行才考虑旧字段/存档兼容，规则见根AGENTS.md。下方rc.6内容保留为历史配置与流程说明。
 
@@ -44,7 +51,7 @@ release/loader.config.json已填写URL、公开publishable键和fallback。公�
 pwsh -NoProfile -File scripts/release.ps1 -Message "改动说明"
 ```
 
-流程：公开配置/remote/分支校验→当前149项检查→core构建/语法→提交/push→CDN本体和元数据逐字比对→保底兼容检查→完整卡构建/check→整卡提交/push→最后写ref并回读。
+流程：公开配置/remote/分支校验→当前测试套件→core构建/语法→提交/push→CDN本体和元数据逐字比对→保底兼容检查→完整卡构建/check→整卡提交/push→最后写ref并回读。
 
 首次Bootstrap已完成，通常不再传-Bootstrap。检查/stage/diff/commit/push/CDN失败均不切指针；写入后的回读失败要先查服务器状态，不能假定指针没动。常规发版不自动清off。GitHub Actions取完整历史以核对fallback；初始无fallback的core提交仅做core gate，整卡提交做完整gate。
 

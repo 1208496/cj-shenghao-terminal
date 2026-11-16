@@ -3,7 +3,7 @@
 维护约定：每次项目任务或可验收阶段结束前主动更新本文件，不等用户提醒；规则已写入根AGENTS.md。以顶部当前状态为准，后续版本段落为历史。
 
 <!-- SH-HANDOFF-BEGIN PH-20261116-rc11-loading -->
-## 当前交接：rc.11开局加载修复已验证，正在按用户授权发布
+## 当前交接：rc.11已推送GitHub、切换作者测试指针并核验
 
 2026-11-16（Asia/Shanghai），E:\CJBAOJISHENHAOZD。用户要求参考桌面V1.2.26.png修复开局卡顿，随后明确要求“推送GITHUB切换指针”。本轮发布授权包含验证、构建、GitHub推送、CDN核对与作者测试指针；不代表向玩家发行。没有创建新聊天。
 
@@ -12,8 +12,11 @@
 - 本地候选 dist/2.0.0-rc.11-checkpoint/神豪终端.json，SHA256 d41afe6c45df85ea861cb494892bacbd92bcaeb76423ca7dd5e1c3353082ff7f。rc.10候选保留，未覆盖。
 - 226项测试通过，checkpoint build/check通过；真实ST1.19.0/助手4.12.0：无主程序可填写三步及预览、未就绪禁止提交、草稿恢复、依赖就绪允许提交、parseMessage结束释放busy且无楼层写入、焦点选区保持、提示词清理通过。证据 evidence/rc11-opening-loading.md及同前缀JSON。不能据此称全功能验收完成。
 - EGO空间3、p1，独立角色「神豪终端 rc11 加载修复」，仅1条开局消息，无正式游戏初始化。表单草稿为合成验收数据。已恢复旧临时模型pg-gemini-4-hydrogen-low，旧fetch包装移除；旧4A正文请求结果仍未知。
-- 发布前Git为main，HEAD=b232a6abbf639c44e8401a1c408c858f1e482699；rc.10与本轮修改未提交。线上最后已核验仍rc.9/ref7195a9a；下面发布回执将以实际执行结果补充，不提前记成功。
-- 正在执行：scripts/release.ps1。下一步核对正式整卡/CDN/ref，记录真实提交和SHA；发布后提醒重新导入rc.11整卡（开场白、正则、世界书均变化，旧卡只切指针不足以更新）。全功能、移动端、低速公网及真实模型验收缺口沿用，不扩写成通过。
+- 发布完成：本体/ref/fallback=e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd，正式整卡提交=0ba9c7b068beaab2a324e538d2ca1c2808954f32。GitHub Actions运行43890470482成功；226项测试、正式build/check、CDN逐字核对通过；公开指针回读一致，off为空。发布脚本在最后读取旧指针时遇到传输EOF，未写指针；使用现有代理重核CDN后单独完成指针阶段，未重复提交本体。回执 evidence/rc11-release-receipt.json。
+- 最新正式卡：dist/2.0.0-rc.11/神豪终端.json，SHA256 417080e7aef33e13d907669feb1f2487ec5927669c70c538ce729b9c08f82f3a。用户随后要求“把最新卡给我”，应交付此文件，不交checkpoint。开场白、正则、世界书变动，需要重导整卡；旧卡只切指针不足以获得本轮全部变更。
+- 正式包新鲜导入独立角色「神豪终端 rc11 正式发布验收」，脚本/正则/实际开局消息与正式成品一致；线上加载ref=e2f4058112cc29c4b547e8cc44a3d5501b6f0ddd、fallback=false、pointerAvailable=true、nativeReady=true、busy=false、无诊断，只有1条消息且未初始化。证据 evidence/rc11-release-runtime.json。截图local/rc11-release-opening.png中蓝色提示是切指针前首次加载旧ref产生的旧toast，不代表最终加载状态，实际inspect结果以上述JSON为准。
+- EGO已finish并保留酒馆结果页供用户测试，空间3已交回用户，旧p1标签不再有效；后续继续时按EGO指南claim/adopt。临时对象随之前整页刷新移除，没有后台生成任务。
+- 后续：用户用正式rc.11新整卡测试开局体验；原rc.10全功能矩阵、移动端、低速公网与真实模型验证缺口仍在，不据开局专项和自动测试记为全部功能通过。发布回执、README及本节随文档提交同步；不改变本体/ref指向。
 
 <!-- SH-HANDOFF-END PH-20261116-rc11-loading -->
 
