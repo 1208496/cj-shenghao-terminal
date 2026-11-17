@@ -44,8 +44,15 @@
 - `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.25-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
 - 成品抽查：世界书 31 条、`version=2.0.0-rc.25`、`protocol` 21 行（含 `HOUSE|CAR|BUSINESS|YACHT_JET|LUXURY|COLLECTIBLE|OTHER` 与「20至45字内」）、`score`/`private-life` 与方案逐字一致且 `constant:true`、`worldbookHash` `8fb6afbd…`。
 
-### 未验证 / 未做
+### 发布状态（2026-11-17 23:37，七步已走完）
 
+- SHA_A `38607e64ea6fa9f86bdfe9d0a7c7f8e567251412`（源码 + 两个 checkpoint）→ `release/loader.config.json` 的 `fallbackRef` 改指它 → 非 checkpoint 构建 `BUILD_OK dist/2.0.0-rc.25/` + `CHECK_OK` → SHA_B `b265ed90e284f064198b8394488f7375115031b4`。
+- Supabase 指针 `cj_shenghao_terminal_v2_ref = b265ed90e284f064198b8394488f7375115031b4`，`off` 保持空。
+- `node scripts/verify-release.mjs` → **`E2E_OK`**：元数据 `2.0.0-rc.25`、sha256 `17c7a7be0602…`；世界书契约 `8fb6afbd5b08…` 两边一致；测试 cf / fastly / cdn 三节点均 278,273 字节且 sha256 匹配。
+- 交付整卡：`dist/2.0.0-rc.25/神豪终端.json`；运行本体 `dist/terminal.js`。
+- rc.24 当时未单独发版（源码未提交），本次一并发出：玩家这次吃到的世界书/结构变化同时包含 rc.24 与 rc.25，**必须重新导入整卡**，只切指针拿不到新世界书。
+
+### 未验证 / 未做（rc.25）
 - 真实 SillyTavern 实机：**未跑**。三轴行、2×2 方块点击、财富双行大字号、七类胶囊、资产卡片在 320px 窄容器与暗紫主题下的观感都只有离线渲染证据。
 - 播种人体档案的实际叙事效果（模型是否照着 `chestDetail`/`vaginaLook` 写）未实机确认。
 - 证据兜底在真实模型「概括式 evidence」下的漏单率未压测；兜底句取正文首句，若首句是纯环境描写会记录成偏弱的证据。
