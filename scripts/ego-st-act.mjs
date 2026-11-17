@@ -19,6 +19,7 @@ import * as L from "./ego-st-lib.mjs";
 await L.run("通用动作执行", async () => {
   const cfg = L.loadConfig();
   L.setExtraPopupRules(cfg.extraPopupRules);
+  L.setPromptHistoryExclude(cfg.promptHistoryExclude);
   const st = L.loadState();
   const raw = L.readJson(L.ACTION_FILE, null);
   if (!raw) L.fail("读动作", `先写 ${L.ACTION_FILE}`);

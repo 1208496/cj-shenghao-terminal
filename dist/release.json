@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.25",
+  "version": "2.0.0-rc.29",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "8fb6afbd5b08dc23f27aa8573cc7f2a6577d6b643ce54922990228d7f252337e",
-  "sha256": "17c7a7be0602fbd1131731c61ad3274e0ef29a4d9fc0183ce4923482172fc753",
-  "notes": "rc.25：女性私密肉体档案确定性播种（胸型乳晕/下体户型色泽/紧致湿润/阴毛/后庭/体香敏感带）、此刻与详情四方块重构、我的财富与持有资产大字号双栏与七大分类（50字描述）、rc.24 四项实战 Bug 全修复（资产事件归并入账/卖画转其他收入/证据首句兜底/开局穿搭/亲密回合禁倒扣）。"
+  "worldbookHash": "7636de8741cd5aec1fac51ac5167e998dd60712f08e19f00bbf6cda6d45b747b",
+  "sha256": "a792e0c3d6b03ef135678f33e3f57ad1fcd8c50bcbb0c1cd0bb0eba0cce82060",
+  "notes": "rc.29：修掉三处实机隐患——提现、建档、日程这类界面操作不再随删楼或换分支静默消失（聊天级操作日志+自动重放，奖池不再成立时退回原池并提示）；任何 OUT 支出一律按玩家现金实扣，借公司公账/财务走账名义免扣或超额的付款会被结算拦下；建档会显示读秒与中止按钮，失败时在弹窗里说明原因，模型漏写姓名年龄三围等硬事实改由脚本补齐。"
 }

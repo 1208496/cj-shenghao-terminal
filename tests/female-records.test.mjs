@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {z} from 'zod';
 import {createSchema} from '../src/runtime/schema.js';
 import {completeInitialState,settleNative,prepareModelCommand} from '../src/runtime/settlement.js';
-import {clone,projection,applyOperation,PROFILE_LABELS,profile,corruptionStage,canWithdraw,poolParts,computeCycle,reward,wealthTier,withdrawalQuote,applyEnvelope,prowessTier} from '../src/core/engine.js';
+import {clone,projection,applyOperation,PROFILE_LABELS,profile,corruptionStage,canWithdraw,poolParts,computeCycle,reward,wealthTier,withdrawalQuote,applyEnvelope,prowessTier,seedAnatomy} from '../src/core/engine.js';
 import {contactPresets} from '../src/ui/setup-options.js';
 import {createScreens} from '../src/ui/screens.js';
 import {fresh,contact,anchor,profiles,payment,score,event,envelope,source,inRange} from './fixtures.mjs';
@@ -11,6 +11,8 @@ const schemas=createSchema(z);
 const initial=()=>schemas.state.parse(completeInitialState(fresh({contacts:[contact(),contact('char_b',{present:false})]}),{startDate:'2026-01-05',startTime:'09:00'}));
 const star=(s,personRef='char_b')=>applyOperation(s,{type:'PLAYER_STAR',operationId:crypto.randomUUID(),personRef,expectedRevision:s.meta.revision},anchor());
 const screensFor=state=>{const ctx={view:{state,prefs:{},busy:false},expanded:new Set(),section:null,privateSection:null,consumptionPage:0,sceneSectionByChar:new Map()};const screens=createScreens({data:()=>ctx,esc:v=>String(v??''),yuan:v=>'¥'+v/100,image:()=>'',avatar:()=>''});return {ctx,screens};};
+// rc.27 起面板改成「左键右值」的 span 结构，断言比较渲染后的纯文本。
+const flat=html=>html.replace(/<[^>]*>/g,'');
 
 test('light private fields default on both the schema and engine-built records',()=>{
   const legacy=schemas.character.parse({id:'char_x',name:'沈知夏',age:27,beautyScore:72,affection:30,relationshipLabel:'客户'});
@@ -21,7 +23,8 @@ test('light private fields default on both the schema and engine-built records',
   assert.deepEqual(legacy.intimacy,{attitude:'',abilityComment:'',partnersCount:0,sexPartnerCount:0,firstTime:'',experience:'',fetishes:'',unlockedTags:[],withUserCount:0,lastIntimate:'',lastMasturbation:''});
   assert.deepEqual(legacy.limits,{scaleLevel:0,weakness:'',worry:'',exposure:0,foreplay:0,intercourse:0,cosplay:0,creampie:0,anal:0,publicPlay:0,multi:0});
   const built=fresh().characters.char_a;
-  assert.equal(built.cupSize,'');assert.equal(built.starred,false);assert.equal(built.arousal,0);assert.deepEqual(built.intimacy.unlockedTags,[]);
+  assert.equal(built.cupSize,'C'); // rc.27：86 上胸 −（62 腰 + 8.5 + (168−160)×0.15 ≈ 71.7）≈ 14.3 ➔ C 罩杯
+  assert.equal(built.starred,false);assert.equal(built.arousal,0);assert.deepEqual(built.intimacy.unlockedTags,[]);
 });
 
 test('arousal clamps to 0–100 and unlockedTags accepts a delimited string or an array',()=>{
@@ -63,7 +66,8 @@ test('starred is player-owned: a model proposal cannot flip it, and new people s
   const person=kept.state.characters.char_c;
   assert(person,'a new person is kept even without a verbatim quote or valid body numbers');
   assert.equal(person.name,'林听白');assert.equal(person.heightCm,null);
-  assert.equal(person.cupSize,'');assert.equal(person.starred,false);
+  assert.equal(person.cupSize,seedAnatomy({id:'char_c',name:'林听白'}).cupSize,'没有三围时按 ID 哈希给杯型，同一人每次一致');
+  assert(['B','C','C','D','D','E','F'].includes(person.cupSize));assert.equal(person.starred,false);
   assert(!kept.diagnostics.some(d=>['CONTACT_NOT_CONFIRMED','PROFILE_INCOMPLETE'].includes(d.code)));
   assert(projection(kept.state).pendingBasicProfiles.some(p=>p.id==='char_c'&&p.missing.includes('heightCm')));
 
@@ -140,15 +144,15 @@ test('the phone renders three axes, click blocks, star switch, off-stage line an
   assert(!detail0.includes('这些记录来自实际接触')&&!detail0.includes('档案供你查阅'));
   assert(!detail0.includes('阴部户型与色泽'));
   ctx.privateSection=0;
-  assert(screens.detail(s.characters.char_a).includes('对你的印象：觉得你比传闻里好相处'));
+  assert(flat(screens.detail(s.characters.char_a)).includes('对你的印象：觉得你比传闻里好相处'));
   ctx.privateSection=1;
-  const flesh=screens.detail(s.characters.char_a);
-  assert(flesh.includes('生理周期：安全期'));assert(flesh.includes('处子状态：非处女'));assert(flesh.includes('阴部户型与色泽：饱满馒头穴'));assert(flesh.includes('敏感带详情：耳后敏感'));
+  const flesh=screens.detail(s.characters.char_a),fleshText=flat(flesh);
+  assert(fleshText.includes('生理周期：安全期'));assert(fleshText.includes('处子状态：非处女'));assert(fleshText.includes('阴部户型与色泽：饱满馒头穴'));assert(fleshText.includes('敏感带详情：耳后敏感'));
   ctx.privateSection=2;
-  const outfitPanel=screens.detail(s.characters.char_a);
+  const outfitPanel=flat(screens.detail(s.characters.char_a));
   assert(outfitPanel.includes('穿搭风格：极简通勤'));assert(outfitPanel.includes('上装：白色真丝衬衫'));assert(outfitPanel.includes('袜子／丝袜：薄款黑丝'));assert(outfitPanel.includes('鞋履：细高跟'));
   ctx.privateSection=3;
-  const expPanel=screens.detail(s.characters.char_a);
+  const expPanel=flat(screens.detail(s.characters.char_a));
   assert(expPanel.includes('性观念：外冷内热'));assert(expPanel.includes('与你亲密次数：2'));assert(expPanel.includes('最近一次性行为：2026-01-05 · 玄关'));
   assert(expPanel.includes('拥抱')&&expPanel.includes('留宿'));
   assert(expPanel.includes('当前开放档位：L'));assert(expPanel.includes('手口侍奉：'));assert(expPanel.includes('多人同欢：'));
@@ -360,7 +364,7 @@ test('rc.25 开局就有默认穿搭，outfit 与 currentClothes 双向补齐，
   const filled=settleNative(b,e,anchor(),'本轮正文',schemas).state.characters.char_a;
   assert(filled.outfit.top.length>0);assert.equal(filled.currentClothes,filled.outfit.top);
   const d=clone(b);d.characters.char_a.arousal=52;
-  assert.equal(settleNative(b,d,anchor(),'本轮正文',schemas).state.characters.char_a.outfit.complexion,'雙頰緋紅，眼波含春，呼吸微促');
+  assert.equal(settleNative(b,d,anchor(),'本轮正文',schemas).state.characters.char_a.outfit.complexion,'双颊绯红，眼波含春，呼吸微促');
 });
 test('rc.24 the first real night backfills private state and his review',()=>{
   const b=schemas.state.parse(completeInitialState(fresh({prowessScore:90}),{startDate:'2026-01-05',startTime:'09:00'}));

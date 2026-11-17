@@ -220,7 +220,7 @@ function syncOutfit(c){
   const parts=[o.top,o.bottom,o.socks,o.shoes].filter(v=>typeof v==='string'&&v.trim());
   if(clothes&&!o.top)o.top=clothes.slice(0,200);
   if(!c.currentClothes&&parts.length)c.currentClothes=parts.join('；').slice(0,300);
-  if(Number(c.arousal)>=50&&!o.complexion)o.complexion='雙頰緋紅，眼波含春，呼吸微促';
+  if(Number(c.arousal)>=50&&!o.complexion)o.complexion='双颊绯红，眼波含春，呼吸微促';
 }
 // Level and the eight limits are derived, never asked of the model: openness
 // follows whichever axis moved further, and unlocked tags jump straight to 3.
@@ -267,19 +267,49 @@ function newCharacter(cid,value,schemas){
   return parsed.success?parsed.data:null;
 }
 
-// Drop malformed existing-character fields before the native Zod command handler
-// can reject them with a player-facing popup. Settlement still owns protected data.
+// Drop or normalize malformed character commands before the native Zod command
+// handler can reject them with a player-facing red toast.
 export function prepareModelCommand(command,before,schemas){
   const parts=commandPath(command).split('.');
-  if(parts[0]!=='shenghao'||parts[1]!=='characters'||!before?.characters[parts[2]])return true;
-  if(command.type!=='set'||parts.length<3)return true;
-  const prior=before.characters[parts[2]];
-  // Four levels reach a character field, five reach physiology.* / intimacy.*.
+  if(parts[0]!=='shenghao'||parts[1]!=='characters')return true;
+  // Case 0: insert on /shenghao/characters with [path, key, value]
+  if(parts.length===2&&command.type==='insert'&&command.args?.length>=3){
+    const cid=String(command.args[1]??'').trim().replace(/^['"`]|['"`]$/g,'');
+    const raw=command.args.at(-1);
+    let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return false;}
+    if(!cid||!value||typeof value!=='object'||Array.isArray(value))return false;
+    const merged=before?.characters?.[cid]
+      ?acceptFields(value,before.characters[cid],schemas.character,'characters.'+cid,[])
+      :newCharacter(cid,value,schemas);
+    if(!merged)return false;
+    command.type='set';
+    command.args=['shenghao.characters.'+cid,JSON.stringify(merged)];
+    return true;
+  }
+  if(parts.length<3)return true;
+  const prior=before?.characters?.[parts[2]];
+  const raw=command.args.at(-1);
+  let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return false;}
+  // Case 1: brand-new character written at /shenghao/characters/<cid>.
+  if(!prior){
+    if(parts.length!==3||!value||typeof value!=='object'||Array.isArray(value))return false;
+    const created=newCharacter(parts[2],value,schemas);
+    if(!created){console.log('[神豪终端] 新人物缺少必要身份字段，已忽略',parts[2]);return false;}
+    command.type='set';
+    command.args[command.args.length-1]=JSON.stringify(created);
+    return true;
+  }
+  // Case 2: existing character — normalize an accidental add/insert into set.
+  if(['add','insert'].includes(command.type))command.type='set';
+  if(command.type!=='set')return true;
+  // Four levels reach a character field, five reach physiology.* / intimacy.* / outfit.* / limits.*.
   if(parts.length>5)return false;
-  const raw=command.args.at(-1),value=typeof raw==='string'?JSON.parse(raw):raw;
   const nested=parts.length>3?unwrapSchema(schemas.character.shape[parts[3]]):null;
   let parsed;
-  if(parts.length===3)parsed={success:true,data:acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[])};
+  if(parts.length===3){
+    if(!value||typeof value!=='object'||Array.isArray(value))return false;
+    parsed=schemas.character.safeParse(acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[]));
+  }
   // Writing a whole sub-object keeps the untouched siblings instead of wiping them.
   else if(parts.length===4)parsed=nested?.safeParse(value&&typeof value==='object'&&!Array.isArray(value)?{...(prior[parts[3]]||{}),...value}:value);
   else parsed=nested?.shape?.[parts[4]]?.safeParse(value);

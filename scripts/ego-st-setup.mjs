@@ -14,6 +14,7 @@ import * as L from "./ego-st-lib.mjs";
 await L.run("通用建档与开卡", async () => {
   const cfg = L.loadConfig();
   L.setExtraPopupRules(cfg.extraPopupRules);
+  L.setPromptHistoryExclude(cfg.promptHistoryExclude);
 
   // 清掉上一次的变量基线
   try { fs.unlinkSync(L.RUN_DIR + "/vars-last.json"); } catch {}

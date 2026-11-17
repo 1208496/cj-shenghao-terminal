@@ -6,7 +6,355 @@
 
 <!-- SHZD-HANDOFF-BEGIN PH-20261117-SHZD-01 -->
 
-## rc.25 女性肉体档案播种 · 此刻/详情四方块 · 财富资产 UI 与入账全修复（2026-11-17 23:20 · 最新）
+## 【永久铁律】神豪终端 · 变量与提示词（2026-11-17 YG 采纳，永久有效）
+
+> 1. **脚本兜底律**：凡是能由脚本根据日期、分数、次数确定性推算或联动兜底的字段（如生理周期 `cycle`、实战后的处子状态 `virgin=false`、亲密行为后的 `unlockedTags` 与 `withUserCount`），**绝不干等大模型手写**，必须在结算引擎里由脚本自动推算补齐。
+> 2. **示例驱动律**：凡是必须由大模型生成文本的字段（如敏感带 `traits`、打星离场动态 `offscreen`、心声 `currentThought`），**绝不能藏在协议括号里写「按事实增量更新」**，必须给出明确的「当轮触发条件 + 顶层待办索引 + 协议末尾 `<JSONPatch>` 完整抄写示例」；模型是抄示例机器，示例里有什么，它才稳定写什么。
+> 3. **文案逐字照抄律**（2026-11-17 rc.24 起永久有效）：凡涉及世界书（`src/content/literary.json`）、更新协议（`src/content/protocol.txt`）、状态说明（`src/content/state-context.txt`）及开场白的一切文字，**必须 100% 逐字复制粘贴方案设计师给出的定稿文本，一个字、一个标点都不准自行发挥或缩写**，彻底杜绝八股文与楼盘广告腔。落地方式：先写进方案 Markdown 的代码块，再用脚本从方案里抠出原文写盘，不靠手抄。
+>
+> 判断新需求是否合格时先对照这三条：能算的交给脚本，要让模型写的就给示例，给定稿就一个字不改。
+
+
+## rc.29 三项问题修复（agy 方案落地）· 2026-11-18 06:30 · 最新
+
+> 方案来源：`AGY_SOLUTIONS_rc28.md`（agy / Gemini 4 Argon medium，305 行）；验收报告：`reports/rc29-三问题修复与实机验收-20261118.md`。
+> 版本 **2.0.0-rc.29**、`cardContractRevision` 24 → **25**。**未提交、未推送、未切指针、未出正式卡。**
+
+### 一、三项修复
+
+1. **界面操作不再随删楼/换分支消失**（`host.js`）：新增聊天分支级操作日志 `cj-shenghao:ops:v1:<branch>`（按 `initKey` 隔离、上限 80 条）+ `applyMissingPlayerOps()` 幂等重放；`mutateState` 成功后记账，`readCurrent()` 与 `VARIABLE_UPDATE_ENDED` 两个入口自动愈合并把结果写回回退后的顶楼；提现若因奖池缩水不再成立则撤回该笔、清出日志、弹一次性提示。
+2. **封堵公司公账绕过现金上限**（`engine.js` + 三个内容文件）：删掉 `if(e.direction==='OUT' && e.payer!=='USER')return;` 这个免扣后门，OUT 一律归一化为 `USER` 实扣、超额抛 `INSUFFICIENT_CASH`；`literary.json`/`protocol.txt`/`state-context.txt` 按方案**逐字**写入「公私可调配资金统一记于 user.cashCents」。
+3. **建档有进度、可中止、失败说原因、事实由脚本兜底**（`host.js` + `app.js`）：90 秒超时、JSON 容错提取、`anchorProfileFacts()` 补齐姓名/年龄/职业/外貌/三围鞋码/性格标签（`PROFILE_FACT_CONFLICT` 从必炸变兜底）、`cancelBuildProfile()`、UI 读秒（0s→2s→…）+「中止建档」+ 弹窗内红字 + 重试按钮 + Toast。
+
+### 二、自动化
+
+- `npm test`：**314 / 314 通过**（原 309 + 新增 `tests/rc29-ops-replay.test.mjs` 4 条；旧「他人付款不扣现金」改写为「强制实扣」+「超额拦截」两条）。
+- `build --checkpoint` → `BUILD_OK dist/2.0.0-rc.29-checkpoint/`；`check --checkpoint` → `CHECK_OK`。
+- `worldbookHash` 已变（`7636de87…`），**玩家要吃 rc.29 必须整卡重导**。
+
+### 三、实机（8001 / space 3 / 神豪终端3.png）
+
+- 关卡 PASS（世界书 `v2.0.0-rc.29` 绑定、10 正则、5 iframe、MVU 正常）；开局 513 字段、现金 100 万。
+- **建档读秒**：`正在建档… (0s) → (2s) → (6s)`，出现「中止建档」；点中止 → 弹窗关闭 + Toast「已取消本次人物建档。」。
+- **成功路径**由 YG 本人实测：Toast「九大档案已保存」，顾星遥 9 段档案，日志里有 `PLAYER_BUILD_PROFILE`。
+- **删楼保留（问题 1 核心）**：`/del 1` 前 `floors=6 / revision=5 / 顾星遥 9 段` → 删后 `floors=5 / revision=4 / **顾星遥仍 9 段**`，且写回回退后的顶楼。
+- **公账超额（问题 2 核心）**：现金 100 万时指令「60 万垫资 + 300 万走对公账户全打」，模型正文如实写「个人卡加上公司账上目前能立刻抽调出来的流动头寸，一共只有一百万。三百六十万今天下午肯定一次性打不过去」，变量 `cashCents` 不变、`finance.ledger` 为空。
+- **失败路径**：中途模型返回非 JSON，界面正确显示「模型返回的档案格式有误，请点击重试」+ 重试按钮；API 恢复后一次建档成功 → 该次是模型侧抽风。
+
+### 四、补测（同日 06:45）
+
+- **提现跨删楼**：四轮剧情把顾星遥好感推到 71、奖池 ¥103.66 万（轮 A 实扣 60 万 + 40 万，现金 100 万 → **0**）。提现后 `cash 0 → 1,036,626,000` 分、`revision 16→17`；`/del 1` 后 cash 回 0、withdrawals 清空、未领池恢复，Toast「因回退楼层包含未确认的入池事件，上一笔提现已退回奖池，可随时重新领取。」
+  - 原因：删的是 AI 楼，回退到该轮用户楼，好感 71→68 跌破门槛 → `WITHDRAWAL_LOCKED` → 撤回。旧版这里是**静默抹钱**，现在是明确提示。
+  - 「池与报价都没变 → 无损重放」由新增单测（第 4 条）覆盖。
+- **大字号 8.2em**：`--cj-font-scale:1.3` 下欲念页 8 行 `.kv` 全部 `overlap=0`、零截断。
+- **宽屏底部骨架**：694px / `position:relative` / 挂 `.mes_text` / `.is-bottom-dock` / `.wide-nav` / 底部导航 `none`。
+- **三主题**：香槟暖金、深曜雾紫截图正常，已切回鼠尾草绿。
+
+### 五、未验证（补测后剩余）
+
+她们页双列在底部模式下的列宽（rc.29 未改该段代码，沿用 rc.28 的 `325.24px × 2`）；`/swipe` 分支切换下的重放实机（与 `/del` 同入口，单测覆盖）；建档 90 秒 `MODEL_TIMEOUT` 路径。
+
+### 六、下一步
+
+1. 要发版就走七步（提交 SHA_A → `fallbackRef` → 非 checkpoint 构建 + check → SHA_B → `set-pointer` → `verify-release` 要 `E2E_OK`）；本轮未提交。
+2. 需要的话补验：她们页双列列宽、`/swipe` 重放实机、90 秒超时路径。
+
+
+## rc.28 全流程实机游玩验收（2026-11-18 06:00 · 历史，已被 rc.29 接续）
+
+> 目标：用 ego 在 8001 实例把 `dist/2.0.0-rc.28-checkpoint/神豪终端.json` **当正常玩家玩一遍**，边玩边找问题。
+> 报告：`reports/神豪终端-2.0.0-rc.28-游玩实测-20261118.md`；截图 23 张在 `reports/rc28-play-shots/`。
+> **本轮没有改任何源码、没提交、没构建、没切指针。** 玩家发行状态未变（仍未对外发行）。
+
+### 一、结论
+
+- **卡本体没有阻断性问题**：四步开局表单 → 713 字段落盘 → 六轮正常游玩 → 三页面板 / 人物档案 / 九大档案建档 / 奖池提现 / 日程 / 设置 / 宽屏底部 / 三主题 / 大字号 / 酒馆六项操作，全部走通。
+- **rc.28 的两个目标实机确认**：
+  1. 宽屏底部面板：`position:relative` 满宽 694px 挂 `mesid=13 .mes_text`，与「本轮变量更新」折叠条左右边界一致；`wide-nav` 三胶囊；她们页 `grid-template-columns: 325.24px 325.24px`；底部导航 `display:none`；`phone-screen overflow:visible`。
+  2. **8.2em 长标签修复（原「下次要实测确认」→ 现已确认通过）**：字号「大」`--cj-font-scale: 1.3` 下，欲念页 10 行、行头 9 行、经历 7 行全部 `overlap=0`、`anyCut=false`，标签列实测 **117.26px**（8.2em × 14.3px）；8 个底线格 141px 无溢出。
+
+### 二、实测路径
+
+富家公子哥开局（`陆时行` / 28 岁 / `晟世资本 执行合伙人` / 187cm 82kg / 颜值 76 / 性能力 82）→ 起点 2026-11-18 19:30 临江大平层 → 新增「迈巴赫 S 680」并测资产编辑回填 → 预设拉入温迎（好感 55、称呼「陆先生」）→ 四步确认开局 → 六轮剧情：微信回温迎 → 电话顾星遥 → 次日公司面谈 → 签 300 万全款合同 → 花店与房东谈铺租（实付 11 万）→ 免债并抛 20 万答谢会单。
+
+### 三、变量/算术核对（全部自洽）
+
+- 提现：奖池 110,000 消费 + 40,760 暴击 = 150,760，×10 → 实到 ¥1,507,600；现金 89,000,000 → 239,760,000 分；奖池清零；楼层数不变（纯 UI 落盘）。
+- 我的页：总资产 14,292,600 = 11,895,000 资产 + 2,397,600 现金；累计收入 1,507,600、累计支出 110,000。
+- `limits` 确认是脚本兜底：温迎好感 67 → L4 / 露点 2 / 手口 2 / 实战 1 / 丝袜 3，与 `settlement.js` 的 `LIMIT_GATES` 逐项对得上，不是模型写的。
+- 回滚一致：`/swipe` 后 `sourceAnchor.swipeId 0→1`、好感 73→72、旧分支暴击事件被丢弃；`/del 1` 后 `revision 14→13`、时间 16:05→15:50。
+- 刷新保留：楼层 14 / chatId / 现金 ¥890,000 / 2026-11-19 15:50 / revision 13 / 三人好感 63·30·67 / 小手机 74×108 全部一致，`errors=[]`。
+
+### 四、发现的问题（4 项待 YG 决策 / 2 项观察）
+
+1. **界面操作与楼层绑定，回退楼层会静默撤销（中）**：提现 150.76 万后 `/del 1`，现金回到 ¥890,000，奖池记录一起消失，无任何提示。根因是 `mutateState` 把结果写在精确最后一条消息的 MVU 变量里。建档（30–50 秒生成）同样会被这条路径吃掉。
+2. **「公司账户流水」绕开现金硬约束（中）**：玩家只有 100 万，模型用“晟世资本对公流水”付了 300 万，`cashCents` 一分不扣、无 `CASH_TRANSACTION`。模型思考块里明写了这条规避理由。等于一条无限资金通道。
+3. **建档失败/超时无用户可见反馈（低，失败路径未验证）**：`app.js` 建档分支 `try/finally` 没有 `catch`，失败时按钮恢复、无 toast、无错误；成功路径实测通过。
+4. **推理折叠栏出现在每楼（低，属测试环境）**：每轮带粉色「吾乃小猫之神…点我收起喵~」折叠块，内容是模型完整思考（含玩家预设原文）。来源是 8001 实例的小猫之神/CatGod 预设与 `aaa-骚话文风` 等全局世界书，**不是本卡正则/世界书**；`promptChecks` 两项仍 `ok:true`。
+5. **观察 · 双列卡片称呼换行（极低）**：宽屏 325px 双列时「称呼「你」」会断行。
+6. **观察 · 折叠态 iframe 尺寸偶发不缩回（待复现）**：有一次从宽屏切回悬浮后是折叠态但 iframe 仍 299×599 / 365×730，透明区拦住底下点击；随后按「底部→⚙→悬浮」干净路径复测得到正确 74×108，**未稳定复现，按未验证记录**。顺带记一条测试纪律：折叠态文档里只有 `#folded`，脚本必须检查 click 的 `ok`，否则空点会被误判成“切换失效”。
+
+### 五、未验证
+
+新聊天（未跑，避免冲掉存档）、手机尺寸「标准」档、<320px 极窄屏、已隐藏人物页、检测更新（外网）、建档失败路径、锁定档案对提示词体积的影响、多人在场与亲密/堕落线走向。
+
+### 六、环境
+
+- space 3 保留完整游玩存档：`神豪终端2.png` / `神豪终端 - 2026-11-18@05h33m14s939ms`，14 楼，`revision 13`，现金 ¥890,000。
+- 收尾状态：显示位置=悬浮、字号=中、主题=鼠尾草绿、面板折叠（74×108）。
+
+
+## 工作区清理 + M1 实机验收 + 测试手册收敛（2026-11-18 05:20 · 历史，已被上方接续）
+
+> 由 agy 全量审查工作区（`AGY_WORKSPACE_AUDIT.md`）→ DSH 逐条核查修正 → 执行清理。**未改任何源码，未发版。**
+
+### 一、工作区清理（移动 + 压缩，未直接删除）
+
+- 移出 **364 文件 / 25.49 MB** 到 `E:\_shzd_trash_20261118\`，压缩为 **`E:\SHZDCHOSSS-清理备份-20261118.zip`（9 MB，368 条目）**。
+- 项目体积 **35.54 MB → 9.48 MB**（不含 node_modules/.git）；清理后 `npm test` **309/309 通过**。
+- 移出明细：
+  - `.work/` 整目录（206 文件）：`mvu/`（8123 本地服务）、`test-card/`（rc.24 魔改卡）、`tavern-8001-backup/`（7.31 MB 旧备份）、`ui-preview/`、`rc25/`、`rc26/` 及全部一次性探针脚本与日志
+  - `dist/` 历史版本：`rc.20`~`rc.24-checkpoint`、`rc.25-checkpoint`、`rc.26-checkpoint`、`rc.27-checkpoint`、空目录 `rc.26/`
+  - 被取代脚本：`ego-*-8001.mjs`(5)、`live-test-*.mjs`(5)、`extract-rc25/26-content.mjs`、`build-acceptance-docx.py`
+  - 过时报告：`rc.22`~`rc.26` 各版、`ego操作流程测试报告-20261117.md`
+  - 草案：`修改计划/rc24_overhaul_plan.md`（被 `plan2` 取代）、根目录 `AGY_REVIEW.md`
+  - 旧手册：`tests/live-ego.md`、`tests/DSH-ego操作手册.md`
+- **核查后判定不可删、已保留**：`src/ui/phone.html`（被 `host.js` import）、`.secrets/supabase-service-key.txt`、`dist/2.0.0-rc.25/`（线上在役 `b265ed9`）、`dist/2.0.0-rc.28-checkpoint/`、`dist/terminal.js`、`dist/release.json`、`release/loader.config.json`、`scripts/ego-st-*.mjs`、`card-probe.mjs`、全部 `tests/*.test.mjs`。
+- 清理中停掉一个挂 10 小时的僵尸服务：**PID 16088** `node .work\mvu\server.mjs`（监听 8123，早已废弃）。酒馆 8001（PID 1860）未受影响。
+
+### 二、测试手册收敛 + 通用经验归位到 Skill
+
+`tests/live-ego.md` + `tests/DSH-ego操作手册.md` 已移入备份。其中**唯一不可丢**的内容**归入全局 Skill** `~/.agents/skills/ego-tavern-card-test`（跨项目可用），不留在项目里：
+
+- **SKILL.md 新增「3. 禁令与判据」**：7 条禁令（禁止直接拷卡冒充导入 / 禁止挂弹窗往下走 / 禁止世界书没绑定就开局 / **禁止开过局后重填开局表** / 禁止瞎点陌生弹窗 / 禁止碰 8000 / 禁止硬等）+ 两条等待纪律（唯一合法长等待是等模型回正文 1~3 分钟；生成类操作前必须 `connectApi`）
+- **「5. 失败怎么读」扩充 5 条**：确认框没点到、`#preloader` 卡住、遮罩挡点击、API 插头点错元素、**刷新后没重连 API**（最常见的假故障）
+- **新增 `references/card-shapes.md`**（42 行）：5 种卡形态的详细判断方法——特征、`survey` 表现、怎么开局、怎么测；含「有开局前端的卡，走完表单是唯一开局方式」这条硬门
+- **新增 `references/tavern-api.md`**（44 行）：酒馆界面与底层 API 速查——顶栏抽屉 ID、`☰` 菜单选择器、`getContext()` 字段、`TavernHelper`/`Mvu` 对象、读数据的三条路子；并写明「菜单项默认隐藏，直接点 `option_*` 等于空点，优先用斜杠命令」
+
+**去重**：判「回复到了」的三条判据，`references/harness.md` 第 5 节本来就写全了（`#mes_stop` 主判据 + `is_user === false` + 正文非空 + 不能只看楼层数）。SKILL.md 里只保留一行摘要指向它，不重复正文。
+
+**项目内** `tests/DSH-酒馆全卡通用测试手册.md` 保留，但通用内容不再在它里面维护，`〇·五` 一节已改为指向 Skill 的指针。三份手册收敛为一份全局 Skill + 一份项目本地记录。
+
+**遗留待办**：SKILL.md 里仍有几处本机专属内容未通用化——`C:\jiuguan\SillyTavern`（8000 实例）、`E:\Ajiuguanagentceshi\SillyTavern`（8001 实例）、`C:/Users/Administrator/ego/st-run/`（运行目录）、`#f_name`（神豪终端表单 id）、`cupSize`（神豪终端变量名）、`.kv / .kv-k / .kv-v`（神豪终端 CSS 类名）。这些在有该环境时可用，换机器需替换。
+
+### 三、M1 酒馆基本操作回归（首次完整跑通）
+
+环境：8001，卡 `神豪终端1.png`（rc.28 checkpoint 重导），连 API，走完 3 步开局表单后开测。
+
+| # | 项目 | 结果 |
+|---|---|---|
+| 1 | 重新生成 `/regen` | ✅ 1801 → 1805 字 |
+| 2 | 滑动 `/swipe` | ✅ 1805 → 2015 字，swipeId 0→1 |
+| 3 | 继续 `/continue` | ✅ 2015 → 3580 字 |
+| 4 | 删除一楼 `/del 1` | ✅ 3 楼 → 2 楼 |
+| 5 | 新聊天 | ✅ 回到 1 楼 |
+| 6 | 刷新后保留 | ✅ 楼层 / 聊天ID / 变量 / 姓名 / 时间 / 小手机 全部一致 |
+
+**重要更正：小手机从未「消失」。** 三次误判的原因：
+1. 跳过开局表单直接 `sendText` → 面板根本没被创建
+2. 在 `Assistant` 空白角色上测试 → 世界书照样生效，产出很像正常楼
+3. 把「刷新回欢迎页」当成 bug → 这是酒馆正常行为（`auto_load_chat` 默认 `false`）
+
+M1-6 的正确测法：刷新 → **重新点开卡**（自动加载该卡最近聊天）→ 连 API → 再验状态。酒馆设置未做任何改动。
+
+### 四、rc.28.1 的 8.2em 修复实机确认（原交接标注「下次要实测确认」）
+
+悬浮态 299px 下 10 行 `.kv` 全部 `overlap=0`、零截断；`grid-template-columns: 103.73px` 证明 8.2em 已生效。四个 7 字标签（阴部户型与色泽 / 阴部紧致与状态 / 后庭外观与状态 / 体香与特征）完整显示，不再被省略号吃掉。
+
+### 五、三套主题宽屏实测（原标注未验证）
+
+鼠尾草绿 `#557a64`、香槟暖金 `#ac8048`、深曜雾紫 `#a477df`（深色主题，ink `#f0e8fa`）全部正常，无黑边、无溢出。收尾已切回鼠尾草绿。
+
+### 六、未完成 / 待办
+
+1. **重复验收报告未合并**：`reports/神豪终端-2.0.0-rc.28-实机验收-20261118.md` 与本文件顶部引用的 `rc.28-酒馆通用流程复验报告.md` 内容重叠。计划把前者独有内容（M1 六项、三套主题、8.2em DOM 测量）并入后者后删除该文件，本轮未做。
+2. **清理备份未删**：`E:\_shzd_trash_20261118\` + `E:\SHZDCHOSSS-清理备份-20261118.zip`，待 YG 确认后删。
+3. **发布链未走**：rc.28 仍未提交、未推送、未切指针。
+4. **报告内 6 项未验证**：M11 外网依赖、极窄屏 <320px、巨乳/贫乳文字改判罩杯实机、折叠条展开后的变量列表、收支明细有数据时、资产 3 项时的两列布局。
+
+### 七、环境状态
+
+- 8001 实例：仅 `神豪终端10.png` 与 `神豪终端1.png` 两张卡（清理旧卡后重导所致），世界书 rc.24~rc.28 五份保留。
+- 8123 本地 MVU 服务已停，不再需要。
+- `C:/Users/Administrator/ego/st-run/config.json` 仍指向 rc.28 checkpoint。
+
+
+## rc.28 宽屏内嵌底部面板 · 三层反差罩杯 · 开局表单补齐（2026-11-18 01:30 · 历史，已被上方接续）
+
+> 依据 `修改计划/rc28_widescreen_dock_cup_and_form_plan.md` 执行。基线 rc.27（源码未提交，线上指针仍服务 rc.25 的 `b265ed9`）。**未提交、未推送、未切指针、未出正式卡。**
+> 实机验收报告：`reports/rc.28-酒馆通用流程复验报告.md`；关键截图另存 `reports/rc.28-shots/`。
+
+### rc.28.1 长标签压字修复（2026-11-18 01:52 · 已改完，实机被 API 站卡住）
+
+- **现象**（YG 截图）：不管悬浮小手机还是固定正文底部，`阴部户型与色泽`、`阴部紧致与状态`、`后庭外观与状态`、`敏感带与体香` 这些长标签都横向压到右侧数值上。
+- **根因**：rc.27 的 `.kv` 用 `grid-template-columns:64px minmax(0,1fr)` 写死 64px 标签列，而 `.kv-k` 是 `white-space:nowrap`；7 个字的标签在 medium 字号下约 96px，直接越出网格线画到数值列上。
+- **修法**（`src/ui/style.css`）：
+  - `.kv` 改成 `grid-template-columns:8.2em minmax(0,1fr)` —— 标签列按字号等比伸缩，`em` 以 `.kv` 自己的 `calc(11px * var(--cj-font-scale,1))` 为基准，小/中/大三档都不会再被长标签顶穿；
+  - `.kv-k` 补 `min-width:0; overflow:hidden; text-overflow:ellipsis` 作为极端兜底；
+  - `.limit-cell > span` 加 `min-width:0` + 省略号、徽章 `flex-shrink:0`，底线格同样不会被挤爆。
+- **实测（探针逐行量 `kv-k.right` 与 `kv-v.left`）**：
+  - 悬浮态（iframe 299px）：10 行全部 `overlap=0`，标签列 94px、间隙 7px；
+  - 宽屏底部（iframe 698px）：10 行全部 `overlap=0`；
+  - 截图：`r28x3-float-flesh`（悬浮 299px，标签与数值已分开）、`r28x3-wide-gold` / `r28x3-wide-purple`（暖金/雾紫主题宽屏她们页）。**注意：宽屏那张 flesh 截图与悬浮那张逐字节相同（抓拍时机问题），宽屏只有 DOM 数值证据**；折叠横条也仍只有 `698×52` + 文案的数值证据（`r28x3-bar` 实际拍到的是聊天正文）。
+  - 上述截图是 **7.4em** 版本拍的：7 字标签会显示成「阴部户型与...」。
+- **还没验的一步**：把标签列加宽到 **8.2em** 后重建、导入（`chid=9`、space 9）并重新开局时，**API 站没有返回**（`floors=2`，最后一条仍是用户消息；点重新生成 3 分钟超时），所以 8.2em 的实机截图没有拿到。按 94px→8.2em(≈104px) 的增量，7 字标签应当不再被截断，但这只是推算，**下次要实测确认**。
+- **自动化不变**：`npm test` 仍是 **309 / 309**（改的是 CSS，未动断言）；`build --checkpoint` `BUILD_OK`、`check --checkpoint` `CHECK_OK`；runtime sha256 变为 **`9ed07f14…`**（`worldbookHash` 仍是 `39ea2608…`，世界书没动）。
+- **环境残留**：8001 实例里已累计 `神豪终端3/4/5/6/7/8/9.png` 七张测试卡与配套聊天；space 9 里留着一条 `floors=2`、最后一条是用户消息的卡住聊天（下次可直接点重新生成继续，或新建聊天重跑）；`C:/Users/Administrator/ego/st-run/config.json` 仍指向 rc.28 checkpoint。
+
+### 测试工具箱改动（2026-11-18 02:1x，非卡本体）
+
+YG 对通用测试 Skill（`~/.agents/skills/ego-tavern-card-test`）做了评审，连带把 `scripts/ego-st-lib.mjs` 改通用：
+
+- **`promptMustNotContain` 的历史过滤不再写死《神豪终端》的句子**：旧实现用 `!content.includes("正文回复的末尾附且只附一个")` 排除协议条目，别的卡（协议用 role:user/assistant 按深度注入）会误伤。现在改成按"本轮激活过的世界书条目正文前缀"排除（`__agy.injected`），另加 `setPromptHistoryExclude()` + `config.promptHistoryExclude` 正则兜底。
+- `ego-st-setup.mjs` / `ego-st-act.mjs` 已接 `cfg.promptHistoryExclude`。
+- 离线自检：`.work/probe-filter-test.mjs`（同份已放进 Skill 的 `checks/prompt-filter-check.mjs`）覆盖四种场景——世界书注入被排除、正文真泄漏仍能抓到、自定义正则生效、非法正则不炸，全部通过。
+- `node --check` 三个脚本通过；单测不引用这套脚本，`npm test` 不受影响。
+
+
+### 本次做了什么
+
+1. **版本**：`2.0.0-rc.28`、`cardContractRevision` 23 → **24**、`releaseNotes` 用方案定稿原文；`package*.json` 同步。
+2. **`src/core/engine.js` 三层罩杯**：`inferCupSize(bust, waist, height, textHint, seedHash)` —— ①文字层：`/([A-G])\s*(?:罩杯|杯)/i` 直接取字母，`巨乳/爆乳/波涛汹涌/傲人双峰/呼之欲出/极度丰满/豪乳/酥胸硕大/童颜巨乳` 按 hash 奇偶给 E/F，`平胸/贫乳/飞机场/青涩微隆/一马平川` 给 A；②骨架层：`underbust = waist + 8.5 + (height − 160) × 0.22`（**双向浮动，不截断负数**）；③无三围时按 hash 在 `['B','C','C','D','D','E','F']` 抽。`seedAnatomy` 把 `body + appearance` 当 `textHint` 传入并回填 `cupSize`。
+3. **`src/ui/setup-options.js`**：`numericAndDate` 补 `_gen_length`（16/18/20/22/24cm）与 `_gen_girth`（4.2/4.8/5.2/5.6/6.0cm）。
+4. **`src/ui/setup-presets.json`**：`fields._gen_traits` 补 6 条定稿描述（逐字照抄方案，含「形态饱满挺拔，青筋分明，热度惊人」原值）。
+5. **`src/ui/app.js`**：
+   - 新增 `editingAssetId`；第 2 步资产卡改成「编辑 + 移除」双按钮；
+   - `assetForm(assetId=null)` 支持编辑回填（标题「编辑已有资产」、按钮「保存修改」）；`case 'save-asset'` 按 `editingAssetId` 原位替换并保留原 `assetId`；
+   - `phone()` 底部模式：`.phone.is-bottom-dock` + `body.is-bottom-dock`、顶栏 `.wide-nav` 三胶囊、折叠图标 `−`、底部导航让位；渲染后走 `syncBottomHeight()`（`max(260, modal 460, .phone.scrollHeight+4)`）而不是固定 730；
+   - `showModal` / `closeModal` / `details` 的 `toggle` 都补一次 `syncBottomHeight()`，展开面板不被截断。
+6. **`src/runtime/host.js`**：底部模式 `width:'100%'`、高度 `max(260, min(height, 2400))`、圆角 14/16、`margin:'10px 0 6px'`；`lastMesBlock()` 改为**优先 `.mes_text`**。
+7. **`src/ui/style.css`**：追加 rc.28 段（`.phone.is-bottom-dock` 去壳去刘海、`.phone-screen` 取消内层滚动、`.wide-nav/.wide-tab`、`.women-grid` 双列、≥520px 时四方块 1×4 + 底线格 4 列 + 资产两列）。
+8. **`src/ui/screens.js`**：`women()` 外层加 `.women-grid` 容器（默认单列，只有底部模式才双列）。
+
+### 与方案字面不同、实测确认必要的三处
+
+- **高度上限 1600 → 2400**：方案 §5 写 1600（§1.4 又写 1400）。实机人物详情+面板内容 1831px，按 1600 会截断并冒出 iframe 内滚动条，与「绝不截断」目标冲突，放宽到 2400。
+- **挂载点 `.mes_block` → 优先 `.mes_text`**：「本轮变量更新」折叠条长在 `.mes_text` 里。挂在 `.mes_block` 时面板 728px、左 480、右 1208，而折叠条是 698/480/1178，右侧多出 30px；改挂 `.mes_text` 后两者**逐像素一致**（698/480/1178）。
+- **补 `.wide-nav`/`.wide-tab`/`.women-grid` 三处容器与样式**：方案要求「顶栏一体化导航」和「她们双列」，但没给结构与 CSS。
+
+### 实际验证（有效）
+
+- `npm test`：**309 / 309 通过**。新增 3 条 rc.28 用例：
+  - 三层罩杯（六位预设不变、150cm 娇小细腰 83/55 → F、身高必须参与修正、文字层 E/F/A/D 四种命中、hash 池 7 档、`seedAnatomy` 用 body/appearance 改判且显式 `cupSize` 优先）；
+  - 性器三项下拉预设（长度/粗度/特征，含「姓名不给候选」）；
+  - 资产可编辑标记 + 宽屏接线（`editingAssetId`、`data-edit-asset`、`assetForm` 编辑分支、`is-bottom-dock`、`syncBottomHeight`、`wide-nav`、host 的 `width:'100%'` 与高度限幅、CSS 的 `.phone.is-bottom-dock` / 双列 / 四列）。
+- 同批改写的旧断言：`female-records`「新人没有三围时按 ID 哈希给杯型」（原来是死板 `C`）；`rc.27` 用例里 `inferCupSize(0,0)` 从「兜底 C」改为「哈希池内取值」。
+- `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.28-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
+- 成品抽查：`version=2.0.0-rc.28`、世界书 `神豪终端 · v2.0.0-rc.28`、31 条、`protocol` 21 行未动；`phone.html` 含 `is-bottom-dock / wide-nav / wide-tab / women-grid`；runtime 含 `width:"100%"` 与 2400 限幅。
+- **哈希**：`worldbookHash` **`39ea2608e81c…`**（变因是 `cardContractRevision` 24）、runtime sha256 **`58e72761c993…`**。
+- **实机（8001，ego，rc.28 checkpoint，两次导入 chid=6 / chid=7）**：
+  - 组件关卡 PASS（世界书绑定、10 正则、5 个 TH iframe、`Mvu` object、`promptChecks` 两项 ok）。
+  - **开局表单**：性器特征下拉 6 条定稿、长度/粗度各 5 条、选中即回填；第 2 步 3 张资产卡都有「编辑/移除」，点编辑弹「编辑已有资产」且类别/名称/估值/地点/描述/产权全部回填，改名改估值保存后**仍是 3 项、原位替换**（卡面 `¥888,000,000` + 新描述）。
+  - **开局**：514 字段落盘，`测试员 / 100000000 分 / 2026-11-16`；发「让她来家里看方案」后 revision 1→3、顾星遥入场、时间 09:30、`errors=[]`、toasts 无 zod。
+  - **罩杯**：顾星遥 167/86/61 → C，江映 172/92/62 → E。
+  - **宽屏底部面板**：`frame 698×h, left 480, right 1178` 与折叠条 `698/480/1178` **完全对齐**；刘海 `display:none`；边框 `0.64px / 16px`（悬浮态仍 `6.4px / 40px`）；顶栏 3 个 wide-tab、底部导航 `display:none`、折叠图标 `−`；`#phoneScreen overflow: visible`；高度自适应 此刻 519→523、她们 287→291、详情+面板 1831→1835、横条 52；她们双列 `327.48×2`、四方块 1×4 `160.24×4`；发新楼后自动迁到最后一楼且保持展开。
+  - 截图（`C:/Users/Administrator/ego/st-run/shots/`，关键 6 张复制到 `reports/rc.28-shots/`）：`r28d-open-centered`（对齐）、`r28b-dock-scene`、`r28b-dock-women`（双列）、`r28b-dock-detail`（四列）、`r28-wizard-gen-traits`（性器下拉）、`r28-asset-edit-filled`（资产编辑）。
+
+### 未验证 / 待办
+
+1. **三套主题**（sage / gold / purple）在宽屏内嵌下的观感：只验了默认 sage。
+2. **极窄屏**：宽屏模式本身要求容器够宽，未构造 320px 以下场景。
+3. **文字改判罩杯**（巨乳/贫乳）只有单测证据，实机没有带这类描述的野生角色。
+4. **折叠横条观感截图没抓到**：它长在超长消息末尾，视口截图取不到；已用 `698×52` + 文案「✦ 神豪终端 2026-11-16 09:38 · 江城区·临江大平层 ¥1,000,000 点击展开 ⌄」作为证据。需要的话可在短消息里补拍。
+5. 未走的发布链：`worldbookHash` 已变（revision 24），玩家要吃 rc.28 必须整卡重导；发版仍按七步（SHA_A → `fallbackRef` → 非 checkpoint 构建 + check → SHA_B → `set-pointer` → `verify-release` 要 `E2E_OK`）。
+6. 测试环境残留（未清理）：`C:/Users/Administrator/ego/st-run/config.json` 已指向 rc.28 checkpoint；8001 实例里累计有 `神豪终端3/4/5/6/7.png` 五张测试卡与配套聊天；`.work/rc28-*.mjs` 是本次实机脚本（已 gitignore）。
+
+### 下一步
+
+1. 需要的话补拍折叠横条、补验三套主题；确认无问题再谈发版。
+2. 发版前 `npm test` / `build` / `check` 三连重跑，并按七步走完。
+3. 玩家发行状态未变：**仍未对外发行**，不为旧存档加迁移层（AGENTS.md）。
+
+## rc.27 窄屏视觉分层 · 真实罩杯公式 · 悬浮⇄正文底部双模式（2026-11-18 01:05 · 历史，已被 rc.28 接续）
+
+> 依据 `修改计划/rc27_visual_cup_and_dock_plan.md` 执行。基线 rc.26（源码未提交、未发版；线上指针仍服务 rc.25 的 `b265ed9`）。**本轮未提交、未推送、未切指针、未出正式卡。YG 于 01:05 要求暂停并记录进度。**
+> 罩杯口径经 YG 当场改定：**公式用 `w + 8.5`**（方案 Markdown 盘上仍写 `w + 6`，尚未同步），六位预设保 `B / B / C / C / D / E`，三围照方案。
+
+### 已改完的代码（工作树，未提交）
+
+1. **`project.json` / `package.json` / `package-lock.json`**：`2.0.0-rc.27`、`cardContractRevision` 22 → **23**、`releaseNotes` 用方案定稿原文。
+2. **`src/core/engine.js`**：`inferCupSize(bust, waist, height = 165)` 改为先算 `underbust = waist + 8.5 + max(0, (height − 160) × 0.15)` 再按 Δ 判档（A < 11 ≤ B < 13.5 ≤ C < 16 ≤ D < 18.5 ≤ E < 21 ≤ F），并**导出**供单测直接调用；`seedAnatomy` 调用时传入 `c.heightCm`，反推结果继续回填 `cupSize`。
+3. **`src/ui/setup-presets.json`**：六位预设按方案换成差异化三围 —— 乔沐 163/47·80/59/85·B、林叙宁 169/52·83/61/89·B、温迎 166/50·84/60/88·C、顾星遥 167/53·86/61/90·C、沈清弦 170/55·89/61/91·D、江映 172/60·92/62/95·E（`addressing` 未动）。
+4. **`src/ui/screens.js`**：窄屏五层结构全部落地 —— `pill/lead/kv/line/counted/goalBox/thoughtBox` 七个辅助函数；`basicRows` 改「胶囊横条 + 三格微型数字卡 + 左键右值虚线行」；`statusPanel` 神情/心情做成胶囊、行里不再重复；`outfitPanel` 走 `line()` 并支持 `未知 → 🔒 隔衣未知`；`fleshPanel/secretPanel` 顶部状态胶囊（周期/处子/档位/情动）＋句首核心词染色；`limitCell` 出 8 格 2×4 底色分级格；`settings()` 在「手机尺寸」上方新增「显示位置」双按钮。
+5. **`src/ui/style.css`**：追加 rc.27 段落（`--ui-plum/green/amber` 三主题扩展色、`.chips/.chip-tag/.mini-stats/.kv/.thought-card/.goal-card/.limit-cell/.folded-bar`），全部跟随 `--cj-font-scale`。
+6. **`src/runtime/host.js`**：新增 `lastMesBlock()` / `syncDockMount()`，`publish()` 每次刷新都同步挂载点；`api.geometry` 在 `bottom` 模式走 `position: relative` 流式布局（折叠 56px 横条 / 展开 `min(100%, 365px)` × 680px），`float` 模式保持原 `fixed` + 缩放逻辑。
+7. **`src/ui/app.js`**：`phone()` 折叠态在 `bottom` 模式渲染 `#folded.folded-bar`（左 `✦ 神豪终端 · 日期 时间 · 地点`，右 `可用现金 · 点击展开 ⌄`，有未读则亮圆点）；`bottom` 模式不绑拖拽、不覆盖悬浮坐标；新增 `data-display-dock` 点击分支；`signature` 加入 `prefs.displayDock`。
+
+### 与方案字面不同、但已确认必要的四处
+
+- **`mini-stats` 标签合并**：方案写 `<small>身高</small><b>身高：167 CM</b>`，实机截图里出现「身高 / 身高：167 CM」双份标签并换行；改成 `<small>身高：</small><b>167 CM</b>`，纯文本仍是「身高：167 CM」，单测不受影响。
+- **去掉 `sr-only` 双份朗读**：方案 `basicRows` 的「性格标签」同时渲染胶囊与 sr-only 全文，读屏会念两遍；只保留胶囊。
+- **`limitCell` 标签带冒号**：方案模板是 `<span>手口侍奉</span>`，会让既有断言 `手口侍奉：` 失效；改 `<span>手口侍奉：</span>`，观感不变。
+- **新增 `prefs.dockExpanded`（方案没写）**：实机发现 iframe 被 `append` 到新楼层时会重建文档，导致每来一楼就弹回折叠横条。现在折叠/展开写进偏好，`receive()` 按 `displayDock==='bottom' && dockExpanded` 恢复展开态；实测新楼后仍保持展开（但标签页与滚动位置仍会回到「此刻」）。
+
+### 实际验证（有效）
+
+- `npm test`：**306 / 306 通过**。新增 3 条 rc.27 用例：六位预设罩杯与公式一致（含档位边界、身高修正、缺三围兜底、播种回填）、窄屏分层 HTML（chips/kv/lead 染色/锁标/2×4 底线格/折叠态不铺开）、设置页双模式开关与当前档位高亮。
+- 同批改写的旧断言（结构从 `<div class="muted">标签：值` 变成 `span.kv-k + span.kv-v`，纯文本不变）：`tests/female-records.test.mjs` 新增 `flat()` 去标签助手并改 5 处断言、`cupSize` 期望 `E → C`（新公式：168/86/62 → 14.3 → C）；`tests/profile.test.mjs` 的神情/性格标签两处；`tests/rc25-body-economy.test.mjs` 的「此刻穿着」一处。
+- `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.27-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`（卡身份、世界书 31 条、10 正则、4 脚本、哈希、源码/产物一致性全过）。
+- 成品抽查：`version=2.0.0-rc.27`、世界书 `神豪终端 · v2.0.0-rc.27`、`protocol` 仍 21 行（本轮没动协议与世界书正文）；`worldbookHash` **`ea96b8d9d8c1…`**（变因是 `cardContractRevision` 23，世界书正文未改）、runtime sha256 **`b6fc07a56fb2…`**；`phone.html` 含 `folded-bar / chip-tag / mini-stats / kv-k / limit-cell / thought-card / goal-card / ui-plum / data-display-dock`，`隔衣未知` 以 `\u{1F512} \u9694\u8863\u672A\u77E5` 转义写入（esbuild 正常行为）。
+- **实机（8001，ego 驱动，rc.27 checkpoint 卡）**：
+  - 组件生效关两次 PASS（`chid=3`、`chid=4`、`chid=5` 三次导入，世界书 `v2.0.0-rc.27` 已绑定、`globeLit=true`、10 正则、5 个 TH iframe、`Mvu` object、`promptChecks` 两项 `ok:true`）。
+  - 开局 PASS：`测试员` / 富家公子哥 → 楼层 3、变量 513 字段、`cashCents=100000000`、`date=2026-11-16`。
+  - **罩杯落地**：`顾星遥 cupSize=C`（167/53·86/61/90，`C罩杯挺拔半球型…`）、`江映 cupSize=E`（172/60·92/62/95，`E罩杯挺拔半球型…`），不再是全员 D。
+  - **窄屏分层**（悬浮态 365px、精巧档实测 299px 宽均正常）：此刻页「身姿·基础」= 7 胶囊 + 3 格数字卡 + 5 行 `kv` + 2 处高亮；「欲念·私密」= 4 胶囊（`🌿 安全期 / 💮 处女 / ⛓️ L3 渐入佳境`）+ 8 行 `kv` + 5 处高亮；「此刻·动向」= 神情/心情胶囊 + 姿态/动作两行、无重复；详情「经历·尺度」= 8 个底线格（5 个 0 档半透明弱化、2 档暖金、3 档樱粉）；`thought-card` 左粉条与 `goal-card` 左主题色条都正常。
+  - **双模式**：设置点「固定正文底部」→ iframe 迁到 `#chat > .mes:last-child .mes_block`（`parentMesId=2=lastMesId`、`position:relative`、折叠宽 724×56 横条、文字 `✦ 神豪终端 2026-11-16 09:00 · 江城区·临江大平层 ¥1,000,000 点击展开 ⌄`）；点横条 → 365×680 内嵌展开；发一轮「熟人进屋」后自动迁到 `mesid=4`、**仍保持展开**、时间推进到 09:48、顾星遥入场。截图在 `C:/Users/Administrator/ego/st-run/shots/`（`r27-look-*`、`r27-dock-*`）。
+
+### 未验证 / 待办（下次接着做）
+
+1. **最后一次构建的实机全流程被打断**：mini-stat 标签合并后重建并导入了 `神豪终端5.png`，开局 + 「熟人进屋」的批量动作在执行中被 YG 叫停，只确认了开卡关卡（PASS）。**新构建的面板/双模式没有重新截图**，上一版截图对应的是合并前的 markup（改动仅标签位置）。
+2. **🔒 隔衣未知**只有单测证据：实机里模型与播种写的是真实穿搭，`lingerie/socks` 没出现「未知」值。
+3. `悬浮 → 底部 → 悬浮` 往返、三套主题、`小/中/大` 三档字号、320px 及更窄宽度：未实机。
+4. 底部模式下 iframe 会随楼层重建（`dockExpanded` 已兜住展开状态），但**标签页、详情页、滚动位置会回到「此刻」**；要不要一并持久化未定。
+5. `dist/release.json` 与 `dist/terminal.js` 已被 rc.27 checkpoint 构建覆盖（工作树改动，未提交），指针仍服务 rc.25。
+6. 未走的发布链：`worldbookHash` 已变（revision 23），**玩家要吃 rc.27 必须整卡重导**；要发版就按七步：提交 SHA_A → `fallbackRef` 改指它 → `npm run build` + `npm run check`（非 checkpoint）→ SHA_B → `set-pointer` → `verify-release` 要 `E2E_OK`。
+7. **方案文档未同步**：`修改计划/rc27_visual_cup_and_dock_plan.md` 第 18 行与第 80 行仍写 `waist + 6`，实现与预设都按 `+ 8.5` 走；需要 YG 点头后同步文档，避免下次照着旧公式回改。
+8. 测试环境残留（未清理）：`C:/Users/Administrator/ego/st-run/config.json` 已指向 rc.27 checkpoint（原件备份 `config.rc26.bak.json`）；8001 实例多了 `神豪终端3/4/5.png` 三张测试卡及配套聊天与 `worlds/神豪终端 · v2.0.0-rc.27.json`；`.work/rc27-*.mjs` 是本次实机脚本（已 gitignore）。
+
+### 下一步（按优先级）
+
+1. 继续用 rc.27 checkpoint 卡跑完「开局 → 熟人进屋 → 面板截图 → 悬浮⇄底部往返」这一轮，补上 mini-stat 合并后的截图证据。
+2. 决定是否把底部模式的标签页/滚动位置也持久化；实测「新楼是否闪一下」再定。
+3. 上述无问题后再谈发版；发版前 `npm test` / `build` / `check` 三连重跑一次。
+4. 玩家发行状态未变：**仍未对外发行**，不为旧存档加迁移层（AGENTS.md）。
+
+## rc.26 消缺精修（2026-11-18 00:20 · 历史，已被 rc.27 接续）
+
+> 依据 `修改计划/rc26_polish_and_fix_plan.md` 执行。基线 rc.25（已发版，指针 `b265ed9`）。**本轮只改代码与定稿文本，未提交、未推送、未切指针。**
+
+### 本次做了什么
+
+1. **铁律 3（逐字定稿）**：新增 `scripts/extract-rc26-content.mjs`，从方案代码块原样抠出 `protocol.txt`（21 行）、`state-context.txt`（9 行）和 `literary.json` 六条 body（`terminal-economy` / `archive` / `professional-work` / `business-competition` / `public-services` / `wealth-conflict`），写完回读逐字符比对，输出 `EXTRACT_OK`。
+2. **P0 根除 MVU 红字**：`settlement.js` 的 `prepareModelCommand` 升为全路径归一化——`add`/`insert`/`set` 指向已存在人物一律转 `set` 并合并保留原字段；新人物缺字段时走 `newCharacter` 补齐再转 `set`；`insert` 打在 `shenghao.characters` 根上会拆成单个 `<cid>` 的 `set`。协议第 7 行同步改成「已存在的熟人/已建档人物严禁再次 add 整个人物对象，一律 replace 增量写」。
+3. **P0 超额消费硬约束**：`protocol.txt` 第 13 行与 `literary.json` 的 `terminal-economy` 都写明「OUT 消费总额严禁超过 `user.cashCents`，超额时正文写余额不足/改付定金分期/先提现筹款，不写超额到账、不提交该笔交易」。
+4. **P1 界面精修**：`screens.js` 的 `tierBadge` 改用 `tierBasis(s)`（与提现倍率同源），提现记录文案改「提现前计级身家」；`outfitPanel` 在 `outfit.top === currentClothes` 时不再重复渲染「上装」，并删掉与「此刻·动向」重复的「随身物品」；`settlement.js` 的繁体「雙頰緋紅…」改简体；`seedAnatomy` 把反推的罩杯回填 `cupSize`；`setup-presets.json` 六位预设女主补齐 `cupSize:"D"` 与专属 `addressing`（你/你/哥/学弟/老板/你），`a_note` 出戏备注换成生活化说法；`app.js` 的 `defaultDraft` 预填性器特征、删掉 `parserMode` 与 `retry` 两个死分支；`character()` 补齐 `currentAction/currentMood/currentCondition/currentItems` 四个初始字段；`diagnostics.js` 增加中文错误码（保留英文 code 供单测断言）。
+5. **P1 世界书去八股**：六条正文按方案逐字替换；`state-context` 补堕落度/性能力/现金约束，并把「初始熟人」改成「已收录人物」。
+6. **P2 测试工具箱**：`ego-st-lib.mjs` 的 `promptMustNotContain` 改查「聊天历史」（排除 system 与承载协议示例的世界书消息），不再误判世界书里的 `<UpdateVariable>` 教学示例；`waitGeneration` 的 2.5 秒缓冲保留。
+7. **版本**：`2.0.0-rc.26`、`cardContractRevision` **22**、`releaseNotes` 按方案定稿。
+
+### 实际验证（有效）
+
+- `npm test`：**303 / 303 通过**（新增 6 条 rc.26 用例：add/insert 归一化保留原字段、characters 根 insert 归一化、新人物补默认字段、徽章按 `tierBasis`、行头不重影、诊断中文码；改写 `female-records` 的 `cupSize E/C` 与简体断言）。
+- `npm run build -- --checkpoint` → `BUILD_OK dist/2.0.0-rc.26-checkpoint/`；`npm run check -- --checkpoint` → `CHECK_OK`。
+- 成品抽查：世界书 `神豪终端 · v2.0.0-rc.26`、31 条；protocol 21 行且第 7/13 行含新措辞；`terminal-economy` 含 `user.cashCents` 硬约束；`wealth-conflict` 病句已消失。
+- `worldbookHash` `373fdcfc…`、runtime sha256 `749b5100…`。
+- **实机（8001，checkpoint 卡）**：组件生效关 PASS；开局向导 PASS（性器特征已预填）；发「让顾星遥来家里」后 **toasts 里没有任何 `zod` 报错**，模型本轮 15 条 op **全是 replace**；`顾星遥 cupSize=D addressing=你`、`江映 addressing=老板`，她们页显示「称呼「你」/「称呼「老板」」；`promptChecks` 两项 `ok:true`。报告：`reports/rc.26-酒馆通用流程复验报告.md`。
+
+### 未验证 / 待办
+
+- **未发版**：`npm run build`（非 checkpoint）被保底提交保护拦下（`fallbackRef` 仍指 `38607e6`，世界书已变），所以没出 `dist/2.0.0-rc.26/` 正式卡、没切指针。要发就按七步：提交 SHA_A → `fallbackRef` 改指它 → `npm run build`/`check` → SHA_B → `set-pointer` → `verify-release`。
+- `dist/release.json` 与 `dist/terminal.js` 已被这次未完成构建写成 rc.26 内容（工作树改动，未提交）；指针仍服务 rc.25。
+- 「行头去重」「徽章对齐」只有单测证据，实机未构造出 `outfit.top === currentClothes` 的场景。
+- 超额消费的正文写法只改了提示词，未在实机跑「现金不足却要求超额刷卡」的对照轮。
+
+### 下一步
+
+1. **要发版就按七步走**：提交 SHA_A（源码 + `dist/2.0.0-rc.26-checkpoint/` + `reports/rc.26-酒馆通用流程复验报告.md`）→ `release/loader.config.json` 的 `fallbackRef` 改指 SHA_A → `npm run build` + `npm run check`（产出 `dist/2.0.0-rc.26/神豪终端.json`）→ 提交并推送 SHA_B → `node scripts/set-pointer.mjs <SHA_B>` → `node scripts/verify-release.mjs` 要 `E2E_OK`。
+2. **发版前补一轮实机对照**：现金 100 万时要求「刷卡付 300 万」，看正文是否改写成余额不足／定金分期（验 P0-2 的提示词是否真的生效）。
+3. **复跑命令**（本轮实测可用）：`node scripts/card-probe.mjs "dist/2.0.0-rc.26-checkpoint/神豪终端.json"` → 改 `C:\Users\Administrator\ego\st-run\config.json` 的 `card` → `ego-browser nodejs -e "await import('file:///E:/SHZDCHOSSS/scripts/ego-st-setup.mjs')"` → 用 `ego-st-act.mjs` 走开局与「熟人进屋」。
+4. 玩家发行状态未变：**仍未对外发行**，不为旧存档加迁移层（AGENTS.md）。
+
+## rc.25 女性肉体档案播种 · 此刻/详情四方块 · 财富资产 UI 与入账全修复（2026-11-17 23:20 · 历史）
 
 > 依据《神豪终端 rc.25 终极升级方案》（`C:\Users\Administrator\.gemini\antigravity\brain\46cf9e09-…\rc25_ui_body_economy_plan.md`）执行。基线 rc.24 当时尚未提交、未发布，本次一次性提交 rc.24 + rc.25 源码。
 
@@ -44,6 +392,18 @@
 - `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.25-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
 - 成品抽查：世界书 31 条、`version=2.0.0-rc.25`、`protocol` 21 行（含 `HOUSE|CAR|BUSINESS|YACHT_JET|LUXURY|COLLECTIBLE|OTHER` 与「20至45字内」）、`score`/`private-life` 与方案逐字一致且 `constant:true`、`worldbookHash` `8fb6afbd…`。
 
+### 实机验收（2026-11-17 23:50 · 8001 通用流程 M0–M11）
+
+> 依据 `tests/DSH-酒馆全卡通用测试手册.md`，用 `card-probe` / `ego-st-setup` / `ego-st-act` 跑正式卡 `dist/2.0.0-rc.25/神豪终端.json`（space 1）。完整报告：`reports/rc.25-酒馆通用流程测试报告.md`。
+
+- **组件生效关 PASS**：弹窗「标签导入→全部导入」「内嵌世界书→是」；世界书 `神豪终端 · v2.0.0-rc.25` 已绑定（`globeLit=true`）、10 条正则已启用、5 个 TH 脚本 iframe 起来、`Mvu`/`__CJ_SHENGHAO_SCHEMA__` 均为 object。
+- **开局（M6）PASS**：4 步向导 → 预览「测试员，24岁 · ¥1,000,000 · 3 项资产」→ 提交后楼层 3，变量 513 字段落盘。
+- **rc.25 新特性实机可复现**：两位初始熟人开局即有完整肉体档案（D 罩杯不同乳型/不同户型与阴毛/`virgin=true`），`outfit.top` 非空；此刻页三轴 `♥70 · ❖17 · 🌡️0` + 2×2 方块逐块可展开；详情页三轴、奖池双行大字号、「人物与私密档案」在消费记录上方且记录默认折叠；我的页八类胶囊 + 顶栏左标题右金额/满宽描述。
+- **入账链路（M9）**：88 万买表 → 现金 −¥880,000、账本 `GIFT 88,000,000`、资产登记 `LUXURY`（`ownerId=顾星遥`、`TRANSFERRED`、`basisCents=88,000,000`）、描述 30 字；提现 ¥978,105 ×10 = **¥9,781,050** 实到，账本/记录一致。纯寒暄轮 `rewardEvents` 保持为空。
+- **M1**：重新生成 / 继续生成 / 刷新后重开卡（楼层、变量、浮层全在）PASS；**左右滑未验证**——该实例每楼只有 1 个 swipe（regenerate 覆盖不新增）。
+- **发现的问题**：①**每轮一条 `⚠ [MVU zod]变量更新错误`**——模型把「顾星遥进屋」当正式相识，对已存在 ID 又发 `add`，被 MVU/Zod 判非法；数据仍通过 replace 落盘，但红字很显眼。**建议下一版把 protocol 第 7 行改成「已存在的 ID 一律 replace，只有新 ID 才 add」并补示例。**②模型正文写「到账三百万」但玩家现金只有 100 万，卡按 `INSUFFICIENT_CASH` 正确拒收，剧情与账本脱节（模型层缺口）。③回复开头残留 `<game>`（内嵌 U+200B），疑似第三方扩展产物。
+- **测试工具修正**：`scripts/ego-st-lib.mjs` 的 `waitGeneration` 原实现会在「点完按钮 2–4 秒才真正开始生成」时误判成「超时仍在生成」并中断脚本；已补 2.5 秒缓冲 + 二次 `waitEnd`（未提交，等 YG 决定是否入库）。
+
 ### 发布状态（2026-11-17 23:37，七步已走完）
 
 - SHA_A `38607e64ea6fa9f86bdfe9d0a7c7f8e567251412`（源码 + 两个 checkpoint）→ `release/loader.config.json` 的 `fallbackRef` 改指它 → 非 checkpoint 构建 `BUILD_OK dist/2.0.0-rc.25/` + `CHECK_OK` → SHA_B `b265ed90e284f064198b8394488f7375115031b4`。
@@ -57,21 +417,13 @@
 - 播种人体档案的实际叙事效果（模型是否照着 `chestDetail`/`vaginaLook` 写）未实机确认。
 - 证据兜底在真实模型「概括式 evidence」下的漏单率未压测；兜底句取正文首句，若首句是纯环境描写会记录成偏弱的证据。
 
-### 下一步
+### 下一步（已完成，见本节「实机验收」与「发布状态」）
 
 1. 导入 `dist/2.0.0-rc.25/神豪终端.json` 实机跑：开局看「此刻」三轴与四个方块、行头不再空白、卖画/买房是否 100% 入账、亲密回合好感是否不再倒扣。
 2. 观察播种档案在长对话里是否被模型覆写成更贴合剧情的版本（应覆盖，不该被脚本盖回）。
 3. 实机确认无误后再谈给玩家发行；在此之前不为旧存档加迁移层（AGENTS.md 规则）。
 
-## 【永久铁律】神豪终端 · 变量与提示词（2026-11-17 YG 采纳，永久有效）
-
-> 1. **脚本兜底律**：凡是能由脚本根据日期、分数、次数确定性推算或联动兜底的字段（如生理周期 `cycle`、实战后的处子状态 `virgin=false`、亲密行为后的 `unlockedTags` 与 `withUserCount`），**绝不干等大模型手写**，必须在结算引擎里由脚本自动推算补齐。
-> 2. **示例驱动律**：凡是必须由大模型生成文本的字段（如敏感带 `traits`、打星离场动态 `offscreen`、心声 `currentThought`），**绝不能藏在协议括号里写「按事实增量更新」**，必须给出明确的「当轮触发条件 + 顶层待办索引 + 协议末尾 `<JSONPatch>` 完整抄写示例」；模型是抄示例机器，示例里有什么，它才稳定写什么。
-> 3. **文案逐字照抄律**（2026-11-17 rc.24 起永久有效）：凡涉及世界书（`src/content/literary.json`）、更新协议（`src/content/protocol.txt`）、状态说明（`src/content/state-context.txt`）及开场白的一切文字，**必须 100% 逐字复制粘贴方案设计师给出的定稿文本，一个字、一个标点都不准自行发挥或缩写**，彻底杜绝八股文与楼盘广告腔。落地方式：先写进方案 Markdown 的代码块，再用脚本从方案里抠出原文写盘，不靠手抄。
->
-> 判断新需求是否合格时先对照这三条：能算的交给脚本，要让模型写的就给示例，给定稿就一个字不改。
-
-## 8001 标准流程按手册复跑（2026-11-17 22:44 · 当前最新实机状态）
+## 8001 标准流程按手册复跑（2026-11-17 22:44 · 历史记录，rc.24 时期）
 
 > 依据 `tests/DSH-ego操作手册.md` 第三节跑 `scripts/ego-std-flow-8001.mjs`，未用任何捷径。
 

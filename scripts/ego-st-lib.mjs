@@ -96,6 +96,11 @@ export const BASE_POPUP_RULES = [
 ];
 let extraRules = [];
 export const setExtraPopupRules = (r) => { extraRules = Array.isArray(r) ? r : []; };
+// promptMustNotContain 只应查聊天历史。世界书注入的条目要排除，但不能靠写死某张卡的句子
+// （别的卡的协议条目常用 role:user / assistant 按深度注入）；默认按"本轮激活过的世界书正文"排除，
+// 另可用 config.promptHistoryExclude 追加正则，对付非世界书来源的注入。
+let historyExclude = [];
+export const setPromptHistoryExclude = (r) => { historyExclude = Array.isArray(r) ? r : []; };
 
 export async function readPopups(page) {
   return page.evaluate(() => {
@@ -249,22 +254,38 @@ export async function importCardLore(page) {
 }
 
 // ================= 探针：记录世界书触发、最终提示词、页面报错 =================
-export async function installProbes(page) {
-  return page.evaluate(() => {
+export async function installProbes(page, { promptHistoryExclude = historyExclude } = {}) {
+  return page.evaluate((patterns) => {
     if (window.__agy?.installed) return "已装";
     const ctx = window.SillyTavern?.getContext?.();
-    const A = (window.__agy = { installed: true, wi: [], prompt: null, errors: [], toasts: [] });
+    const A = (window.__agy = { installed: true, wi: [], injected: [], prompt: null, errors: [], toasts: [] });
+    const extraExclude = (patterns || []).flatMap((p) => { try { return [new RegExp(p, "i")]; } catch { return []; } });
     const ev = ctx.eventSource, T = ctx.eventTypes || ctx.event_types;
+    // 「世界书注入」按正文识别：记住本轮激活过的条目正文前缀，提示词里带这些前缀的消息不算聊天历史。
+    // 这样对任何卡都成立，与协议条目用什么 role、插在哪个深度无关。
+    const squash = (v) => String(v ?? "").replace(/\s+/g, " ");
     ev.on(T.WORLD_INFO_ACTIVATED, (arr) => {
-      A.wi.push({ at: Date.now(), entries: (arr || []).map((e) => `${e.world}::${e.comment || e.uid}`) });
+      const entries = arr || [];
+      A.wi.push({ at: Date.now(), entries: entries.map((e) => `${e.world}::${e.comment || e.uid}`) });
       if (A.wi.length > 30) A.wi.shift();
+      for (const e of entries) {
+        const body = squash(e?.content).trim();
+        if (body) A.injected.push(body.slice(0, 80));
+      }
+      if (A.injected.length > 300) A.injected.splice(0, A.injected.length - 300);
     });
+    const isInjected = (m) => {
+      const t = squash(m.content);
+      return A.injected.some((p) => t.includes(p)) || extraExclude.some((re) => re.test(t));
+    };
     ev.on(T.CHAT_COMPLETION_PROMPT_READY, (d) => {
       if (d?.dryRun) return;
       const msgs = d?.chat || [];
+      const line = (m) => `[${m.role}] ${typeof m.content === "string" ? m.content : JSON.stringify(m.content)}`;
       A.prompt = { at: Date.now(), count: msgs.length, chars: msgs.reduce((n, m) => n + String(m.content ?? "").length, 0),
         roles: msgs.map((m) => `${m.role}:${String(m.content ?? "").length}`),
-        text: msgs.map((m) => `[${m.role}] ${typeof m.content === "string" ? m.content : JSON.stringify(m.content)}`).join("\n") };
+        text: msgs.map(line).join("\n"),
+        historyText: msgs.filter((m) => m.role !== "system" && !isInjected(m)).map(line).join("\n") };
     });
     window.addEventListener("error", (e) => A.errors.push(String(e.message || e).slice(0, 200)));
     window.addEventListener("unhandledrejection", (e) => A.errors.push("Promise: " + String(e.reason?.message || e.reason).slice(0, 200)));
@@ -276,7 +297,7 @@ export async function installProbes(page) {
       }
     }).observe(document.body, { childList: true, subtree: true });
     return "新装";
-  });
+  }, promptHistoryExclude);
 }
 
 // ================= 等生成 =================
@@ -296,11 +317,18 @@ export async function waitGeneration(page, sig, { timeout = 180000 } = {}) {
     await page.waitForTimeout(300);
   }
   if (!started) return { ok: false, why: "10 秒内没开始生成（按钮没点到 / API 断了 / 有弹窗挡着）" };
-  while (Date.now() - t0 < timeout) {
-    if (!(await isGenerating(page))) break;
-    await page.waitForTimeout(1500);
-  }
-  await page.waitForTimeout(3000); // 给脚本/MVU 落盘留时间
+  const waitEnd = async () => {
+    while (Date.now() - t0 < timeout) {
+      if (!(await isGenerating(page))) break;
+      await page.waitForTimeout(1500);
+    }
+  };
+  await waitEnd();
+  // 有的环境点完按钮要 2–4 秒才真正开始流式生成；这里补一段缓冲，
+  // 否则「还没开始」会被误判成「超时仍在生成」。
+  await page.waitForTimeout(2500);
+  if (await isGenerating(page)) await waitEnd();
+  await page.waitForTimeout(2500); // 给脚本/MVU 落盘留时间
   const cur = await lastSig(page);
   const lastIsUser = await page.evaluate(() => (window.SillyTavern?.getContext?.()?.chat || []).at(-1)?.is_user ?? null);
   if (await isGenerating(page)) return { ok: false, why: "超时仍在生成" };
@@ -461,16 +489,18 @@ export async function survey(page, baseline, opts = {}) {
       wiLast: A.wi?.at(-1) ?? null,
       prompt: A.prompt ? { count: A.prompt.count, chars: A.prompt.chars } : null,
       promptText: A.prompt?.text ?? "",
+      promptHistoryText: A.prompt?.historyText ?? "",
       errors: (A.errors || []).slice(-10),
       toasts: (A.toasts || []).slice(-10),
     };
   }, { base: baseline || { body: [], sheld: [] }, depth: opts.depth ?? 3 });
 
   // 提示词检查（config.promptMustContain / promptMustNotContain）
+  // 应含：查全量 Prompt；不应含：只查聊天历史楼层，避免误伤常驻世界书里的协议教学示例。
   const checks = [];
   for (const k of opts.promptMustContain ?? []) checks.push({ 提示词应含: k, ok: s.promptText.includes(k) });
-  for (const k of opts.promptMustNotContain ?? []) checks.push({ 提示词不应含: k, ok: !s.promptText.includes(k) });
-  const promptText = s.promptText; delete s.promptText;
+  for (const k of opts.promptMustNotContain ?? []) checks.push({ 提示词不应含: k, ok: !s.promptHistoryText.includes(k) });
+  const promptText = s.promptText; delete s.promptText; delete s.promptHistoryText;
   s.promptChecks = checks;
 
   // 变量与上一次相比改了哪些（只比较叶子路径）

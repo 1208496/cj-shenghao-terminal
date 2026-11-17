@@ -220,3 +220,100 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .asset-description{margin:0;width:100%;line-height:1.65;overflow-wrap:anywhere}
 /* rc.25：经历与底线之间加一条分隔线 */
 .limit-sep{border-top:1px dashed var(--ui-line);margin:7px 0}
+
+/* rc.27：三套主题的扩展语义色（樱粉/魅紫/翠绿/暖金） */
+:root{
+  --ui-plum-bg:#f4eef8;--ui-plum:#734085;--ui-plum-border:#dcc7e3;
+  --ui-green-bg:#e8f3e7;--ui-green:#3b6e4c;--ui-green-border:#c5dcc8;
+  --ui-amber-bg:#fdf3df;--ui-amber:#965a1e;--ui-amber-border:#ebd1a7;
+}
+.theme-gold{
+  --ui-plum-bg:#f6edf8;--ui-plum:#7b3b8c;--ui-plum-border:#dfc5e6;
+  --ui-green-bg:#eaf5ec;--ui-green:#387049;--ui-green-border:#c3dec8;
+  --ui-amber-bg:#fff4df;--ui-amber:#9c5718;--ui-amber-border:#ebd0a0;
+}
+.theme-purple{
+  --ui-plum-bg:#412954;--ui-plum:#e4b8ff;--ui-plum-border:#6d488a;
+  --ui-green-bg:#243d35;--ui-green:#9fe3b8;--ui-green-border:#3d695a;
+  --ui-amber-bg:#473522;--ui-amber:#ffd596;--ui-amber-border:#785937;
+}
+
+/* rc.27：365px 窄屏女性信息分层样式 */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px}
+.chip-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font-size:calc(10px * var(--cj-font-scale,1));font-weight:700;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-strong);line-height:1.4}
+.chip-pink{background:var(--ui-pink-bg);color:var(--ui-pink);border-color:var(--ui-pink-border)}
+.chip-plum{background:var(--ui-plum-bg);color:var(--ui-plum);border-color:var(--ui-plum-border)}
+.chip-green{background:var(--ui-green-bg);color:var(--ui-green);border-color:var(--ui-green-border)}
+.chip-amber{background:var(--ui-amber-bg);color:var(--ui-amber);border-color:var(--ui-amber-border)}
+
+.mini-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0 8px}
+.mini-stat{background:var(--ui-card2);border:1px solid var(--ui-line);border-radius:10px;padding:5px 6px;text-align:center}
+.mini-stat small{display:block;font-size:calc(9.5px * var(--cj-font-scale,1));color:var(--ui-sub);line-height:1.2}
+.mini-stat b{font-size:calc(11px * var(--cj-font-scale,1));color:var(--ui-ink)}
+
+.kv{display:grid;grid-template-columns:8.2em minmax(0,1fr);gap:7px;padding:5.5px 0;border-bottom:1px dashed var(--ui-line);align-items:baseline;font-size:calc(11px * var(--cj-font-scale,1));line-height:1.6}
+.kv:last-child{border-bottom:0;padding-bottom:0}
+.kv-k{color:var(--ui-sub);font-size:calc(10.5px * var(--cj-font-scale,1));font-weight:600;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.kv-v{color:var(--ui-ink);min-width:0;overflow-wrap:anywhere}
+.kv-v b{color:var(--ui-strong);font-weight:700}
+.kv-v b.hl-pink{color:var(--ui-pink)}
+.kv-v b.hl-plum{color:var(--ui-plum)}
+.kv-v b.hl-strong{color:var(--ui-strong)}
+
+.thought-card{border-left:3px solid var(--ui-pink);background:var(--ui-pink-bg);border-radius:9px;padding:7px 9px;margin:6px 0;color:var(--ui-ink)!important}
+.goal-card{border-left:3px solid var(--ui-accent);background:var(--ui-soft);border-radius:9px;padding:7px 9px;margin-top:7px;color:var(--ui-ink)!important;font-weight:600}
+
+.limit-cell{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:4.5px 7px;border-radius:8px;border:1px solid var(--ui-line);background:var(--ui-card2);font-size:calc(10.5px * var(--cj-font-scale,1));white-space:nowrap}
+.limit-cell.locked{opacity:.52;background:transparent}
+.limit-badge{font-size:calc(9.5px * var(--cj-font-scale,1));font-weight:700;padding:1px 6px;border-radius:6px;color:var(--ui-sub)}
+
+/* rc.27：固定正文底部模式的折叠态横条 */
+.folded.folded-bar{width:calc(100% - 4px)!important;height:48px!important;margin:2px!important;padding:0 14px!important;border-radius:14px!important;border-width:2px!important;flex-direction:row!important;justify-content:space-between!important;align-items:center!important;cursor:pointer!important}
+.folded-bar-left,.folded-bar-right{display:flex;align-items:center;gap:8px;min-width:0}
+.folded-bar-left b{font-size:calc(13px * var(--cj-font-scale,1));white-space:nowrap}
+.folded-bar-left small{font-size:calc(10.5px * var(--cj-font-scale,1));opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folded-bar-right{flex-shrink:0;position:relative}
+.folded-bar-right b{font-size:calc(12.5px * var(--cj-font-scale,1))}
+.folded-bar-right small{font-size:calc(10px * var(--cj-font-scale,1));opacity:.85}
+
+/* rc.28：固定正文底部 · 100% 满宽内嵌宽屏面板模式（脱掉手机外壳与刘海） */
+body.is-bottom-dock{overflow:visible!important}
+.phone.is-bottom-dock{
+  height:auto!important;min-height:0!important;max-height:none!important;
+  border:1px solid var(--ui-line)!important;border-radius:16px!important;
+  box-shadow:0 8px 26px var(--ui-shadow)!important;
+  background:var(--ui-surface)!important;
+}
+.phone.is-bottom-dock::before{display:none!important}
+.phone.is-bottom-dock .phone-hd{
+  height:auto!important;min-height:48px!important;padding:10px 16px!important;
+  border-bottom:1px solid var(--ui-line);cursor:default!important;
+  flex-wrap:wrap;gap:10px;
+}
+.phone.is-bottom-dock .phone-screen{
+  flex:none!important;height:auto!important;max-height:none!important;
+  overflow:visible!important;padding:14px 16px 18px!important;
+}
+.phone.is-bottom-dock .bottom{display:none!important}
+
+/* rc.28：顶栏一体化导航（宽屏底部模式独有） */
+.wide-nav{display:none}
+.phone.is-bottom-dock .wide-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 auto}
+.phone.is-bottom-dock .wide-tab{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-sub);border-radius:999px;padding:5px 13px;font-size:calc(12px * var(--cj-font-scale,1));font-weight:700;line-height:1.5}
+.phone.is-bottom-dock .wide-tab .i{font-size:calc(14px * var(--cj-font-scale,1));line-height:1}
+.phone.is-bottom-dock .wide-tab.active{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-text)}
+
+/* rc.28：宽屏多列舒展 */
+.women-grid{display:grid;grid-template-columns:minmax(0,1fr)}
+.phone.is-bottom-dock .women-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+@media(min-width:520px){
+  .phone.is-bottom-dock .dossier-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .phone.is-bottom-dock .limit-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .phone.is-bottom-dock .mine-section[data-mine-section="assets"] .asset-mini{display:inline-flex;width:calc(50% - 5px);vertical-align:top;margin-right:5px}
+}
+
+/* rc.28 修复：长标签不再压到右侧数值（标签列随字号自适应 + 底线格禁止溢出） */
+.kv-v{min-width:0}
+.limit-cell>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.limit-cell .limit-badge{flex-shrink:0}

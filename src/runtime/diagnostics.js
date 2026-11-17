@@ -1,3 +1,11 @@
+const CODE_LABELS={
+  INSUFFICIENT_CASH:'可用现金不足（INSUFFICIENT_CASH）',
+  PAYMENT_NOT_PROVEN:'正文未证实已完成付款（PAYMENT_NOT_PROVEN）',
+  INVALID_MONEY:'金额格式无效（INVALID_MONEY）',
+  ALLOCATION_EXCEEDS_COST:'分摊金额超过实付总额（ALLOCATION_EXCEEDS_COST）',
+  ASSET_REQUIRED:'购房购车须同步附上资产信息（ASSET_REQUIRED）',
+  INVALID_TEXT:'文本为空、类型不符或过长（INVALID_TEXT）'
+};
 export function diagnosticMessage(items=[]){
   items=items.filter(item=>['CASH_TRANSACTION','TRANSACTION_REFUND','ASSET_TRANSFER'].includes(item.eventType));
   if(!items.length)return '';
@@ -6,7 +14,7 @@ export function diagnosticMessage(items=[]){
   if(codes.every(code=>code==='NO_NATIVE_COMMANDS'||code==='NATIVE_NOT_PROCESSED'))return '本轮变量更新尚未确认。请检查回复末尾是否有有效的 UpdateVariable/JSONPatch 更新块，再在 MVU 面板检查解析结果。';
   const details=items.slice(0,3).map(item=>{
     const where=Number.isInteger(item.ordinal)?'第'+(item.ordinal+1)+'项事件'+(item.field?'的 '+item.field:''):item.field||item.person||'';
-    const reason=item.code==='INVALID_TEXT'?'文本为空、类型不符或过长':item.code;
+    const reason=CODE_LABELS[item.code]||item.code;
     return (where?where+'：':'')+reason;
   });
   const isolated=items.every(item=>Number.isInteger(item.ordinal)||item.field||item.person);

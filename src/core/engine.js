@@ -88,10 +88,22 @@ export function computeCycle(cid,dateStr,pregnancy='未孕'){
 // Stable 64-bit FNV-1a hash: the same person always seeds the same body record,
 // so a replay of the opening never reshuffles her chest, shape or scent.
 function fnv(value){let h=14695981039346656037n;for(const ch of String(value??'')){h^=BigInt(ch.codePointAt(0));h=BigInt.asUintN(64,h*1099511628211n);}return h.toString(16);}
-function inferCupSize(bust,waist){
-  const diff=(Number(bust)||0)-(Number(waist)||0);
-  if(!(diff>0))return 'C';
-  return diff>=26?'F':diff>=23?'E':diff>=20?'D':diff>=17?'C':diff>=14?'B':'A';
+// rc.28：三层罩杯推算——①文字关键词（巨乳/贫乳/X罩杯）优先；②双向身高骨架修正
+// （150cm 娇小细腰天然加成大罩杯，160cm+ 预设熟人保持 B/B/C/C/D/E）；③无三围时按哈希分布。
+export function inferCupSize(bust,waist,height=165,textHint='',seedHash=0){
+  const hint=String(textHint||'');
+  const explicit=hint.match(/([A-G])\s*(?:罩杯|杯)/i);
+  if(explicit)return explicit[1].toUpperCase();
+  if(/巨乳|爆乳|波涛汹涌|傲人双峰|呼之欲出|极度丰满|豪乳|酥胸硕大|童颜巨乳/.test(hint))return (Number(seedHash)||0)%2===0?'E':'F';
+  if(/平胸|贫乳|飞机场|青涩微隆|一马平川/.test(hint))return 'A';
+  const b=Number(bust)||0,w=Number(waist)||0,h=Number(height)||165;
+  if(!(b>0&&w>0&&b>w)){
+    const pool=['B','C','C','D','D','E','F'];
+    return pool[(Number(seedHash)||0)%pool.length];
+  }
+  const underbust=w+8.5+(h-160)*0.22;
+  const diff=b-underbust;
+  return diff>=21?'F':diff>=18.5?'E':diff>=16?'D':diff>=13.5?'C':diff>=11?'B':'A';
 }
 // rc.25 铁律 1：女性私密肉体档案由脚本确定性播种，绝不留给模型从空白开始填。
 // Every field is filled only when blank, so plot-driven rewrites always win.
@@ -105,7 +117,10 @@ export function seedAnatomy(c) {
   const pick2 = (arr, shift) => arr[Math.floor(h / shift) % arr.length];
   const isVirgin = c.physiology.virgin !== false && (c.intimacy.withUserCount || 0) === 0 && (c.intimacy.sexPartnerCount || 0) === 0;
   if (c.physiology.virgin === null || c.physiology.virgin === undefined) c.physiology.virgin = isVirgin;
-  const cup = c.cupSize || (c.bustCm && c.waistCm ? inferCupSize(c.bustCm, c.waistCm) : 'C');
+  const hint = `${c.body || ''} ${c.appearance || ''}`;
+  const cup = c.cupSize || inferCupSize(c.bustCm, c.waistCm, c.heightCm, hint, h);
+  // rc.26：反推出来的罩杯回填进 cupSize，界面才能在三围后面显示「（D 罩杯）」。
+  if (!c.cupSize) c.cupSize = cup;
   if (!c.physiology.chestDetail) {
     const shapes = ['饱满水滴型', '挺拔半球型', '丰盈圆润型', '娇俏铃兰型'];
     const areolas = isVirgin ? ['浅粉娇嫩乳晕，乳首小巧挺立', '淡樱粉色乳晕，轻触即敏锐充血', '白里透粉乳晕，颗粒细腻敏感'] : ['蜜桃绯红乳晕，乳首饱满易立', '柔嫩粉润乳晕，握感绵密充盈'];
@@ -229,7 +244,7 @@ function character(c) {
     ...basicProfile(c),beautyScore:c.beautyScore==null?null:integer(c.beautyScore,1,100),knownFacts:text(c.knownFacts ?? c.notes ?? '',1200,true),profileFixed:null,profileLocked:false, trackingState:'RECORDED',
     addressing:text(c.addressing ?? '',20,true),impression:'',starred:false,currentThought:'',arousal:0,offscreen:'',currentGoal:text(c.currentGoal ?? '',200,true),
     ...priv,
-    currentClothes:'',currentPose:'',currentExpression:'', avatarRef:null,portraitRef:null});
+    currentClothes:'',currentPose:'',currentAction:'',currentExpression:'',currentMood:'',currentCondition:'',currentItems:'', avatarRef:null,portraitRef:null});
 }
 export function validateDraft(d) {
   requireRule(d && typeof d === 'object', 'INVALID_DRAFT');
@@ -420,7 +435,9 @@ function applyEvent(s,e,eventKey,anchor) {
       const out=['SHOPPING','DINING','TRAVEL','GIFT','TRANSFER_OUT','PROPERTY_PURCHASE','VEHICLE_PURCHASE'];
       const incoming=['SALARY','BUSINESS_INCOME','OTHER_INCOME','TRANSFER_IN','ASSET_SALE'];
       requireRule((e.direction==='OUT'?out:incoming).includes(e.kind),'INVALID_TRANSACTION_KIND');
-      if(e.direction==='OUT' && e.payer!=='USER')return;
+      // rc.29：任何 OUT 支出一律视为玩家本人动用 user.cashCents。模型把 payer
+      // 写成公司/家族/财务走账也照样实扣，超额走下面的 INSUFFICIENT_CASH。
+      if(e.direction==='OUT')e.payer='USER';
       requireRule(!['REFUND','WITHDRAWAL_REWARD'].includes(e.kind),'FORBIDDEN_CASH_WRITE');
       const allocations=e.allocations || [];
       requireRule(Array.isArray(allocations)&&allocations.length<=100,'INVALID_ALLOCATION');

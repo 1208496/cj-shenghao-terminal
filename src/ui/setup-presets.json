@@ -94,7 +94,7 @@
       "大学毕业时购入的纪念款腕表，走时精准，平时在正式场合佩戴",
       "日常使用，保养正常，没有用于出租或抵押",
       "购入后一直由本人使用，目前存放在住处",
-      "作为既有财产登记，本次开局不再发生购买支出"
+      "成色崭新，一直由本人妥善保管，日常随时取用"
     ],
     "c_relation": [
       "合租室友",
@@ -153,6 +153,14 @@
       "公司宿舍",
       "暂住朋友家",
       "短租民宿"
+    ],
+    "_gen_traits": [
+      "形态饱满挺拔，青筋分明，热度惊人",
+      "柱身粗壮笔直，冠头饱满硕大，充血后极具视觉压迫感",
+      "尺寸傲人且硬度极佳，表面脉络盘绕，持久滚烫",
+      "匀称修长，棱角分明，爆发力与持久度兼备",
+      "前端微翘易顶敏感深处，柱身粗硕滚烫，存在感极强",
+      "天赋异禀的巨物规格，青筋虬结，兼具惊人充血量与续航力"
     ]
   },
   "contacts": [
@@ -174,14 +182,16 @@
       "heightCm": 166,
       "weightKg": 50,
       "bustCm": 84,
-      "waistCm": 62,
+      "waistCm": 60,
       "hipCm": 88,
       "shoeSizeEu": 37,
       "notes": "一年前在社区街角开了一家独立花店，因为经常去买绿植而逐渐熟络。她平时专注于花艺设计与植物养护，闲暇时喜欢研究草本茶饮和园艺摄影，性格温和但对审美有着自己的坚持。",
       "currentGoal": "月底前要凑齐街角花店续租的18万押金与转让费，否则店铺将被房东收回",
       "present": false,
       "gender": "女",
-      "beautyScore": 76
+      "beautyScore": 76,
+      "cupSize": "C",
+      "addressing": "你"
     },
     {
       "presetId": "design_colleague",
@@ -199,16 +209,18 @@
       "appearance": "黑色短发打理得干净利落，戴着黑框防蓝光眼镜，眼神专注冷静，日常偏好黑白灰三色的极简休闲装扮。",
       "body": "身形高挑匀称，肩线舒展，日常有散步和游泳的习惯，坐立时姿态自然。",
       "heightCm": 169,
-      "weightKg": 54,
-      "bustCm": 86,
-      "waistCm": 64,
-      "hipCm": 90,
+      "weightKg": 52,
+      "bustCm": 83,
+      "waistCm": 61,
+      "hipCm": 89,
       "shoeSizeEu": 38,
       "notes": "曾在同一个大型项目组里并肩作战过的合作伙伴，工作上配合默契。她平时专注于品牌视觉与数字艺术创作，私下里是个模型收集爱好者，周末常去逛独立艺术展。",
       "currentGoal": "熬夜做的澜光天地年度视觉竞标案被部门总监抢占署名，正设法拿回主导权",
       "present": false,
       "gender": "女",
-      "beautyScore": 82
+      "beautyScore": 82,
+      "cupSize": "B",
+      "addressing": "你"
     },
     {
       "presetId": "cafe_neighbor",
@@ -226,16 +238,18 @@
       "appearance": "齐肩短发染成浅亚麻色，笑起来左边脸颊有一个浅酒窝，眼睛亮晶晶的，常穿着工装裤搭配干净的白T恤。",
       "body": "身高适中，体型匀称充满元气，动作敏捷利落，举手投足间透着青春朝气。",
       "heightCm": 163,
-      "weightKg": 48,
-      "bustCm": 82,
-      "waistCm": 60,
-      "hipCm": 86,
+      "weightKg": 47,
+      "bustCm": 80,
+      "waistCm": 59,
+      "hipCm": 85,
       "shoeSizeEu": 36,
       "notes": "公寓楼下精品咖啡馆的老板，因为经常去买手冲咖啡而成为熟客。她对咖啡豆烘焙有着极高的热情，店里还收留了一只橘猫，平时喜欢收集黑胶唱片和尝试研发新式特调饮品。",
       "currentGoal": "咖啡馆烘豆机故障停摆，还被隔壁新开的连锁品牌恶意压价抢客",
       "present": false,
       "gender": "女",
-      "beautyScore": 79
+      "beautyScore": 79,
+      "cupSize": "B",
+      "addressing": "哥"
     },
     {
       "presetId": "uni_alumni",
@@ -253,16 +267,18 @@
       "appearance": "乌黑顺直的及腰长发，眉目清冷端庄，妆容淡雅精致，日常多穿剪裁得体的通勤风衣或西装套裙。",
       "body": "身材高挑匀称，仪态端方挺拔，常年练习瑜伽使她的身形线条格外柔美流畅。",
       "heightCm": 170,
-      "weightKg": 54,
-      "bustCm": 86,
-      "waistCm": 64,
-      "hipCm": 90,
+      "weightKg": 55,
+      "bustCm": 89,
+      "waistCm": 61,
+      "hipCm": 91,
       "shoeSizeEu": 38,
       "notes": "曾在一场高校社团开放活动中相识，之后保持联系。她目前在财经期刊负责深度报道，工作干练，业余喜欢读历史著作、听交响乐。交谈时重视事实，也愿意听不同意见。",
       "currentGoal": "正在暗中调查东岸一桩私募违约内幕，遭到涉事方施压要求撤稿",
       "present": false,
       "gender": "女",
-      "beautyScore": 84
+      "beautyScore": 84,
+      "cupSize": "D",
+      "addressing": "学弟"
     },
     {
       "presetId": "gym_coach",
@@ -281,15 +297,17 @@
       "body": "身形结实匀称，肩背和腿部有清晰的训练线条，动作稳健，步履轻快。",
       "heightCm": 172,
       "weightKg": 60,
-      "bustCm": 88,
-      "waistCm": 66,
-      "hipCm": 94,
+      "bustCm": 92,
+      "waistCm": 62,
+      "hipCm": 95,
       "shoeSizeEu": 39,
       "notes": "附近健身房的金牌私教，在办理健身卡体测时认识。她对待体能训练非常严谨认真，生活作息极其规律，除了日常带课和自我训练外，周末喜欢去郊外进行山地骑行或露营。",
       "currentGoal": "所在的连锁健身房老板准备卷款跑路，她正想办法盘下场地独立开私教馆",
       "present": false,
       "gender": "女",
-      "beautyScore": 78
+      "beautyScore": 78,
+      "cupSize": "E",
+      "addressing": "老板"
     },
     {
       "presetId": "startup_partner",
@@ -308,15 +326,17 @@
       "body": "身材匀称，肩颈舒展，步伐沉稳，常年打壁球让她保持着不错的体能。",
       "heightCm": 167,
       "weightKg": 53,
-      "bustCm": 85,
-      "waistCm": 63,
+      "bustCm": 86,
+      "waistCm": 61,
       "hipCm": 90,
       "shoeSizeEu": 37,
       "notes": "在一次青年创业沙龙上结识的朋友，彼此在商业理念上颇为投契，曾一起探讨过小型项目的可行性。她目前正忙于经营一家智能硬件初创企业，平时热爱研究前沿科技数码，偶尔通过打壁球解压。",
       "currentGoal": "智能硬件首批量产遭遇代工厂临时毁约断供，急需300万过桥资金与新渠道",
       "present": false,
       "gender": "女",
-      "beautyScore": 81
+      "beautyScore": 81,
+      "cupSize": "C",
+      "addressing": "你"
     }
   ]
 }
