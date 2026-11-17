@@ -54,7 +54,16 @@
 
 她们页双列在底部模式下的列宽（rc.29 未改该段代码，沿用 rc.28 的 `325.24px × 2`）；`/swipe` 分支切换下的重放实机（与 `/del` 同入口，单测覆盖）；建档 90 秒 `MODEL_TIMEOUT` 路径。
 
-### 六、下一步
+### 六、发布链（2026-11-18 07:00 已走完，作者测试指针）
+
+- 代码提交 **`9bc30ab`**（rc.29 全部改动 + 报告 + AGY 方案），产物提交 **`4591deb`**（`fallbackRef` 已指向 `9bc30ab`，正式构建 `dist/2.0.0-rc.29/`）。
+- 已推 `origin/release`（`f060f0f..4591deb`）。
+- CDN 校验：`testingcf / fastly / cdn` 三个 jsdelivr host 的 `dist/terminal.js`（301987 字节）与 `dist/release.json` 与本地**逐字节一致**。
+- 指针 `cj_shenghao_terminal_v2_ref`：**`b265ed9`（rc.25） → `4591deb`（rc.29）**，回读校验 `POINTER_OK`。
+- `node scripts/verify-release.mjs` → **`E2E_OK`**：元数据 version=2.0.0-rc.29、sha256=`a792e0c3…`、世界书契约 `7636de87…` 卡与元数据一致、三 host 本体 mark+sha256 全匹配。
+- **这只是作者测试更新指针，玩家发行状态未变（仍未对外发行）**；`cardContractRevision` 25，玩家要吃 rc.29 必须整卡重导。
+
+### 七、下一步
 
 1. 要发版就走七步（提交 SHA_A → `fallbackRef` → 非 checkpoint 构建 + check → SHA_B → `set-pointer` → `verify-release` 要 `E2E_OK`）；本轮未提交。
 2. 需要的话补验：她们页双列列宽、`/swipe` 重放实机、90 秒超时路径。
