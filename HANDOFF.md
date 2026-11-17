@@ -6,14 +6,203 @@
 
 <!-- SHZD-HANDOFF-BEGIN PH-20261117-SHZD-01 -->
 
+## rc.25 女性肉体档案播种 · 此刻/详情四方块 · 财富资产 UI 与入账全修复（2026-11-17 23:20 · 最新）
+
+> 依据《神豪终端 rc.25 终极升级方案》（`C:\Users\Administrator\.gemini\antigravity\brain\46cf9e09-…\rc25_ui_body_economy_plan.md`）执行。基线 rc.24 当时尚未提交、未发布，本次一次性提交 rc.24 + rc.25 源码。
+
+### 本次做了什么
+
+1. **铁律 3（逐字定稿）**：新增 `scripts/extract-rc25-content.mjs`，从方案 Markdown 的代码块里原样抠出 `score` / `private-life` 两条世界书正文与整份 `protocol.txt`（21 行），写完回读逐字符比对，输出 `EXTRACT_OK`。没有手抄一个字。
+2. **`project.json` / `package*.json`**：`2.0.0-rc.25`，`cardContractRevision` 20 → **21**，`releaseNotes` 换成 rc.25 摘要。
+3. **`src/core/engine.js`**：
+   - 新增并导出 `seedAnatomy(c)`：按 `fnv(id)` 的 64 位稳定哈希确定性播种胸型乳晕（`chestDetail`）、下体户型与色泽（`vaginaLook`：饱满馒头穴/一线天玉缝/粉嫩水滴形/小巧柳叶唇/微绽蝴蝶唇 + 白皙浅粉/娇嫩粉润/蜜桃绯红）、紧致与湿润（`vaginaState`）、阴毛（`pubicHair`：天生白虎/倒三角/柳叶形等）、后庭（`anusLook`/`anusState`）、体香（`bodyScent`）、敏感带（`traits`）、性观念/初体验/性癖、软肋与顾虑。只补空白，已有内容永远优先；`virgin` 为 null 时按 `withUserCount`/`sexPartnerCount` 推。
+   - `character()` 返回前调用；罩杯为空时由 `inferCupSize(bust,waist)` 反推（A–F）。
+   - `assetKind(kind,name)` 扩为 7 类并支持中文/别名自动识别；`assetDescription(a,kind,amountCents)` 收紧为 **≤50 字**（旧存档长描述自动截断），七类各一套 35–48 字兜底文案。
+   - `normalizeEvent(value,anchor,state,sourceText)`：`ASSET`/`PURCHASE`/`ASSET_PURCHASE`/`PROPERTY_PURCHASE`/`VEHICLE_PURCHASE` 自动折成 `CASH_TRANSACTION`（带 `asset`、`PROPERTY_PURCHASE`/`VEHICLE_PURCHASE`/`SHOPPING`）；`ASSET_SALE` 但资产不在玩家持有列表时改判 `OTHER_INCOME`；交易 `evidence` 与正文不逐字匹配时，用本轮正文首句有效叙事兜底（单测哨兵词 `没有发生` / `正文没有这句话`、未付款否定句、非字符串 evidence 一律不兜底）。
+   - `processEvents` 先归一化再查类型白名单，`ASSET` 简写不再被 `UNKNOWN_EVENT` 丢掉。
+   - `CASH_TRANSACTION` 里任何带 `e.asset` 的 OUT 交易都会登记资产，缺 `assetId` 时按 `fnv(name:factId)` 生成确定性 ID。
+4. **`src/runtime/settlement.js`**：
+   - `completeInitialState`：每位角色跑 `seedAnatomy`；`outfit.top` 与 `currentClothes` 都空时从 `appearance`（`/穿着|身着|一袭|一身|偏好/`）提取穿搭短语，否则按职业给默认通勤装，再走 `syncOutfit`。
+   - `syncPrivateRecords`：先 `seedAnatomy`，再按「实战 / 内射标签 / arousal≥65 / arousal≥40」演进 `vaginaState`；模型本轮亲手改写过的值优先保留；初夜把播种的「处女膜完好」改写成「初夜已由你夺取」。
+   - `settleNative`：本轮该角色有 `score≥60` 的 BEHAVIOR 或 `mode:INTIMATE` 时，`AFFECTION_CHANGE` 的负增量截为 0。
+5. **`src/runtime/schema.js`**：`asset.kind` 改为 `z.preprocess` 智能映射的 7 类枚举（旧枚举与中文别名都能过）。
+6. **`src/ui/screens.js` / `app.js` / `style.css`**：删除两句出戏提示（「这些记录来自实际接触…」「档案供你查阅…」）；此刻页名字行改三轴，展开只留 `💭 心声` + 三条进度条 + 2×2 方块（`data-scene-section="<id>:0..3"`：此刻·动向 / 行头·穿戴 / 身姿·基础 / 欲念·私密）+ 查看档案按钮；详情页顶部补三条进度条，基础档案并入「人物与私密档案」四方块（身姿·基础 / 欲念·肉体 / 行头·穿搭 / 经历·尺度），与九大档案一起挪到消费/提现记录上方，两张记录卡去掉 `open` 默认折叠，头像/立绘按钮并入人物主卡；`mine()` 的「可用现金/持有资产」与详情奖池的「消费入池/暴击入池」改为上下双行 15px 加粗大数字，资产卡片改「顶栏左标题右金额 + 满宽描述」，分类胶囊扩为 8 个（含全部）。`app.js` 新增 `sceneSection` Map 与点击切换，开局「登记资产」下拉补到 7 类。
+7. **`src/ui/opening-presets.js`**：六个开局资产描述换成方案定稿的 36–41 字短描述。
+
+### 有效决定
+
+- `seedAnatomy` 用 `fnv(id)` 前 8 位（`Number('0x…')`，方案原文写 `Number(hash.slice(0,8))` 会得到 NaN）当哈希，同一人物每次开局播种结果恒定，回放/重开不会换一套胸型。
+- 播种只填空白：模型或建档写过的内容优先，避免剧情覆写被脚本盖回去。
+- 证据兜底只救「字符串 evidence」，数字等非法类型仍旧按 `INVALID_TEXT` 报错（`settlement-batch` 用例依赖该行为）。
+- 资产描述上限落在 `assetDescription` 一处（schema 仍留 800 兼容旧存档），旧长描述展示时截到 50 字。
+- 「此刻」四个方块与详情四块共用同一套 `blockGrid` 渲染，只换标题组、状态键与 `data-*` 属性。
+
+### 实际验证（有效）
+
+- `npm test`：**297 / 297 通过**（rc.24 的 285 + 新增 `tests/rc25-body-economy.test.mjs` 12 条：播种完整性/确定性、`vaginaState` 四种演进、`ASSET` 简写入账、卖画转其他收入、SHOPPING 带资产自动登记、证据首句兜底与哨兵/未付款拒绝、开局穿搭、亲密回合禁倒扣、七类映射与 50 字上限、三轴与四方块/折叠顺序、协议与世界书关键词）。
+- 同批改写的旧断言：`behavior-output`（新协议的 BEHAVIOR 示例分数为 98，区间改 5000 万–1.2 亿）、`female-records`（播种后的 virgin/私密卡/穿搭/UI 结构）、`profile`（方块点击后才出神情与性格标签）。
+- `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.25-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
+- 成品抽查：世界书 31 条、`version=2.0.0-rc.25`、`protocol` 21 行（含 `HOUSE|CAR|BUSINESS|YACHT_JET|LUXURY|COLLECTIBLE|OTHER` 与「20至45字内」）、`score`/`private-life` 与方案逐字一致且 `constant:true`、`worldbookHash` `8fb6afbd…`。
+
+### 未验证 / 未做
+
+- 真实 SillyTavern 实机：**未跑**。三轴行、2×2 方块点击、财富双行大字号、七类胶囊、资产卡片在 320px 窄容器与暗紫主题下的观感都只有离线渲染证据。
+- 播种人体档案的实际叙事效果（模型是否照着 `chestDetail`/`vaginaLook` 写）未实机确认。
+- 证据兜底在真实模型「概括式 evidence」下的漏单率未压测；兜底句取正文首句，若首句是纯环境描写会记录成偏弱的证据。
+
+### 下一步
+
+1. 导入 `dist/2.0.0-rc.25/神豪终端.json` 实机跑：开局看「此刻」三轴与四个方块、行头不再空白、卖画/买房是否 100% 入账、亲密回合好感是否不再倒扣。
+2. 观察播种档案在长对话里是否被模型覆写成更贴合剧情的版本（应覆盖，不该被脚本盖回）。
+3. 实机确认无误后再谈给玩家发行；在此之前不为旧存档加迁移层（AGENTS.md 规则）。
+
 ## 【永久铁律】神豪终端 · 变量与提示词（2026-11-17 YG 采纳，永久有效）
 
 > 1. **脚本兜底律**：凡是能由脚本根据日期、分数、次数确定性推算或联动兜底的字段（如生理周期 `cycle`、实战后的处子状态 `virgin=false`、亲密行为后的 `unlockedTags` 与 `withUserCount`），**绝不干等大模型手写**，必须在结算引擎里由脚本自动推算补齐。
 > 2. **示例驱动律**：凡是必须由大模型生成文本的字段（如敏感带 `traits`、打星离场动态 `offscreen`、心声 `currentThought`），**绝不能藏在协议括号里写「按事实增量更新」**，必须给出明确的「当轮触发条件 + 顶层待办索引 + 协议末尾 `<JSONPatch>` 完整抄写示例」；模型是抄示例机器，示例里有什么，它才稳定写什么。
+> 3. **文案逐字照抄律**（2026-11-17 rc.24 起永久有效）：凡涉及世界书（`src/content/literary.json`）、更新协议（`src/content/protocol.txt`）、状态说明（`src/content/state-context.txt`）及开场白的一切文字，**必须 100% 逐字复制粘贴方案设计师给出的定稿文本，一个字、一个标点都不准自行发挥或缩写**，彻底杜绝八股文与楼盘广告腔。落地方式：先写进方案 Markdown 的代码块，再用脚本从方案里抠出原文写盘，不靠手抄。
 >
-> 判断新需求是否合格时先对照这两条：能算的交给脚本，要让模型写的就给示例。
+> 判断新需求是否合格时先对照这三条：能算的交给脚本，要让模型写的就给示例，给定稿就一个字不改。
 
-## rc.23 私密字段自动兜底（2026-11-17 · 当前最新）
+## 8001 标准流程按手册复跑（2026-11-17 22:44 · 当前最新实机状态）
+
+> 依据 `tests/DSH-ego操作手册.md` 第三节跑 `scripts/ego-std-flow-8001.mjs`，未用任何捷径。
+
+- space id=1（记录在 `C:/Users/Administrator/ego/std-flow/last-space.txt`），全流程 47 秒到开局正文。
+- 关卡逐条通过：打开 `readyState=complete` / `#preloader` 无 / `#send_form` 在 → 连 API `fa-plug` 无 exclamation → 酒馆内导入新增 chid=1（`神豪终端1.png`，正好 1 张）→ 开卡弹窗 0 个（这张卡此前已认过世界书/正则/脚本，酒馆记了 `AlertWI_`，所以不弹）→ 世界书 `神豪终端 · v2.0.0-rc.24`、在 `#world_editor_select` 里、`#world_button.world_set` 亮 → MVU `Mvu/schema/loader/host` 全 object、`#TH-message--0--0` 在 → 预览 `startDisabled=false` → 开局回复 replied=true、楼层 3。
+- 变量落盘：`meta.initialized=true`、`revision=1`、`cashCents=100,000,000`、`world.date=2026-11-16`、顾星遥 ♥55 / 江映 ♥30。
+- **假失败与修复**：`finalCheck` 原来用 `.phone-screen` 找小手机文字，rc.24 的小手机是 iframe 壳（`#app` + 折叠按钮 `#folded`），内部没有这个类 → 首跑报「小手机没出来」。实测 iframe 内 `innerHTML` 139KB，展开后 365×730，日期 09:05 / 测试员 / 新晋神豪·十倍 / 颜值 60/100 / 江城区·临江大平层 / 穿着 / 此刻·她们·我的 全部渲染，组件本身正常。已改 `scripts/ego-lib-8001.mjs` 的 `finalCheck` 判据为 `phoneMounted`（`#app` 存在）+ `phoneRendered`（`.basic-grid / .world-time-card / .dossier-grid / .char-row` 任一），复验 `RESULT=PASS`。
+- 截图：`C:/Users/Administrator/ego/std-flow/20261117144200-开局-final.png`、`20261117144330-复验-final.png`、`probe-phone-open.png`（小手机展开态）。
+- 待 YG 决定：`tests/DSH-ego操作手册.md` 第 10 步与第七节仍写 `.phone-screen`，与 rc.24 小手机结构不一致，是否同步改（这是 YG 定的手册，没有擅自改）。
+- 未验证：全新 `data` 目录下「首次导入世界书弹窗」路径本轮没有被走到（卡此前已导入过），要验就得清 8001 的 `data` 或用新卡名。
+
+### 重新导入卡验证（2026-11-17 22:45 · `scripts/ego-reimport-8001.mjs`）
+
+- 接管 space 1（控制权一度在用户手里，用户说「继续」后才 `takeOverTaskSpace`）→ 刷新 → 在酒馆界面重导入同一张卡 → 新增 `chid=2 神豪终端2.png`，19.5 秒完成，`RESULT=PASS`。
+- 弹窗链实测：导入时**「标签导入 → 全部导入」**；开卡（等 1 秒再点、再等 2 秒）时**「酒馆助手嵌入式脚本 → 确认」**——正是上方记录的「头号阻塞根因」那个框，这次正常弹出并点到了。toast 证据：`[MVU]脚本加载成功（构建信息 2026-10-19 08:25）`、`[MVU]变量初始化成功，当前使用世界书：[Engram] Global / aaa-骚话文风 / AAA姿势情趣大全 (2) / 神豪终端 · v2.0.0-rc.24`。
+- 世界书框这次**没弹**，但 `extensions.world=神豪终端 · v2.0.0-rc.24`、`worlds/` 里文件已在、`#world_button.world_set` 亮。`settings.json` 里仍然只有 `AlertWI_神豪终端.png`，**没有 `AlertWI_神豪终端2.png`** —— 说明世界书弹窗不是按头像名记的，而是「`worlds/` 里已有同名世界书就不弹」。所以手册「一张卡一辈子只弹一次」的说法不完整，真正要验首弹必须先挪走 `worlds/神豪终端 · v2.0.0-rc.24.json`（未做，属删/移测试数据，等 YG 点头）。
+- 新卡干净：聊天 1 楼（只有开场白）、`#TH-message--0--0` 向导在、四档开局可选，MVU 四对象全 object。截图 `20261117144517-重导-result.png`。
+
+### 删旧卡 + 删旧世界书后重导（2026-11-17 22:52 · 世界书弹窗首次实测到）
+
+用户要求「删掉旧卡、旧世界书，重新导入」，按此执行：
+
+1. **备份**（`E:\SHZDCHOSSS\.work\tavern-8001-backup\20261117-2250\`）：3 张卡 PNG、`worlds\神豪终端 · v2.0.0-rc.24.json`、3 个聊天目录、3 张缩略图、`settings.json`，全部记录 SHA256。
+2. **停 8001**（PID 19556）→ 删 `characters\神豪终端{,1,2}.png`、`worlds\神豪终端 · v2.0.0-rc.24.json`、`chats\神豪终端{,1,2}\`、对应缩略图 → `.work/fix-settings8001.mjs` 清掉 `settings.json` 里的 `AlertWI_神豪终端.png`（及残留 `AlertRegex_神豪终端20/26.png`）、`tag_map` 里 5 个神豪条目、`active_character` → **重启**（新 PID 1860，日志 `agent-test.out.log`，`SillyTavern is listening on IPv4: 127.0.0.1:8001`）。
+3. **重导**：导入前角色数 **0** → `chid=0 神豪终端.png`；弹窗 `标签导入 → 全部导入`，开卡后 **`世界书导入(打开卡时) → 是`**（手册第二节那个框终于实测到并点中）；18 秒 `RESULT=PASS`。
+4. **世界书重建无损**：`worlds\神豪终端 · v2.0.0-rc.24.json` 202648 bytes，SHA256 `8D7C85785E68102CB5E8C9FF4737223B8409250FBCAB0FC6BEAF1B9205B06493`，与备份**逐字节一致**。
+5. **卡元数据差异（导入前后对比，`.work/compare-card*.mjs`）**：①`character_book`（31 条）在酒馆导入世界书成功后**被从卡里剥离**，所以已入卡的 PNG 再导入不会再触发世界书弹窗，要验首弹必须用源卡 `.work/test-card/神豪终端-localmvu.json`；②`first_mes` 的 `\n` 变 `\r\n`（143→145 字符），渲染无影响；③`talkativeness/fav/depth_prompt` 被补默认值。其余一致：10 条 regex、4 个嵌入式脚本（Zod结构注册 / MVU 国内 / MVU 全球 / 本地验收本体）、`extensions.world`、版本号。
+6. **开局实跑**（新增 `scripts/ego-open-8001.mjs`，lib 新增 `fillAndStartOpening`）：楼层 1 → 填表 → 富家公子哥 → 预览 `startDisabled=false` → 回复 → `floors=3`、`meta.initialized=true`、`revision=1`、`cashCents=100,000,000`、`date=2026-11-16`、顾星遥 ♥55 / 江映 ♥30、小手机展开 365×730 内容完整，`RESULT=PASS 终检复验`。
+7. **finalCheck 判据二次修正**：小手机折叠态只有 74×108 壳按钮（`✦ 神豪终端`），此时 `.basic-grid` 等还没渲染，所以终检要先点 iframe 内 `#folded` 展开、等 1.8 秒，再判 `phoneMounted` + `phoneRendered`。
+8. **小手机是 `position: fixed` 浮窗**：展开后 365×730、`transform: scale(0.82)`、`z-index:3000`；右侧角色面板打开时会挡住它，截图前先点 `#rightNavDrawerIcon` 收右栏。可见证据 `phone-open-viewport.png`（此刻页：日期卡 / 测试员 / 新晋神豪·十倍 / 颜值 60/100 / 江城区·临江大平层 / 穿着 / 此刻 / 现场的她们(0) / 此刻·她们·我的）。
+9. **截图手段备忘**：`page.screenshot()` 只抓页面渲染；ego 窗口被别的窗口盖住时，可用 `PrintWindow(hwnd, hdc, 2)`（PW_RENDERFULLCONTENT）直接抓 ego 窗口（实测 2062×1126 拿到完整浏览器画面）。
+10. **测试报告产物**：`reports/ego操作流程测试报告-20261117.md`（6 个用例、8 条问题、5 条脚本变更、手册待改 3 处、未覆盖项）。手册修订建议在该报告 §6，等 YG 批准后才改 `tests/DSH-ego操作手册.md`。
+11. **本文件历史纠错**：上方 2026-11-17 21:20 那条记的实例目录 `E:\SillyTavern-test` **在本机不存在**，实际是 `E:\Ajiuguanagentceshi\SillyTavern`（与 `tests/DSH-ego操作手册.md` 环境表一致）。
+
+## rc.24 实机验收（2026-11-17 20:50 · 历史记录，已被上方接续）
+
+> 测试流程已重写为唯一权威版：`tests/live-ego.md`（旧版归档在 `tests/legacy/live-ego_20261117-old.md`，只作参考）。
+> 核心口径：除等模型回复外，任何卡住都算故障；每步几秒内必须出结论。
+
+### 已跑通（ego lite 0.6.3.14 驱动本机酒馆）
+
+- 打开 `dist/2.0.0-rc.24-checkpoint` 对应的测试整卡（`.work/test-card/神豪终端-localmvu.json`，MVU 走同源 `http://127.0.0.1:8000/cj-mvu-bundle.js`）。
+- MVU 就绪证据：`typeof window.Mvu === "object"`、`__CJ_SHENGHAO_SCHEMA__` / `__CJ_MVU_LOADER__` / `__CJ_SHENGHAO_V2__` 全部 object，toast `[MVU]变量初始化成功`，世界书 `神豪终端 · v2.0.0-rc.24`。
+- 开局向导：富家公子哥预设 → 现金 ¥1,000,000、资产 3 项、熟人 2 位 → 正文生成成功（第 3 楼）。
+- MVU 落盘：`cash=100000000` 分（=¥1,000,000）、`prowessScore=70`、`world.date=2026-11-16`、`time=09:00`、`meta.revision=1`。
+- 两位初始熟人（顾星遥 ♥55 / 江映 ♥30）都带 `currentGoal`（项目断供 300 万过桥 / 健身房老板卷款跑路），`physiology.cycle` 由脚本兜底为「月经期·第4天」，`limits.scaleLevel` 自动推为 3 / 1。
+- 纯寒暄一轮：有回复（楼层 3→4），`rewardEvents` 仍为空，`revision 1→2` —— 日常对话不发暴击，符合双模式设计。
+- **涩涩 INTIMATE 轮（rc.24 头号特性）实机通过**：`rewardEvents` 一条 `cashbackCents=1,671,400`（¥16,714，整元），落在 60 档区间 `[888,800, 2,888,800]` 内，称号 **羞耻破防**，`mode=INTIMATE`，`score=68`；顾星遥 堕落 0→12、情动 48、`unlockedTags` 自动提炼「深情热吻/解锁新姿/贴身爱抚」、`currentThought` 写入；`revision 2→4`。
+- 干净重跑一遍全流程（新 space）：打开网址 553ms `complete` → 连 API `fa-plug` → 导入新卡 chid 8（自动改名 `神豪终端10.png`）→ 确认框「全部导入」→ MVU 全 object → 表单 → 预览 → 第一楼正文，全程无一处需要硬等。
+
+### 阻塞根因（本轮最大发现，下次必看）
+
+- **头号原因：「酒馆助手嵌入式脚本」确认框没点到 / 没弹出来，卡内脚本就没启用**。2026-11-17 YG 亲自实测纠正：导入卡时点得太快，确认框还没出现就被略过；刷新酒馆后重新点开同一张卡，那个「是否启用酒馆助手脚本」的框才会弹出，点「确认」后 MVU 自己加载、开局立刻正常。**操作节奏：导入卡 → 等 1 秒 → 再点开卡 → 等确认框 → 点确认。** 框不出现就刷新页面重开卡，不要在同一文档里反复重开聊天（ES 模块会按 URL 缓存失败的 import）。
+- 次要原因：**ego 的浏览器原生 HTTP Basic 认证框会挂死模块加载**。出现「登录 http://127.0.0.1:8000」的系统弹窗时，`import()` 会永久 pending、`performance` 里连资源条目都没有，表现同样是「连接尚未完成」、`Mvu` undefined。处理：人手动输 `user` / `98` 登录一次。
+- 已排除：本轮我曾判断是「Vue 未就绪导致 MVU import 失败」并改过 `src/runtime/mvu-loader.js`，**判断错误，改动已回退、checkpoint 已从回退后的源码重建**。源码现在与 rc.24 原版一致。
+- 之前记录的「ego 拉不到 jsDelivr」在本轮实测不成立：`cdn.jsdelivr.net` 与 `testingcf.jsdelivr.net` 的 `gh/`、`npm/+esm` 两类路径都返回 200；`cdn.skypack.dev` 与 `127.0.0.1:8123` 才是 Failed to fetch。
+
+### 未验证
+
+- 收入入账、买房写入资产 `basisCents`：**本轮实测未通过**。模型确实按协议提交了 `CASH_TRANSACTION`（`amountYuan: 1500万`）与 `ASSET`（`云玺湾1801大平层 / bookValue 1200万`），但 `evidence` 用的是它自己改写的句子（「我前几天把手头那幅一直收着的画卖给画廊了…」），与玩家原话不是逐字原文，被 `hasEvidence` 校验丢弃；换成短句「画廊把一千五百万打到我卡上了。」后模型干脆没提交事件，现金仍为 ¥1,000,000。**结论：卡没坏，是「证据必须逐字」这条规则与模型改写习惯冲突，待 YG 决定是放宽校验还是改提示词。**
+- 提现按 `tierBasis` 结算总身家倍率：**未验证**，前置是某角色 `affection≥70 || corruption≥60`（涩涩两轮后顾星遥 ♥47/❖16、江映 ♥30/❖0，都不到门槛）。
+- `outfit.top` 开局后为空（`syncOutfit` 是否只在 `currentClothes` 有值时生效，需对着源码确认一次）。
+- 初始资产的 `basisCents` 为 null（设计上初始资产不进 `tierBasis`，是否要在数据里也留空需确认）。
+- 涩涩轮里顾星遥好感 55→45（模型自己写的下降）；是否属于「被冷处理时好感反向下降」的设计内行为，待确认。
+
+### 本轮补充的关键操作细节（2026-11-17 21:20 实机）
+
+- **已建立测试专用酒馆实例（2026-11-17 22:00）**：`E:\SillyTavern-test`，端口 **8001**，从 `C:\jiuguan\SillyTavern` 复制（代码 + `public/scripts/extensions/third-party` 四个扩展：Engram / JS-Slash-Runner / LittleWhiteBox / ST-Prompt-Template，`node_modules`、`default` 一并带），**`data` 目录全新独立**，`basicAuthMode: false`、`listen: false`。启动：双击 `E:\SillyTavern-test\启动测试实例.cmd` 或在该目录 `node server.js`。实测初始化 3.1 秒、角色数 0（干净）。以后所有实机测试走 8001，`C:\jiuguan\SillyTavern`（8000）不再用于测试。复制时踩到：`robocopy /XD data` 会把**所有**名为 `data` 的子目录一起排除（包括 `node_modules/node-releases/data`、Engram 与 LittleWhiteBox 的 `data`），必须补拷，否则 webpack 编译直接崩。
+
+- **弹窗有固定顺序**：导入卡 → 「正在导入标签」点「全部导入」→ 打开卡 → **「此角色含有内置正则？确定」** → **「包含酒馆助手可用的嵌入式脚本？确认」** → 约 1.7 秒后 `Mvu/schema/loader/host` 全部就位。只点后者、漏掉正则那个，MVU 起不来。
+- **HTTP Basic 凭据只存在浏览器进程内存里**：ego 完全关闭后必须重新登录一次（`user` / `98`），酒馆自己的会话 cookie 不覆盖这一层。本轮用「系统级键盘自动化」把凭据打进了浏览器原生登录框（`AppActivate` + `SendKeys`），成功后页面正常初始化。
+- **浏览器原生弹窗截不到**：`page.screenshot()` 是页面渲染，浏览器 Chrome 层的登录框完全不可见；要确认这类弹窗，用系统级截屏（.NET `CopyFromScreen` 抓整屏）。
+- 涩涩轮实测：`cashbackCents=1,692,300`（¥16,923，整元），称号「羞耻破防」，`mode=INTIMATE`，评分 72，落在 60 档区间内。
+
+## rc.24 双模式随机暴击 · 主动剧情钩子 · 世界书亲笔定稿（2026-11-17 · 历史记录，已被上方实机验收进行中接续）
+
+### 本次做了什么
+
+按 `修改计划/rc24_overhaul_plan.md` 执行，逐条对应：
+
+1. `project.json`：`version` → `2.0.0-rc.24`，`cardContractRevision` 19 → **20**，`rewardTiers` 六档改为带 `minCents` / `maxCents` / `intimateLabel` 的结构（保留 `amountCents` 作基准中位值以兼容旧读取）；`package.json` / `package-lock.json` 同步版本号。
+2. `src/core/engine.js`：
+   - `reward(score, seed = '', mode = '')`：带 `seed` 时用 FNV-1a（`seed + ':' + score`）在该档位 `[minCents, maxCents]` 内摇出**整元**金额（分数在档内越高越偏上），不带 `seed` 时回落 `tier.amountCents` 基准值；`mode === 'INTIMATE'` 或 seed 命中涩涩关键词时返回专属称号（春心微澜 / 羞耻破防 / 欲海沉沦 / 绝顶征服 / 极乐巅峰），并回传 `mode`。
+   - `SIGNIFICANT_BEHAVIOR_SCORE` 以 `${eventKey}:${action}` 作 seed 调 `reward`；`e.mode === 'INTIMATE'` 或 `arousal >= 50` 自动进涩涩轨道；`normalizeEvent` 只放行 `INTIMATE` / `BREAKTHROUGH`。
+   - `wealthTier` 称号升级：新晋神豪·十倍 → 豪门新贵·八倍 → 资本巨鳄·五倍 → 云澜大亨·三倍 → 财阀霸主·二倍（最低 2 倍，不再掉到 1 倍）。
+   - 新增 `tierBasis(s)` = 现金 + 游戏内后购且仍持有的自有资产成本；`withdrawalQuote` 与 `PLAYER_WITHDRAW` 的 `preCashCents` 都改用它，`projection` 的 `user.wealthTier` 同步改用它（否则界面显示十倍、实际按八倍结算）。
+   - `CASH_TRANSACTION` 付款证据正则改为只拦「尚未付款 / 未付款 / 还没付 / 打算买…」，并补「刷卡 / 付了 / 结清 / 买下 / 全款 / 转账 / 到账」等完成词。
+3. `src/runtime/schema.js`：`character.currentGoal`（≤200 字，默认空）；`withdrawal.multiplier` 联合类型补 `z.literal(2)`（保留 `1` 兼容旧数据）。
+4. `currentGoal`（眼下心事）贯通：`character()`、`projection()`（在场与打星离场都带）、`setup-presets.json` 六位预设各写一条手写钩子、`screens.js` 在「此刻」展开区与人物详情各显示一行「🎯 眼下心事」、`style.css` 加 `.goal`。
+5. 开局向导：`app.js` 熟人表单新增「眼下心事 / 她的现实困境（选填）」，`setup-options.js` 的 `contactPresetValues` 映射 `c_goal`。不补这一处，预设钩子会在玩家点保存时被表单重建成空。
+6. 世界书与协议按方案定稿**逐字替换**（见铁律 3）：`protocol.txt` 21 行（双模式评分、`currentGoal` 建档与推进、11 个 op 的 `<JSONPatch>` 示例）；`literary.json` 的 `opening`、`world`、`terminal-economy`、`daily-life`、`score`、`nightlife-hospitality`、`private-life` 七处，并把 `calendar` / `private-life` / `social-feedback` 三条 `constant` 设为 `true`。
+7. `scripts/live-test-ego.mjs` 的 `cardPath` 指向 `dist/2.0.0-rc.24-checkpoint/神豪终端.json`，实机脚本下次可直接用新卡。
+8. **（方案 2 追加）男主性能力与性器**：`schema.user` 增加 `prowessScore`（1–100，默认 70）、`sexualAbility{stamina,hardness,technique,volume}`、`genitals{length,girth,traits}`；`validateDraft` 落默认值与校验；新增 `prowessTier(score)`（-1/0/+1/+2/+3）；`CORRUPTION_CHANGE` 只在「堕落正向增长 + `prior<85` + 本轮有身体接触（`prowessBonus`）」时叠加。
+9. **（方案 2 追加）女性四宫格字段**：`physiology` 扩充 hymenNote / chestDetail / vaginaLook / vaginaState / pubicHair / anusLook / anusState / bodyScent / tattooScar；新增 `outfit`（9 项行头）与 `limits`（scaleLevel 0–6 + 8 项底线 0–3）；`intimacy` 补 abilityComment / partnersCount / sexPartnerCount / firstTime / lastMasturbation；`PLAYER_BUILD_PROFILE` 用 `seedRecord` + 新 `seedLimits` 播种，`projection` 在场女性携带 `outfit` / `limits`。
+10. **（方案 2 追加）脚本兜底四宫格**：`syncPrivateRecords` 增 `syncOutfit`（`currentClothes` ⇄ 穿搭栈双向补齐、arousal≥50 补面色）、`syncLimits`（按 `max(affection, corruption×1.15)` 推档位与底线，命中标签直接置 3）、实战兜底（hymenNote / vaginaState / sexPartnerCount / abilityComment）；`settleNative` 在 arousal≥30、lastIntimate 变化、withUserCount 增加或 60+ BEHAVIOR 时给 `CORRUPTION_CHANGE` 打 `prowessBonus`。
+11. **（方案 2 追加）建档提示词**：`generateProfile` 追加四组种子（physiology / outfit / intimacy / limits），`buildProfile` 随操作一次性播种。
+12. **（方案 2 追加）界面**：`screens.js` 用与九大档案同款 2×2 `dossier-grid` 渲染「私密四维档案」（`data-private-section=0..3`、选中描边、−/+ 折叠、`aria-expanded`）；「我的」页在颜值下方加性能力评价与性器尺寸；`app.js` 新增 `privateSection` 状态与切换、开局第 1 步加性能力滑块与性器三项输入（`collect()` 跳过 `_` 前缀辅助字段）。
+13. **（方案 2 追加）定稿再替换**：`protocol.txt` 换成含 `outfit` / `limits` / `abilityComment` 的 21 行版本（15 个 op 示例）；`literary.json` 的 `score` 换成《颜值、性能力、双轴张力与双模式暴击准则》。
+
+### 有效决定
+
+- 随机暴击用确定性哈希而不是 `Math.random()`：同一事件重解析金额恒定，账本、幂等、回滚仍然严丝合缝，同时每次暴击数字不重样。
+- 只把「游戏内后购、仍持有」的资产计入 `tierBasis`：开局自带的 160 万房车不进总身家，也不会留下「提现前买房把现金花光卡十倍」的漏洞。
+- `currentGoal` 走「开局预设 + 模型增量写 + 界面只读展示」，不新增第二套剧情状态机，避免与世界书的 `offscreen` 重复。
+- 三条 `constant: true` 是刻意常驻：它们承载双模式口径与亲密写法，靠 keys 触发会漏。
+- 性能力加成用 `prowessBonus` 显式开关，而不是“只要在亲密就自动加”：纯数值单测（`corruption=9`）仍精确等于 9，只有真实身体接触的轮次吃 +1/+2/+3。
+- 四宫格不另造样式：复用九大档案的 `.dossier-grid` / `.dossier-panel` / `.section-caret` 与主题 token，只补 `.limit-grid`（底线两列）与 `.private-panel` 内间距，三套主题自动跟随。
+- 面板不放“共 N 条记录”这类伪计数；空字段交给脚本兜底后自然出现。
+
+### 实际验证（有效）
+
+- `npm test`：**285 / 285 通过**（rc.23 的 270 + rc.24 首批 9 条：5 条涩涩称号、1 条随机暴击区间/幂等/INTIMATE、1 条防买房卡倍率、1 条付款证据防误杀、1 条 `currentGoal` 预设+投影+界面；方案 2 再补 6 条：`prowessTier` 边界与建档校验、`prowessBonus` 亲密门控、limits 自动推算与标签跳 3、穿搭双向同步与情动面色、实战四项兜底、我的页性能力与建档四宫格播种）。同步改写：`reward(n)` 基准表、crit 定值断言改为「区间 + 整元」断言（`engine` / `host-binding` / `behavior-output` / `interaction-simplification` / `native-mvu` / `settlement-batch`）、`wealthTier(1万亿) = 2`、rc9 提现跨级用例改为「100 万实付 ×10 倍」不再依赖暴击随机值。
+- `node scripts/build.mjs --checkpoint` → `BUILD_OK dist/2.0.0-rc.24-checkpoint/`；`node scripts/check.mjs --checkpoint` → `CHECK_OK`。
+- 成品抽查（rc.24 checkpoint）：protocol 21 行、示例 11 个 op、含「双模式行为评分」与 `currentGoal`；`opening` 为新定稿；`world` 已无「真心无法按标价强买」；`nightlife-hospitality` 已无「绝非按标价出售」；`daily-life` / `score` / `private-life` 为新标题新正文；世界书 31 条，`calendar` / `private-life` / `social-feedback` 均 `constant: true`。
+- runtime 含 `maxCents`、`tierBasis`、`财阀霸主·二倍`、`极乐巅峰`、`春心微澜`、`currentGoal`；`phone.html` 含 `\u{1F3AF} 眼下心事` 与 `.goal`（esbuild 以 unicode 转义写入，属正常现象）。
+- 元数据（方案 2 定稿后重新构建）：`2.0.0-rc.24`、`cardContractRevision` 20、`worldbookHash` `5bd551536811…`（rc.23 为 `ad426baf…`）、runtime sha256 `34f53582…`、checkpoint 整卡 591,511 字节。
+
+### 未验证 / 未做
+
+- 真实 SillyTavern 实机：**未跑**。随机金额弹窗、涩涩专属称号、🎯 眼下心事、`tierBasis` 提现倍率目前只有单测与成品层证据。
+- 发布链**未执行**：未提交、未推送、未切 Supabase 指针，指针仍指 rc.23 的 `34c77b3…`；`dist/terminal.js`、`dist/release.json` 已被 checkpoint 构建覆盖为 rc.24 内容（本地未提交）。
+- `worldbookHash` 变了：老玩家的固定加载器会拒绝新本体，要吃 rc.24 必须重新导入整卡。
+- 涩涩模式沿用「枪枪暴击」：模型每轮都提交 INTIMATE 事件时奖池会快速膨胀，金额区间按方案给定，未做长对话通胀压测。
+- `arousal >= 50` 自动判为 INTIMATE 是方案要求，但也意味着「高情动时的普通帮忙」会拿到涩涩称号；实机观感不对就改这一行。
+- 开局熟人表单多了一个选填框，`tests/setup-options.test.mjs` 未覆盖 `c_goal` 的取值链路（只有预设与投影/界面被覆盖）。
+- 四宫格与「我的」页性能力信息目前只有**离线渲染证据**：`.work/ui-preview/private-panels.html` 用真实 `screens.js` 渲染并截图（`shots/`），未在真实酒馆 iframe 里点过；暗紫主题、320px 窄容器、长文本换行都未实机确认。
+- 性能力长期平衡未验证：`+3` 加成叠在单轮 ±12 限幅内，极端高堕落角色可能很快推满 corruption，未做长对话压测。
+
+- 实机全链路（`scripts/live-test-rc24-full.mjs`，14 项：开局/四宫格/我的页/寒暄/涩涩/收入/买房/提现倍率）**尚未跑通**。已定位并修掉三层环境问题：① ego 浏览器拉不到 jsDelivr，MVU 永远未就绪；② ego 只放行酒馆端口，其它本地端口 `Failed to fetch`；③ **真正的卡点**：打开角色时弹出的「角色卡包含酒馆助手嵌入式脚本，是否启用」确认框未被点掉，脚本没启用 → `Mvu`/`__CJ_SHENGHAO_SCHEMA__` 全空 → 「开始我的人生」一直是 disabled。脚本已改为打开角色后清弹窗 + 轮询中反复清 + 失败自动截图，但最近一次运行被中断，未产出最终结果。
+- 实机测试临时物（未入库，`.work/` 已 gitignore）：`.work/test-card/神豪终端-localmvu.json`（把 MVU 源换成本机地址的测试卡）、`.work/mvu/`（镜像服务与 bundle）、`.work/rc24-full.progress.log`（逐步进度）；另在酒馆安装目录临时放了 `C:\jiuguan\SillyTavern\public\cj-mvu-bundle.js`（同源托管 MVU 用），测完应删除。
+
+### 下一步
+
+1. 实机跑一遍 rc.24-checkpoint：开局看 6 位预设的 🎯 眼下心事、连打两轮普通寒暄确认不发暴击、再打一轮涩涩确认专属称号与区间金额。
+2. 实机验证「买房后提现仍按总身家倍率」，用 `tests/female-records.test.mjs` 的用例做对照。
+3. 实机确认无误后走 HANDOFF 七步发版（需 YG 明确点头，含推送与指针切换）。
+
+## rc.23 私密字段自动兜底（2026-11-17 · 历史记录，已被 rc.24 接续）
 
 ### 本次做了什么
 
@@ -63,6 +252,7 @@
 ### 未验证 / 未做
 
 - rc.24 整体未开工：`修改计划/rc24_overhaul_plan.md`（40 KB，2026-11-17 18:55 放入）**尚未阅读与评估**。
+  - 历史注记（2026-11-17 当晚更新）：此条已失效，rc.24 已按该方案执行完毕，见上方「rc.24 双模式随机暴击…」章节；本节其余内容保留为 rc.23 当时的记录。
 - `applyCycles` 跨日重算依赖 `world.date` 正确推进；模型漏更日期时周期会停在同一天（设计内行为，不是 BUG）。
 - `syncPrivateRecords` 的标签规则是关键词匹配，措辞特别含蓄的描写可能不命中；75 分以上的「action 前 6 字」兜底会产出偏机械的标签。
 - 长对话下的奖池累积上限、退款追回与提现并发未做压力验证；打星人物恰好在场时不会渲染异地实况（打星与在场互斥）。

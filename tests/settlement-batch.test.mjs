@@ -5,7 +5,7 @@ import {createSchema} from '../src/runtime/schema.js';
 import {completeInitialState,settleNative} from '../src/runtime/settlement.js';
 import {clone,poolParts,assertState} from '../src/core/engine.js';
 import {diagnosticMessage} from '../src/runtime/diagnostics.js';
-import {fresh,anchor,payment,score,source} from './fixtures.mjs';
+import {fresh,anchor,payment,score,source,inRange} from './fixtures.mjs';
 const schemas=createSchema(z);
 const initial=()=>{const s=schemas.state.parse(completeInitialState(fresh(),{startDate:'2026-01-05',startTime:'09:00'}));s.characters.char_a.affection=40;return s;};
 const affection=(extra={})=>({type:'AFFECTION_CHANGE',personRef:'char_a',delta:5,meaningfulInteraction:true,evidence:source,...extra});
@@ -15,7 +15,7 @@ test('one native batch commits valid affection/payment/score with one revision a
  const before=initial(),candidate=clone(before);candidate.characters.char_a.affection=45;candidate.pendingEvents=[affection(),payment(),score()];
  const snapshot=clone(candidate),r=settle(before,candidate);
  assert.deepEqual(r.diagnostics,[]);assert.equal(r.state.meta.revision,before.meta.revision+1);
- assert.equal(r.state.characters.char_a.affection,45);assert.equal(poolParts(r.state,'char_a').total,8030000);
+ assert.equal(r.state.characters.char_a.affection,45);{const pool=poolParts(r.state,'char_a');assert.equal(pool.spend,30000);assert(inRange(pool.crit,3500000,9800000));}
  assert(Object.values(r.state.operationHistory).every(op=>op.revision===r.state.meta.revision));
  assert.deepEqual(candidate,snapshot);assert.equal(before.characters.char_a.affection,40);assertState(r.state);
  const retry=clone(r.state);retry.pendingEvents=clone(candidate.pendingEvents);
@@ -36,7 +36,7 @@ test('transport accepts mixed proposals and only invalid events are rejected by 
  const before=initial(),candidate=clone(before);
  candidate.characters.char_a.affection=45;candidate.pendingEvents=[affection(),null,score({reason:''}),affection({delta:3}),{type:'SCENE_REPLACE',evidence:source}];
  const r=settle(before,schemas.state.parse(candidate));
- assert.equal(r.state.characters.char_a.affection,45);assert.equal(poolParts(r.state,'char_a').total,8000000);
+ assert.equal(r.state.characters.char_a.affection,45);assert(inRange(poolParts(r.state,'char_a').crit,3500000,9800000));
  assert.deepEqual(r.diagnostics.map(d=>[d.ordinal,d.code,d.field]),[[1,'INVALID_EVENT',undefined],[4,'UNKNOWN_EVENT',undefined]]);
  assert.equal(r.state.pendingEvents.length,0);assert.equal(diagnosticMessage(r.diagnostics),'');
 });
@@ -47,7 +47,7 @@ test('economic event failure after tentative writes rolls back cash, ledger, fac
  const r=settle(before,candidate);
  assert.equal(r.diagnostics.length,1);assert.equal(r.state.user.cashCents,before.user.cashCents);
  assert.deepEqual(r.state.finance.ledger,{});assert.equal(r.state.facts.pay_1,undefined);
- assert.equal(r.state.characters.char_a.affection,45);assert.equal(poolParts(r.state,'char_a').total,8000000);assertState(r.state);
+ assert.equal(r.state.characters.char_a.affection,45);assert(inRange(poolParts(r.state,'char_a').crit,3500000,9800000));assertState(r.state);
 });
 test('invalid money evidence reports the field while direct affection still settles',()=>{
  const before=initial(),candidate=clone(before);candidate.characters.char_a.affection=43;candidate.pendingEvents=[payment({evidence:13})];

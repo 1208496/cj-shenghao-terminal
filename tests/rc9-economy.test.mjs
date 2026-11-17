@@ -10,10 +10,10 @@ const run=(s,events,n=2,body=source)=>applyEnvelope(s,envelope(...events),anchor
 const op=(s,operationId='w',type='PLAYER_WITHDRAW',personRef='char_a')=>applyOperation(s,{operationId,type,personRef,expectedRevision:s.meta.revision},anchor(99));
 const refund=(amount,extra={})=>event('TRANSACTION_REFUND',{factId:'refund_'+amount,refundOf:'pay_1',amountCents:amount,completed:true,...extra});
 const schemas=createSchema(z),native=s=>schemas.state.parse(completeInitialState(s,{startDate:'2026-11-16',startTime:'09:00'}));
-for(const [cash,multiplier] of [[0,10],[999999999,10],[1000000000,8],[9999999999,8],[10000000000,5],[99999999999,5],[100000000000,3],[999999999999,3],[1000000000000,1]])test('现金倍率边界 '+cash,()=>assert.equal(wealthTier(cash).multiplier,multiplier));
+for(const [cash,multiplier] of [[0,10],[999999999,10],[1000000000,8],[9999999999,8],[10000000000,5],[99999999999,5],[100000000000,3],[999999999999,3],[1000000000000,2]])test('现金倍率边界 '+cash,()=>assert.equal(wealthTier(cash).multiplier,multiplier));
 test('提现前锁倍率，到账跨级，历史不重算，消费可降级',()=>{
- let s=run(fresh({initialCashCents:1}),[score({score:100})]);s=op(s);assert.equal(s.user.cashCents,1000000001);assert.equal(s.withdrawals.w.multiplier,10);assert.equal(wealthTier(s.user.cashCents).multiplier,8);assert.equal(poolParts(s,'char_a').total,0);
- s=run(s,[payment({amountCents:100,allocations:[{personRef:'char_a',amountCents:100}]})],3);assert.equal(wealthTier(s.user.cashCents).multiplier,10);s=op(s,'w2');assert.equal(s.withdrawals.w2.multiplier,10);assert.equal(s.withdrawals.w.paidCents,1000000000);
+ let s=run(fresh({initialCashCents:100000001}),[payment({amountCents:100000000,allocations:[{personRef:'char_a',amountCents:100000000}]})]);s=op(s);assert.equal(s.user.cashCents,1000000001);assert.equal(s.withdrawals.w.multiplier,10);assert.equal(wealthTier(s.user.cashCents).multiplier,8);assert.equal(poolParts(s,'char_a').total,0);
+ s=run(s,[payment({factId:'pay_2',amountCents:100,allocations:[{personRef:'char_a',amountCents:100}]})],3);assert.equal(wealthTier(s.user.cashCents).multiplier,10);s=op(s,'w2');assert.equal(s.withdrawals.w2.multiplier,10);assert.equal(s.withdrawals.w.paidCents,1000000000);
 });
 test('同一女性三期提款，空池不能领，事实与操作重试不重发',()=>{
  let s=fresh();assert(!canWithdraw(s,'char_a'));

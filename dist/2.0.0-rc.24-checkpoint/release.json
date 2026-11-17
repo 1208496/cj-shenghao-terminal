@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.24",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "5bd551536811acec5264008c6d4d6eabe02a4fa3441363e9f53fe3d8e4a55560",
+  "sha256": "0c721ab30ad4859781247577664c9bb169a77a5586d45e612e768598b1eccd6f",
+  "notes": "rc.24：双模式随机暴击（日常破防/涩涩狂飙 + 区间随机金额与专属称号）、总身家提现倍率与财阀称号、付款证据正则修复、currentGoal眼下心事剧情钩子与世界书亲笔定稿。"
+}

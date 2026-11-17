@@ -7,5 +7,7 @@ export const anchor=(messageId=2,swipeId=0)=>({branchKey:'test:branch',messageId
 export const event=(type,extra={})=>({ordinal:0,type,evidence:'确实已经发生',...extra});
 export const envelope=(...events)=>({schemaVersion:2,events});
 export const source='确实已经发生';
+// rc.24 seeded crits land inside the tier range, always in whole yuan.
+export const inRange=(v,min,max)=>Number.isSafeInteger(v)&&v>=min&&v<=max&&v%100===0;
 export const payment=(extra={})=>event('CASH_TRANSACTION',{factId:'pay_1',direction:'OUT',amountCents:30000,payer:'USER',kind:'GIFT',completed:true,memo:'礼物',allocations:[{personRef:'char_a',amountCents:30000}],...extra});
 export const score=(extra={})=>event('SIGNIFICANT_BEHAVIOR_SCORE',{factId:'behavior_1',personRef:'char_a',action:'真诚支持',score:86,reason:'独立且有意义的相互支持',completed:true,consensual:true,independent:true,...extra});

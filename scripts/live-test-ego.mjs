@@ -9,7 +9,7 @@ const CONFIG = {
   stUrl: "http://127.0.0.1:8000/",
   basicUser: "user",
   basicPass: "98",
-  cardPath: "E:/SHZDCHOSSS/dist/2.0.0-rc.23/神豪终端.json",
+  cardPath: "E:/SHZDCHOSSS/dist/2.0.0-rc.24-checkpoint/神豪终端.json",
   characterMatch: "神豪终端", // 仅作兜底文本校验；真正的定位靠「新增卡片」
   playerName: "测试员",
   tierText: "小康人家",

@@ -1,13 +1,31 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
+// rc.25 Bug #3：开场第一轮她的「行头」不能是空白。先从外貌描述里抠穿搭短语，
+// 抠不到才按职业给一套得体默认，然后走正常的 outfit ⇄ currentClothes 同步。
+const APPEARANCE_CLOTHES=/(?:穿着|身着|一袭|一身|偏好)([^。，；,;]{2,40})/;
+function defaultOutfit(c){
+  const look=String(c?.appearance||'').match(APPEARANCE_CLOTHES);
+  if(look&&look[1])return look[1].trim().slice(0,40);
+  const job=String(c?.occupation||'');
+  if(/医|护/.test(job))return '白色修身工作服，内搭浅色圆领，配低跟软底鞋';
+  if(/教师|老师|讲师/.test(job))return '剪裁利落的通勤套装，浅色内搭与低跟鞋';
+  if(/设计|艺术|编辑|文案/.test(job))return '宽松针织上衣与直筒长裤，配简约帆布鞋';
+  if(/律|金融|投行|经理|主管|总裁|顾问/.test(job))return '深色西装外套与同色半裙，白衬衫与细高跟';
+  if(/花|咖啡|烘焙|店主/.test(job))return '棉麻围裙连衣裙，素色内搭与舒适的平底鞋';
+  return '剪裁利落的通勤套装，搭配浅色内搭与低跟鞋';
+}
 export function completeInitialState(base,draft){
   const s=clone(base);
   s.world={date:draft.startDate,time:draft.startTime,weather:draft.weather||'晴',timeZone:'Asia/Shanghai'};
   s.calendar={appointments:{}};s.pendingEvents=[];
   for(const c of Object.values(s.characters)){c.contactConfirmed=true;c.firstContactEvidence='玩家确认的初始熟人';c.relationshipEvidence='';
-    if(c.physiology&&!c.physiology.cycle)c.physiology.cycle=computeCycle(c.id,s.world.date,c.physiology.pregnancy);}
+    seedAnatomy(c);
+    c.outfit=c.outfit&&typeof c.outfit==='object'?c.outfit:{};
+    if(!c.currentClothes&&!c.outfit.top){const look=defaultOutfit(c);c.outfit.top=look;c.currentClothes=look;}
+    if(c.physiology&&!c.physiology.cycle)c.physiology.cycle=computeCycle(c.id,s.world.date,c.physiology.pregnancy);
+    syncOutfit(c);}
   refreshContext(s);return s;
 }
 export function replayPlayerCommand(state,command,anchor,schemas){
@@ -24,6 +42,12 @@ export function replayPlayerCommand(state,command,anchor,schemas){
 export function settleNative(before,candidate,anchor,source,schemas){
   requireRule(before?.meta.initialized&&candidate,'INVALID_NATIVE_STATE');
   let s=clone(candidate);const diagnostics=[],body=withoutUpdates(source),queue=clone(s.pendingEvents||[]),affectionEvents=[];
+  // Rounds that actually touched her body unlock the prowess bonus on corruption.
+  const intimateBehaviors=new Set();
+  for(const e of queue)if(e&&['BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE'].includes(e.type)&&Number(e.score)>=60&&typeof e.personRef==='string')intimateBehaviors.add(e.personRef);
+  // rc.25 Bug #4：本轮已经发生 60+ 正向破防或亲密暴击时，好感只许升不许扣。
+  const positiveRounds=new Set();
+  for(const e of queue)if(e&&['BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE'].includes(e.type)&&(Number(e.score)>=60||e.mode==='INTIMATE')&&typeof e.personRef==='string')positiveRounds.add(e.personRef);
   // These fields are written only by deterministic settlement or a confirmed player operation.
   for(const k of ['schemaVersion','finance','rewardEvents','withdrawals','recoveries','operationHistory','notifications','facts','hiddenTemporary','identityMap'])s[k]=clone(before[k]);
   s.meta=clone(before.meta);s.meta.branchKey=anchor.branchKey;
@@ -42,10 +66,17 @@ export function settleNative(before,candidate,anchor,source,schemas){
       const known=prior[k];if(known!==null&&known!==undefined&&known!==''&&(!Array.isArray(known)||known.length))proposed[k]=clone(known);
     }
     const want=typeof proposed.affection==='number'||typeof proposed.affection==='string'&&proposed.affection.trim()?Number(proposed.affection):NaN;
-    if(Number.isSafeInteger(want)&&want!==prior.affection)affectionEvents.push({type:'AFFECTION_CHANGE',personRef:cid,delta:want-prior.affection,auto:true});
+    let affectionDelta=Number.isSafeInteger(want)?want-prior.affection:0;
+    if(affectionDelta<0&&positiveRounds.has(cid))affectionDelta=0;
+    if(Number.isSafeInteger(want)&&affectionDelta!==0)affectionEvents.push({type:'AFFECTION_CHANGE',personRef:cid,delta:affectionDelta,auto:true});
     proposed.affection=prior.affection;
     const wantCorruption=typeof proposed.corruption==='number'||typeof proposed.corruption==='string'&&proposed.corruption.trim()?Number(proposed.corruption):NaN;
-    if(Number.isSafeInteger(wantCorruption)&&wantCorruption!==(prior.corruption??0))affectionEvents.push({type:'CORRUPTION_CHANGE',personRef:cid,delta:wantCorruption-(prior.corruption??0),auto:true});
+    if(Number.isSafeInteger(wantCorruption)&&wantCorruption!==(prior.corruption??0)){
+      const priorLast=prior.intimacy?.lastIntimate??'';
+      const proposedLast=proposed.intimacy?.lastIntimate??priorLast;
+      const intimateRound=Number(proposed.arousal)>=30||proposedLast!==priorLast||Number(proposed.intimacy?.withUserCount??0)>Number(prior.intimacy?.withUserCount??0)||intimateBehaviors.has(cid);
+      affectionEvents.push({type:'CORRUPTION_CHANGE',personRef:cid,delta:wantCorruption-(prior.corruption??0),auto:true,prowessBonus:intimateRound});
+    }
     proposed.corruption=prior.corruption??0;
     s.characters[cid]=acceptFields(proposed,prior,schemas.character,'characters.'+cid,diagnostics);
   }
@@ -133,6 +164,8 @@ export function syncPrivateRecords(s,before,queue){
   }
   for(const [cid,c] of Object.entries(s.characters)){
     if(!c||c.trackingState!=='RECORDED')continue;
+    // rc.25：静态肉体档案先由脚本补齐（户型、色泽、阴毛、乳晕、体香、敏感带）。
+    seedAnatomy(c);
     const prior=before?.characters?.[cid]||{};
     const behavior=behaviors.get(cid)||{score:0,text:'',tags:[]};
     const last=String(c.intimacy?.lastIntimate||'');
@@ -146,6 +179,9 @@ export function syncPrivateRecords(s,before,queue){
       if(firstNight)c.physiology.virgin=false;
       if((c.intimacy?.withUserCount||0)<1)c.intimacy.withUserCount=1;
       if(firstNight)addTag(c,'初夜夺取');
+      if(firstNight&&(!c.physiology.hymenNote||/处女膜完好|未经人事/.test(c.physiology.hymenNote)))c.physiology.hymenNote='初夜已由你夺取';
+      if((c.intimacy.sexPartnerCount||0)<1)c.intimacy.sexPartnerCount=1;
+      if(!c.intimacy.abilityComment&&(s.user?.prowessScore??70)>=75)c.intimacy.abilityComment='尺寸惊人且持久滚烫，每次深入都让她食髓知味、难以招架';
     }
     if(behavior.score>=60||lastChanged){
       for(const [rule,tag] of INTIMATE_TAG_RULES)if(rule.test(text))addTag(c,tag);
@@ -155,8 +191,52 @@ export function syncPrivateRecords(s,before,queue){
         if(label)addTag(c,label);
       }
     }
+    // rc.25：下体状态随情动值与实战自动演进；模型本轮亲手写过的值优先保留。
+    const priorVagina=String(prior.physiology?.vaginaState||'');
+    const wroteVagina=typeof c.physiology.vaginaState==='string'&&c.physiology.vaginaState.trim()&&c.physiology.vaginaState!==priorVagina;
+    if(realSex){
+      const creampie=(c.intimacy?.unlockedTags||[]).some(t=>/内射|灌满|中出/.test(t));
+      if(creampie)c.physiology.vaginaState='经受巨物深度开发，内壁滚烫痉挛，花穴微张、深处灌满浓稠精液';
+      else if(!wroteVagina)c.physiology.vaginaState='刚经受强悍肉体充分开发，内壁温热紧箍、春水泥泞泛红，余韵微颤';
+    }else if(!wroteVagina){
+      const arousal=Number(c.arousal)||0;
+      if(arousal>=65)c.physiology.vaginaState='情动难耐，透明爱液泌出湿透底裤，花唇充血微张、阴蒂敏感挺立';
+      else if(arousal>=40)c.physiology.vaginaState='芳心微乱，秘处温热湿润，内壁随呼吸轻度收缩';
+    }
+    syncOutfit(c);
+    syncLimits(c);
   }
   return s;
+}
+// Outfit and currentClothes are mirrors of each other: whichever the model
+// filled last wins, and the other side is completed from it.
+function syncOutfit(c){
+  const o=c.outfit;if(!o)return;
+  const clothes=String(c.currentClothes||'').trim();
+  // rc.25 Bug #3：开局或换装后两边都空时，从外貌提取或按职业补一套，绝不空着。
+  if(!clothes&&!o.top&&!Object.entries(o).some(([k,v])=>k!=='complexion'&&typeof v==='string'&&v.trim())){
+    const look=defaultOutfit(c);if(look){o.top=look;c.currentClothes=look;}
+  }
+  const parts=[o.top,o.bottom,o.socks,o.shoes].filter(v=>typeof v==='string'&&v.trim());
+  if(clothes&&!o.top)o.top=clothes.slice(0,200);
+  if(!c.currentClothes&&parts.length)c.currentClothes=parts.join('；').slice(0,300);
+  if(Number(c.arousal)>=50&&!o.complexion)o.complexion='雙頰緋紅，眼波含春，呼吸微促';
+}
+// Level and the eight limits are derived, never asked of the model: openness
+// follows whichever axis moved further, and unlocked tags jump straight to 3.
+const LIMIT_GATES={cosplay:30,exposure:40,foreplay:50,intercourse:65,creampie:75,publicPlay:72,anal:82,multi:90};
+const LIMIT_TAGS=[[/丝袜|制服|旗袍|情趣|泳装/,'cosplay'],[/露点|走光|全裸|脱光|裸裎/,'exposure'],[/口交|口侍|吞吐|足交|手口|侍奉/,'foreplay'],[/交欢|插入|鱼水|本垒|承欢|云雨/,'intercourse'],[/内射|中出|无套|灌满/,'creampie'],[/后庭|肛|菊/,'anal'],[/半公开|偷欢|办公室|车内|试衣间|包厢|落地窗/,'publicPlay'],[/多人|三人|双飞|同床侍奉/,'multi']];
+function syncLimits(c){
+  const l=c.limits;if(!l)return;
+  const openness=Math.max(Number(c.affection)||0,(Number(c.corruption)||0)*1.15);
+  const autoLevel=openness>=90?6:openness>=78?5:openness>=65?4:openness>=50?3:openness>=35?2:openness>=20?1:0;
+  l.scaleLevel=Math.max(l.scaleLevel||0,autoLevel);
+  for(const [key,threshold] of Object.entries(LIMIT_GATES)){
+    const auto=openness>=threshold+30?3:openness>=threshold+15?2:openness>=threshold?1:0;
+    l[key]=Math.max(l[key]||0,auto);
+  }
+  const tags=(c.intimacy?.unlockedTags||[]).join(' ');
+  if(tags)for(const [rule,key] of LIMIT_TAGS)if(rule.test(tags))l[key]=3;
 }
 // Cycle is date-driven: recompute when it is blank or when the story day moved.
 function applyCycles(s,before){

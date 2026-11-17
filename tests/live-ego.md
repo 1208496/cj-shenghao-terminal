@@ -1,160 +1,213 @@
-# 实机测试流程 · ego lite 驱动 SillyTavern
+# 最高测试角色卡流程（唯一权威 · 2026-11-17 实测跑通）
 
-> 2026-11-17 首次跑通并落地。目的：把「导入整卡 → 连 API → 走开局 → 验证变量界面」这条实机链路变成可重复执行的动作，而不是每次靠记忆手点。
-> 本文件只记录实测有效的步骤与判据。没跑过的写「未验证」。
+> 本文件是**唯一现行**的实机测试流程，取代旧的 `tests/legacy/live-ego_20261117-old.md`（旧文件只作历史参考，不再更新、不再照抄）。
+> 所有步骤与数值都是 2026-11-17 晚上在 ego lite 0.6.3.14 + 本机酒馆 1.19.0 上实测出来的，不是推测。
+
+## 铁律（先看这条）
+
+1. **除了等模型回复，任何"卡住需要等"都是故障**。等 API 回正文可以等 1–3 分钟；打开网址、连 API、导入卡、开卡、填表、点确认框，每一步都应该是**几秒内出结论**。超过 10 秒没结论就停下来取证据，别硬等。
+2. **判"回复到了"只看最后一条是不是用户消息**，不要用楼层数增加来判断 —— 你自己发的那条用户消息也会涨楼层，会把"还没回"误判成"回了"。
+3. 原生浏览器弹窗（HTTP Basic 登录框）必须由人点掉；ego 的脚本 API 碰不到它。
+4. **动作之间要留一拍**：导入卡后等 1 秒再点卡；打开卡后等确认框出现并点「确认」——那个框是卡内脚本的启用开关，点不到就等于没启用，MVU 永远起不来。框不出现就刷新页面重开卡，别在同一文档里反复重试。
 
 ## 前置
 
 | 项 | 值 |
 | --- | --- |
-| 浏览器 | ego lite 0.6.3.14（`--startup-ego-browser-service` 后台服务，无主窗口属正常） |
-| 酒馆 | `http://127.0.0.1:8000/` |
-| 前置认证 | HTTP Basic，`user` / `98`，realm `SillyTavern` |
-| 跑法 | `ego-browser nodejs -e "await import('file:///E:/SHZDCHOSSS/scripts/live-test-ego.mjs')"` |
-| 脚本 | `scripts/live-test-ego.mjs`（顶部 CONFIG 区改卡路径 / 开关） |
+| 浏览器 | ego lite 0.6.3.14，`ego-browser skill` 可打印官方用法 |
+| **测试专用酒馆** | **`http://127.0.0.1:8001/`**（目录 `E:\SillyTavern-test`，从 `C:\jiuguan\SillyTavern` 复制而来：代码 + 四个第三方扩展全带、`data` 全新独立） |
+| 认证 | **测试实例已关闭 Basic 认证**，不再需要登录，也不会再弹浏览器原生登录框 |
+| 启动 | 双击 `E:\SillyTavern-test\启动测试实例.cmd`，或 `node server.js`（工作目录 `E:\SillyTavern-test`） |
+| 测试卡 | `.work/test-card/神豪终端-localmvu.json`（MVU 走同源 `http://127.0.0.1:8001/cj-mvu-bundle.js`） |
+| API | 自定义（兼容 OpenAI）`https://catiecli.sukaka.top/v1`，每个新 space 打开后都要点一次「连接」 |
 
-Windows 下必须写 `.mjs` 文件再 `-e "await import(...)"`；PowerShell 5.1 会破坏 `-e` 里的引号和中日韩字符。
+> 用户本人的酒馆 `127.0.0.1:8000`（目录 `C:\jiuguan\SillyTavern`）**不再用于测试**，避免测试产生的角色卡副本、聊天记录、世界书导入污染他的数据。
 
-## 七步流程与判据
+## 流程（实测耗时写在括号里）
 
-### 1. 过 Basic 认证
-
-不走原生认证弹窗（会卡住导航），直接注入请求头：
+### 1. 开 space + 注认证头（< 2 秒）
 
 ```js
+const task = await taskSpace("rc24 全流程 " + Date.now());
+const page = (await task.pages())[0] ?? (await task.adopt((await task.tabs())[0].page));
 await page.cdp("Network.enable", {});
-await page.cdp("Network.setExtraHTTPHeaders", { headers: { Authorization: "Basic " + btoa("user:98") } });
-await page.goto("http://127.0.0.1:8000/");
+await page.cdp("Network.setExtraHTTPHeaders", {
+  headers: { Authorization: "Basic " + Buffer.from("user:98", "utf8").toString("base64") },
+});
 ```
 
-判据：`document.title === "SillyTavern"`，`#send_form` 可见。
-注意：请求头是**每个 Node 进程**都要重设的，脚本每轮开头都要执行。
-
-### 2. 连接 API
-
-- 点击 `#API-status-top`（插头图标，其父链是 `#sys-settings-button.drawer`）打开「API 连接配置」抽屉
-- 点抽屉里**可见且文本恰好为「连接」**的按钮
-
-**不要用 `#api_button`** —— 它在 `#kobold_api_block` 里，是 0×0 的隐藏按钮。自定义 OpenAI 源真正的按钮在 `#openai_api` 内。
-
-判据：`#API-status-top` 的 class 从 `fa-plug-circle-exclamation` 变成 `fa-plug`，且无 error toast。
-当前配置：聊天补全来源 = 自定义（兼容 OpenAI），端点 `https://catiecli.sukaka.top/v1`，模型由用户在 UI 里选。
-
-### 3. 清确认弹窗
-
-导入前后会连环弹三类，逐个用原生 `click()` 点掉（ego 的指针点击会被模态拦截，报 `intercepts pointer events`）：
-
-1. 角色标签导入 → 点「全部导入」
-2. 内置正则询问 → 点「确定」
-3. 酒馆助手嵌入式脚本 → 点「确认」
-
-判据：`#dialogs` 内无可见弹出；这些按钮不在 `#dialogs` 里的容器也可能出现，所以按「全页扫描可见且文本匹配 `确认|确定|是|OK` 的叶子元素」来找更稳。
-
-### 4. 导入整卡
+### 2. 打开网址（实测 553ms 就 `readyState=complete`）
 
 ```js
-await page.click("#rightNavDrawerIcon");                    // 角色管理抽屉
-await page.setInputFiles("#character_import_file", [CARD_PATH]);
+await page.goto("http://127.0.0.1:8000/", { timeout: 20000 });
+await page.waitForTimeout(4000);   // 只为取样，不是为了等它"好"
 ```
 
-判据：toast 出现「角色已创建：<名>」，`#rm_print_characters_block .character_select` 数量增加。
-注意：同名卡重复导入会被重命名（如 `神豪终端19.png`），`chid` 每次不同，不要写死。
+取样判据：`document.readyState === "complete"`、`#send_form` 存在、`preloader === null`。
+**`#preloader` 还挂着就是故障**（多半是模块请求被原生登录框堵住），不是"再等等"。
 
-### 5. 打开该角色
+### 3. 连 API（5 秒内看结果）
 
 ```js
-const hit = [...document.querySelectorAll("#rm_print_characters_block .character_select")]
-  .find(c => (c.querySelector(".avatar")?.getAttribute("title") || "").includes("神豪"));
-hit.querySelector(".avatar").click();
+await page.evaluate(() => document.querySelector("#API-status-top")?.click());  // JS 点击，绕开遮罩
+await page.waitForTimeout(1200);
+await page.evaluate(() => {
+  const pool = [...document.querySelectorAll("button, .menu_button, div, span")]
+    .filter((el) => el.children.length === 0 && (el.offsetWidth || el.offsetHeight));
+  pool.find((el) => (el.textContent || "").trim() === "连接")?.click();
+});
+await page.waitForTimeout(5000);
 ```
 
-判据：`#chat .mes` 出现 1 条 assistant 开场；`#TH-message--0--0` iframe 的 `srcdoc` 长度 > 100KB（开场向导已渲染）。
+判据：`#API-status-top` 的 class 含 `fa-plug` 且不含 `exclamation`。
+不要用 `#api_button`（隐藏的 kobold 按钮，0×0）。
 
-### 6. 走开局向导
-
-开场向导在 iframe `#TH-message--0--0` 内（srcdoc，同源，可直接 `contentDocument`）。手机界面在 `#cj-shenghao-phone-frame`。
-
-| 步 | 操作 | 控件 |
-| --- | --- | --- |
-| 01 塑造身份 | 填姓名、选开局档 | `#f_name`，`#f_age`，`#f_gender`，`#f_occupation`，`#beautySlider`/`#beautyNumber`，`#f_appearance`，`#f_body`，`#f_background`；档位按钮文本含「穷光蛋开局 / 上班族牛马 / 小康人家 / 富家公子哥」 |
-| 02 设定起点 | 确认现金与资产 | 现金 chip：`¥0 / ¥10,000 / ¥100,000 / ¥1,000,000`（选中项 class 含 `on`）；「＋ 登记资产」 |
-| 03 已有关系 | 熟人列表 | 「＋ 添加初始熟人」，按钮「预览开局」 |
-| 最终确认 | 点「开始我的人生」 | 预览行显示「<名>，<age>岁 · 城市 / 初始现金 / 已有资产 N 项 / 初始熟人 N 位」 |
-
-填值必须走原生 setter + `dispatchEvent("input"/"change")`，直接赋 `value` 不会触发卡的校验状态：
+### 4. 导入最新卡（约 4 秒）
 
 ```js
-const setter = Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, "value").set;
-setter.call(el, v);
-el.dispatchEvent(new win.Event("input", { bubbles: true }));
-el.dispatchEvent(new win.Event("change", { bubbles: true }));
+await page.evaluate(() => document.querySelector("#rightNavDrawerIcon")?.click());
+await page.waitForTimeout(1200);
+const prev = await page.evaluate(() =>
+  [...document.querySelectorAll("#rm_print_characters_block .character_select")]
+    .map((c) => c.querySelector(".avatar")?.getAttribute("title") || ""));
+await page.setInputFiles("#character_import_file", ["E:/SHZDCHOSSS/.work/test-card/神豪终端-localmvu.json"]);
+await page.waitForTimeout(3500);
 ```
 
-判据：`#chat .mes` 从 1 变 3（user 开局消息 + assistant 首轮正文）；user 消息里含完整开局设定文本。
+新版找卡方式：**导入前后 title 差集**（同名卡会被改名成 `神豪终端10.png`，chid 每次不同，不能写死，也不要按名字模糊匹配 —— 会点到旧卡）。
 
-### 7. 验证变量与界面
+### 5. 点确认框（每次 1.1 秒轮询，最多 10 轮）
 
-- `#chat .mes` 最后一条是 assistant 正文，长度数百字
-- 手机浮层：点 `#cj-shenghao-phone-frame` 内的按钮 `#folded`（文本「✦神豪终端」）展开
-- tab：`⌂此刻` / `♡她们` / `▣我的`
+确认框按钮是 `<div class="popup-button-ok">`，**不是 `<button>`**；按「可见叶子元素 + 文本匹配」点击最稳：
 
-数值交叉校验（本次实测通过）：
+```js
+for (let i = 0; i < 10; i += 1) {
+  const hit = await page.evaluate(() => {
+    const out = [];
+    const vis = (el) => !!(el.offsetWidth || el.offsetHeight);
+    for (const p of [...document.querySelectorAll(".popup, .dialog, [role='dialog']")]) {
+      const leaf = [...p.querySelectorAll("button, div, span, a")]
+        .filter((el) => el.children.length === 0 && vis(el));
+      const ok = leaf.find((el) => /^(确认|确定|是|OK|全部导入|启用|继续)$/i.test((el.textContent || "").trim()));
+      if (ok) { ok.click(); out.push((ok.textContent || "").trim()); }
+    }
+    return out;
+  });
+  if (!hit.length) break;
+  await page.waitForTimeout(1100);
+}
+```
 
-| 项 | 手机显示 | 应对得上 |
+### 6. 打开卡 + 校验 MVU（约 3 秒，但**必须先等一拍再点**）
+
+**节奏要点（2026-11-17 YG 实测纠正，这条比什么都重要）**：
+
+- 导完卡**先等 1 秒再点卡**，别连点。
+- 点开卡之后约 0.5–1.2 秒才会弹这个框，原文是：**「角色卡 '神豪终端NN.png' 中包含酒馆助手可用的嵌入式脚本 是否现在就启用它们?」**，按钮文字是 **「确认」**（同一时刻可能出现两条，都点）。
+- **点了它才是真正启用卡内脚本**；框没弹出来 = 脚本没启用 = MVU 一定起不来。此时**刷新酒馆页面 → 重新点开这张卡 → 确认框会重新弹出 → 点「确认」**，MVU 会自己加载、开局立刻可用（YG 实测有效）。
+- **等足 2 秒再点**：框虽然出现了，脚本还没加载完，太早点会点到别的按钮（比如另一个「确定」），等于没启用。打开卡 → 等 ≥2 秒 → 先截图看清是哪个框 → **只点「嵌入式脚本」那个框里的「确认」**。
+- 启用状态**按角色记住**：同一张卡确认过一次后，再打开不再弹框，MVU 直接起（实测：`神豪终端19.png` 第二次打开时 `mvu/schema/host` 立即可用）。
+- 从「最近的聊天」列表里找条目要注意分隔符是长横「–」，不是短横「-」，按短横匹配会一个都选不中。
+- 常见错法：扫描确认框的动作跑在框出现**之前**，扫到空就当没有 —— 要等框出现再扫，别提前下结论。
+- 不要在同一文档里反复重开聊天：ES 模块会按 URL 缓存失败的 import，同一页面再试也没用。
+
+```js
+await page.waitForTimeout(1000);      // 导入后先停一拍，别急着点
+await page.evaluate((id) => document.querySelector(`[data-chid="${id}"] .avatar`)?.click(), chid);
+await page.waitForTimeout(1200);      // 等确认框真正出现
+// 再跑一遍第 5 步的确认框清理（按钮文本「确认」/「是」）
+```
+
+判据：`typeof window.Mvu === "object"`、`__CJ_SHENGHAO_SCHEMA__` / `__CJ_MVU_LOADER__` / `__CJ_SHENGHAO_V2__` 全为 object，且 toast 出现「[MVU]变量初始化成功」。
+这条不过 → 先查「酒馆助手嵌入式脚本」是否启用（刷新重开卡、点确认），再看原生登录框，不要继续。
+
+### 7. 填开局表单（每步 0.9 秒）
+
+```js
+await page.fill("#f_name", "测试员");
+await page.evaluate(() => {
+  const doc = document.getElementById("TH-message--0--0")?.contentDocument;
+  [...(doc?.querySelectorAll("button") ?? [])].find((b) => (b.textContent || "").includes("富家公子哥"))?.click();
+});
+// 下一步 ×2 → 预览开局
+await page.evaluate(() => {
+  const doc = document.getElementById("TH-message--0--0")?.contentDocument;
+  [...(doc?.querySelectorAll("button") ?? [])].find((b) => /预览开局/.test(b.textContent || ""))?.click();
+});
+```
+
+向导在 iframe `#TH-message--0--0` 内（同源 srcdoc，可直接 `contentDocument`）。
+判据：预览出现「测试员，24岁 · 云澜市 / 初始现金 ¥1,000,000 / 已有资产 3 项 / 初始熟人 2 位」，且「开始我的人生」`disabled === false`。
+
+### 8. 点开局，等第一楼正文（唯一合法的长等待）
+
+```js
+await page.evaluate(() => {
+  const doc = document.getElementById("TH-message--0--0")?.contentDocument;
+  [...(doc?.querySelectorAll("button") ?? [])].find((b) => /开始我的人生/.test(b.textContent || ""))?.click();
+});
+await page.waitForFunction(() => {
+  const c = window.SillyTavern?.getContext?.()?.chat || [];
+  return c.length > 0 && c.at(-1)?.is_user === false;     // ← 只认「最后一条不是用户消息」
+}, undefined, { timeout: 150000 });
+```
+
+### 9. 读变量（每轮测试都靠它）
+
+```js
+const state = await page.evaluate(() => {
+  const chat = window.SillyTavern?.getContext?.()?.chat || [];
+  for (let i = chat.length - 1; i >= 0; i -= 1) {
+    const v = window.Mvu?.getMvuData?.({ type: "message", message_id: i });
+    if (v?.stat_data?.shenghao?.meta?.initialized) return v.stat_data.shenghao;
+  }
+  return null;
+});
+```
+
+`facts` / `events` / `ledger` 可能是数组也可能是对象，读之前先 `Array.isArray(x) ? x : Object.values(x)`。
+
+### 10. 发消息（别点 `#send_but`）
+
+`#send_but` 有时是 0×0（点了报 `zero-sized bounding box`）。用原生 setter + JS 点击：
+
+```js
+await page.evaluate((text) => {
+  const ta = document.getElementById("send_textarea");
+  Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set.call(ta, text);
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
+  document.getElementById("send_but")?.click();
+}, line);
+```
+
+## 实测判据表（2026-11-17 本轮真跑出来的数）
+
+| 环节 | 实测 |
+| --- | --- |
+| 打开网址 | 553ms `readyState=complete` |
+| 连 API | `fa-plug`，无感叹号 |
+| 导入卡 | 新卡 chid 8（同名自动改名 `神豪终端10.png`），确认框「全部导入」1 次 |
+| MVU 就绪 | `Mvu/schema/loader/host` 全 object，toast「[MVU]变量初始化成功」，世界书 `神豪终端 · v2.0.0-rc.24` |
+| 开局变量 | `cash=100000000`（¥1,000,000）、`prowess=70`、`date=2026-11-16`、`time=09:05`、`revision=1` |
+| 初始熟人 | 顾星遥 ♥55 / 江映 ♥30，均带 `currentGoal`；`cycle` 脚本兜底（经前期·敏感 / 安全期）；`limits.scaleLevel` 3 / 1 |
+| 纯寒暄 | 有回复，`rewardEvents` 空，`revision 1→2`（不发暴击 ✅） |
+| 涩涩轮 | `rewardEvents` 1 条：**¥16,714（1,671,400 分，整元）**，称号 **羞耻破防**，`mode=INTIMATE`，评分 68；顾星遥 堕落 0→12、情动 48、自动标签「深情热吻/解锁新姿/贴身爱抚」；`revision 2→4` |
+
+## 故障对照表（按踩坑代价排序）
+
+| 症状 | 真实原因 | 处理 |
 | --- | --- | --- |
-| 总资产 | ¥1,700,000 | 现金 100,000 + 资产 1,600,000 |
-| 持有资产 | ¥1,600,000 | 公寓 1,500,000 + 车 100,000 |
-| 等级 | 见习·十倍 | 正文「可用现金十万元，等级为见习·十倍」 |
-| 颜值 | 60/100 | 表单 `#beautyNumber` |
-| 时间 | 2026-11-16 星期一 09:00 | 开局设定「起始日期时间」 |
+| 开局表单「连接尚未完成」、「开始我的人生」灰、`window.Mvu` 永远 undefined | **「酒馆助手嵌入式脚本」确认框没点到 / 没弹出**，卡内脚本没启用（最常见）；其次是原生 HTTP Basic 登录框挂起模块请求 | 刷新页面 → 重新点开卡 → 点弹出来的「确认」；确认框始终不出现再查登录框。不要在同一文档里反复重开聊天 |
+| `#preloader` 一直显示「正在初始化…」 | 同上一行（初始化里的模块拉不下来） | 同上，别等 |
+| 点击报 `#preloader intercepts pointer events` | 遮罩还在 | 用 JS `element.click()`，或先确认遮罩真的消失 |
+| 点 `#send_but` 报 `zero-sized bounding box` | 按钮在这一版布局里是 0×0 | 走第 10 步的原生 setter + JS 点击 |
+| 以为「回了」，其实楼层增加的是自己的消息 | 判据用了楼层数 | 只认 `chat.at(-1).is_user === false` |
+| `#TH-message--0--0` 不存在、开场只有纯文本 | 「酒馆助手嵌入式脚本」确认框没点掉 | 跑第 5 步的确认框清理，必要时 `reloadCurrentChat()` |
+| `#api_button` 点了插头还是感叹号 | 那是 0×0 的 kobold 隐藏按钮 | 按可见文本「连接」找 |
+| jsDelivr 相关红字 | （2026-11-17 复核）`cdn.jsdelivr.net` 与 `testingcf.jsdelivr.net` 的 `gh/`、`npm/+esm` 都 200；`cdn.skypack.dev` 与 `127.0.0.1:8123` 才是 Failed to fetch | 本地 bundle 同源托管即可，不必再改 CDN |
 
-## 踩过的坑（按代价排序）
+## 未验证（本流程还没覆盖到）
 
-0. **确认弹窗的按钮是 `<div class="popup-button-ok">`，不是 `<button>`**（2026-11-17 rc.22 实机第一次踩到，代价最大）。按「文本找 button」会一个都点不到，于是「内置世界书 / 内置正则 / 酒馆助手嵌入式脚本」三个确认一直挂着：正则没启用 → 开场 `<div data-cj-opening>` 不会被替换成 iframe → `#TH-message--0--0` 不存在 → 看起来完全像「脚本没有加载」。正确做法：循环点所有可见的 `.popup .popup-button-ok`，直到没有 `.popup`，再检查 `#TH-message--0--0`；仍缺失就调用 `SillyTavern.getContext().reloadCurrentChat()` 重渲染一次。脚本里已封装为 `dismissPopups()`。
-0b. **导入卡不能按名字模糊匹配**：`characterMatch: "神豪"` 会 `pop()` 到最后一张同名旧卡（实测打到了「都市神豪之我爱装逼托马斯版」），后面全在测错卡。改成「记录导入前的卡片 title 集合，导入后取差集」，并用 `data-chid` 打开；重复跑时用 `reuseChid` 直接复用已导入的角色。
-0c. **开局前手机 iframe 的 `#app` 是空的，这是正常现象**：`state` 还是 null 时宿主只创建 74×108 的折叠位，界面要等开局提交、MVU 初始化后才渲染。判据要用「开局后 `#cj-shenghao-phone-frame .phone-screen` 有文本」，不要用「iframe 存在」。
-1. **用户一碰 ego 窗口，控制权就判给用户**，我的指令立刻被暂停，报 `Control of this task space is with the user`。这是硬停止，不能自己抢。恢复要 `takeOverTaskSpace(spaceId)`，且必须用户明确说继续。跑长流程前先跟用户说好别点窗口。
-2. **`#api_button` 是隐藏的 kobold 按钮**（0×0）。点它等于没点，插头一直是感叹号。要按可见文本「连接」找。
-3. **ego 的 `page.screenshot()` 只截视口的约 0.8 倍**，右侧会被裁。手机浮层贴右边缘 4px 且有 `transform: matrix(0.82,…)`，截图里直接被切掉。绕法：临时把 `#cj-shenghao-phone-frame` 设成 `position:fixed; left:20px; top:70px; transform:none; z-index:2147483000`，截完还原原 `style` 属性。CDP `Page.captureScreenshot` + `clip` 更差（坐标是文档坐标、输出还按 DPR 1.25 放大）。
-4. **百度搜索结果页会让该 tab 的截图永久超时**（`EGO_PAGE_UNRESPONSIVE`），原始 CDP 也救不回。换 `task.newPage()` 即恢复；不要在同一个 tab 死磕。
-5. **ego 这个 Chromium 里 jsDelivr 全域 + raw.githubusercontent 都是 `Failed to fetch`**，而台面 `Invoke-WebRequest` 能通、unpkg 与 api.github.com 能通。卡的「固定加载器」每次打开都走 jsDelivr 拉 `dist/terminal.js`，会弹红字「脚本没有下载或启动成功」。这是 **ego 环境问题，不是卡的问题**（同一张卡用用户自己的浏览器导入就正常）；实测红字不阻塞开局与变量界面。
-6. `page.events()` 是 async 且返回事件名数组，不是 EventEmitter；`waitForEvent` 只支持 `popup` / `download`，没有 screencast。想抓 console 得先 `page.cdp("egoAutomated.disable")` 再 `Runtime.enable`，且拿不到推送回调。
-
-## rc.22 实机验收记录（2026-11-17）
-
-跑法：先 `scripts/live-test-ego.mjs`（导入链路），再 `scripts/live-test-rc22-resume.mjs`（向导 + 界面断言）。
-
-| 断言 | 结果 | 证据 |
-| --- | --- | --- |
-| 导入 rc.22 整卡 | ✅ | 新增卡 `chid 31`「神豪终端」，标签已导入 |
-| 内置世界书 / 正则 / 嵌入式脚本 | ✅ | 按 `.popup-button-ok` 点掉后 `#TH-message--0--0` srcdoc 171,740 字符 |
-| 开局向导 + 两位初始熟人 | ✅ | 表单出现 `f_c_cupSize` / `f_c_corruption`，四人列表（含卡自带的温迎、沈清弦） |
-| 此刻页双轴 | ✅ | 「♥ 好感 43/100 · ❖ 堕落 2/100」，奖池 **¥5,000**（50 分微光暴击 ×10） |
-| 基础档案 | ✅ | 「称呼你：陆总」「三围 86／62／89 CM（C 罩杯）」 |
-| 她们页 | ✅ | 副标题「平面设计师 · 称呼「陆总」 · ♥ 41 · ❖ 0」，提示语「好感满70或堕落满60即可提现」 |
-| 详情页双数值 + 提现文案 | ✅ | 「♥ 41 好感度 · 朋友与信任」「❖ 0 堕落度 · 矜持自守」「♥ 好感达70 或 ❖ 堕落达60 解锁提现」 |
-| 私密与亲密记录卡 | ✅ | 展开后「处子状态：未知 / 孕期：未孕 / 还没有已解锁的亲密体验」 |
-| ★ 特别关注 | ✅ | 点击后按钮变「★ 已关注」，此刻页出现「★ 特别关注 · 异地实况 (1) · 林知夏 · 近况尚未同步」 |
-| 堕落度实机写入 | ✅ | 一轮对话后 `corruption 0 → 2`，facts 出现 `CORRUPTION_CHANGE finalDelta=2`；`currentThought` 同时写入 |
-| 单轮限幅 ±12 | ✅ | 连续四轮 corruption 2→12→22→28→34，单轮 +10/+6/+6 均未越界 |
-| 好感 70 解锁提现（方案 B1） | ✅ | 苏晚 affection 72 →「可提现」，按钮可用，奖池 ¥390,000，见习十倍预计实到 **¥3,900,000** |
-| 十倍奖金阶梯 | ✅ | 52/55 分→¥5,000；65/66/68/72 分→¥20,000；92 分→¥300,000（与 `rewardTiers` 完全一致） |
-| `intimacy` 部分落盘 | ✅ | `withUserCount=1`、`lastIntimate="翠湖公寓主卧首次交欢"`，界面渲染「与你亲密次数：1 次」 |
-
-**协议执行缺口（不是代码 BUG，字段能收能渲染，模型没写）**：
-
-| 字段 | 实机结果 | 说明 |
-| --- | --- | --- |
-| `physiology.virgin` | ❌ 仍为 null | 剧情已到「首次交欢」，模型仍不判定处子状态，界面显示「处子状态：未知」 |
-| `intimacy.unlockedTags` | ❌ 空数组 | 界面显示「还没有已解锁的亲密体验」，模型跳过了标签数组 |
-| `physiology.cycle` / `traits` | ❌ 空 | 生理周期与敏感带摘要都没写 |
-| `offscreen` | ❌ 空 | 林知夏已打星且不在场，中途点名问过她，`currentThought` 提到了她，但 `offscreen` 字段没写，此刻页显示「近况尚未同步」 |
-
-**未验证**：`corruption ≥ 60 而 affection < 70` 的实机提现路径（当前苏晚好感已 72，无法区分是哪条通道解锁；该路径只有单测覆盖）。
-
-## 已知未验证
-
-- 刷新页面后重新连接 API 的完整回归（用户说每次刷新都要重连）——流程同上第 2 步，**未单独立项验证**。
-- 连续多轮对话下变量是否逐轮更新（只看了一轮）。
-- 「她们」tab 在有在场角色时的渲染。
-- 卡更新后（改 Supabase 指针）加载器能否在 jsDelivr 受阻时走 fallback。
+- 收入入账、买房后资产写入 `basisCents`。
+- 提现按 `tierBasis`（现金 + 后购且仍持有的资产成本）算总身家倍率；前置是某个角色 `affection≥70 || corruption≥60`。
+- 打星离场 `offscreen` 的逐轮更新、长对话通胀、多人同时在场。

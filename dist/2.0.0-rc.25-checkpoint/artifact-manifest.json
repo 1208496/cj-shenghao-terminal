@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "projectId": "cj-shenghao-terminal-v2",
+  "version": "2.0.0-rc.25",
+  "gate": "offline-candidate",
+  "files": {
+    "神豪终端.json": {
+      "sha256": "8ac07c7eb1b55eb1d277c8700e2cd7f5591602f394bb37039e8b6787dc42a5e7",
+      "bytes": 607028
+    },
+    "worldbook.json": {
+      "sha256": "d71ccdd25377a5751a981540fbd3d7e08b246da18ea0450e56728b3b172b6147",
+      "bytes": 78474
+    },
+    "runtime.js": {
+      "sha256": "17c7a7be0602fbd1131731c61ad3274e0ef29a4d9fc0183ce4923482172fc753",
+      "bytes": 278273
+    },
+    "bootstrap-loader.js": {
+      "sha256": "17c7a7be0602fbd1131731c61ad3274e0ef29a4d9fc0183ce4923482172fc753",
+      "bytes": 278273
+    },
+    "release.json": {
+      "sha256": "60bf51beb547653e4f82c434dd92f04fddf5f218d341b6ea558174b961b5db07",
+      "bytes": 782
+    },
+    "schema.js": {
+      "sha256": "f7616d09385bcb5dcc2d820e2bffd71c11584d747825dcbdc7fe400d8319afaa",
+      "bytes": 10629
+    },
+    "mvu-domestic.js": {
+      "sha256": "c0a8647f5f456993bf0cb50ee07e022d014936fb17c04ed52a36fa07a11f2681",
+      "bytes": 518
+    },
+    "mvu-global.js": {
+      "sha256": "b9141dc80c57a80b27b5f8b452a6b325d2ac8e4a2ee96c342c808d846a7a1d78",
+      "bytes": 512
+    },
+    "opening.html": {
+      "sha256": "2422860a14f82ebc15d8779afbca10e4e4453b926598675b82129e7e96119331",
+      "bytes": 180433
+    },
+    "phone.html": {
+      "sha256": "f8eddd148c48938e13780d7bebefe205122e90af6578e6ec081a73013d316ead",
+      "bytes": 180455
+    }
+  }
+}

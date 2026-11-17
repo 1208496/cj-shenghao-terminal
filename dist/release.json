@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.23",
+  "version": "2.0.0-rc.25",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "ad426bafd5cb1970869b8ab5fbd701c7e684e2ab15f4d9ac595b9e81358201c9",
-  "sha256": "b26cb0ad398cb769c69819438bdabe2805f3ba7a8cb8333361c12bc01f6e654e",
-  "notes": "rc.23：脚本兜底私密字段（生理周期自动推算、实战自动置非处并补标签、亲密标签自动提炼）与打星离场顶层索引 starredOffscreenIds；协议改为强触发并附全要素示例。"
+  "worldbookHash": "8fb6afbd5b08dc23f27aa8573cc7f2a6577d6b643ce54922990228d7f252337e",
+  "sha256": "17c7a7be0602fbd1131731c61ad3274e0ef29a4d9fc0183ce4923482172fc753",
+  "notes": "rc.25：女性私密肉体档案确定性播种（胸型乳晕/下体户型色泽/紧致湿润/阴毛/后庭/体香敏感带）、此刻与详情四方块重构、我的财富与持有资产大字号双栏与七大分类（50字描述）、rc.24 四项实战 Bug 全修复（资产事件归并入账/卖画转其他收入/证据首句兜底/开局穿搭/亲密回合禁倒扣）。"
 }

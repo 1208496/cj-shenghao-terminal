@@ -4,7 +4,7 @@ import {z} from 'zod';
 import {createSchema} from '../src/runtime/schema.js';
 import {completeInitialState,settleNative,allowModelCommand,commandPath,replayPlayerCommand} from '../src/runtime/settlement.js';
 import {clone,poolParts,applyOperation,hasEvidence,applyEnvelope,projection} from '../src/core/engine.js';
-import {fresh,profiles,anchor,payment,score,source} from './fixtures.mjs';
+import {fresh,profiles,anchor,payment,score,source,inRange} from './fixtures.mjs';
 const schemas=createSchema(z),initial=()=>schemas.state.parse(completeInitialState(fresh(),{startDate:'2026-01-05',startTime:'09:00'}));
 test('verbatim evidence permits paragraph formatting and explicit omissions, never rewritten words',()=>{const body='花材整理完成，水桶放回原位。\n\n“给你买的点心。”刚才扫码支付了三百元。';assert(hasEvidence(body,'花材整理完成，水桶放回原位。“给你买的点心。”刚才扫码支付了三百元。'));assert(hasEvidence(body,'花材整理完成，水桶放回原位。……刚才扫码支付了三百元。'));assert(!hasEvidence(body,'花材整理完成，水桶放回原位。……刚才扫码支付了五百元。'));});
 test('native JSONPatch bracket paths are accepted while money, root and executable literals are rejected',()=>{
@@ -24,8 +24,8 @@ test('scene, clock and current clothes update through native settlement; finance
 test('valid economic candidates settle once, invalid candidates do not erase scene changes',()=>{
  const before=initial(),next=clone(before);next.world.time='10:30';next.pendingEvents=[payment(),score(),payment({factId:'bad',amountCents:-1})];
  const result=settleNative(before,next,anchor(),source,schemas);
- assert.equal(result.state.user.cashCents,before.user.cashCents-30000);assert.equal(poolParts(result.state,'char_a').total,8030000);assert.equal(result.state.world.time,'10:30');assert.equal(result.diagnostics.length,1);
- const again=clone(result.state);again.pendingEvents=[payment(),score()];const replay=settleNative(result.state,again,anchor(3),source,schemas).state;assert.equal(replay.user.cashCents,result.state.user.cashCents);assert.equal(poolParts(replay,'char_a').total,8030000);
+ assert.equal(result.state.user.cashCents,before.user.cashCents-30000);{const pool=poolParts(result.state,'char_a');assert.equal(pool.spend,30000);assert(inRange(pool.crit,3500000,9800000));}assert.equal(result.state.world.time,'10:30');assert.equal(result.diagnostics.length,1);
+ const again=clone(result.state);again.pendingEvents=[payment(),score()];const replay=settleNative(result.state,again,anchor(3),source,schemas).state;assert.equal(replay.user.cashCents,result.state.user.cashCents);{const pool=poolParts(replay,'char_a');assert.equal(pool.spend,30000);assert(inRange(pool.crit,3500000,9800000));}
 });
 test('formal archive keeps a new person even without a verbatim quote or full body data',()=>{
  const before=initial(),next=clone(before);next.characters.char_b=schemas.character.parse({id:'char_b',name:'许栀',age:24,beautyScore:75,affection:25,relationshipLabel:'新识',personalityTags:['温和'],appearance:'黑色长发',body:'匀称',heightCm:168,weightKg:52,bustCm:86,waistCm:62,hipCm:89,shoeSizeEu:38,profileFixed:null,contactConfirmed:true,firstContactEvidence:source});next.scene.presentCharacterIds.push('char_b');

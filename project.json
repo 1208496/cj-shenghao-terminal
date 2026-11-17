@@ -1,7 +1,7 @@
 {
   "id": "cj-shenghao-terminal-v2",
   "name": "神豪终端",
-  "version": "2.0.0-rc.23",
+  "version": "2.0.0-rc.25",
   "cardType": "mvu_zod",
   "repository": "1208496/cj-shenghao-terminal",
   "private": false,
@@ -13,34 +13,52 @@
     {
       "minScore": 0,
       "amountCents": 0,
-      "label": "未触发"
+      "minCents": 0,
+      "maxCents": 0,
+      "label": "未触发",
+      "intimateLabel": "未触发"
     },
     {
       "minScore": 40,
-      "amountCents": 500000,
-      "label": "微光暴击"
+      "amountCents": 388800,
+      "minCents": 188800,
+      "maxCents": 688800,
+      "label": "微光暴击",
+      "intimateLabel": "春心微澜"
     },
     {
       "minScore": 60,
-      "amountCents": 2000000,
-      "label": "心动暴击"
+      "amountCents": 1888800,
+      "minCents": 888800,
+      "maxCents": 2888800,
+      "label": "心动暴击",
+      "intimateLabel": "羞耻破防"
     },
     {
       "minScore": 75,
-      "amountCents": 8000000,
-      "label": "强力暴击"
+      "amountCents": 6800000,
+      "minCents": 3500000,
+      "maxCents": 9800000,
+      "label": "强力暴击",
+      "intimateLabel": "欲海沉沦"
     },
     {
       "minScore": 90,
-      "amountCents": 30000000,
-      "label": "超凡暴击"
+      "amountCents": 25000000,
+      "minCents": 12000000,
+      "maxCents": 38000000,
+      "label": "超凡暴击",
+      "intimateLabel": "绝顶征服"
     },
     {
       "minScore": 98,
-      "amountCents": 100000000,
-      "label": "传说暴击"
+      "amountCents": 88000000,
+      "minCents": 50000000,
+      "maxCents": 120000000,
+      "label": "传说暴击",
+      "intimateLabel": "极乐巅峰"
     }
   ],
-  "releaseNotes": "rc.23：脚本兜底私密字段（生理周期自动推算、实战自动置非处并补标签、亲密标签自动提炼）与打星离场顶层索引 starredOffscreenIds；协议改为强触发并附全要素示例。",
-  "cardContractRevision": 19
+  "releaseNotes": "rc.25：女性私密肉体档案确定性播种（胸型乳晕/下体户型色泽/紧致湿润/阴毛/后庭/体香敏感带）、此刻与详情四方块重构、我的财富与持有资产大字号双栏与七大分类（50字描述）、rc.24 四项实战 Bug 全修复（资产事件归并入账/卖画转其他收入/证据首句兜底/开局穿搭/亲密回合禁倒扣）。",
+  "cardContractRevision": 21
 }

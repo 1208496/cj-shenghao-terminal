@@ -181,6 +181,8 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .thought{color:var(--ui-pink);font-size:calc(11px * var(--cj-font-scale,1));line-height:1.7}
 .thought i{font-style:italic}
 .arousal{color:#b07a55;font-size:calc(11px * var(--cj-font-scale,1))}
+/* rc.24 眼下心事：人物主动剧情钩子，用主题强调色单独成行 */
+.goal{color:var(--ui-strong);font-size:calc(11px * var(--cj-font-scale,1));line-height:1.7}
 .arousal-bar{margin-top:5px}
 .arousal-bar>div{background:linear-gradient(90deg,#f2c9b6,#c8795f)}
 .starred-offscreen summary{cursor:pointer;font-size:calc(12px * var(--cj-font-scale,1));font-weight:700;color:var(--ui-strong);list-style-position:inside}
@@ -189,9 +191,10 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .star-flag{vertical-align:middle}
 .star-btn{padding:3px 8px;font-size:calc(10px * var(--cj-font-scale,1));border-radius:9px;vertical-align:middle}
 .star-btn.on{background:var(--ui-tag-bg);border-color:var(--ui-accent);color:var(--ui-strong);font-weight:800}
-.private-record summary{cursor:pointer;font-size:calc(12px * var(--cj-font-scale,1));font-weight:700;color:var(--ui-strong);list-style-position:inside}
-.private-record[open] summary{border-bottom:1px solid var(--ui-line);padding-bottom:7px;margin-bottom:7px}
-.private-record .muted{margin:4px 0}
+/* rc.24 私密四维档案：沿用九大档案的网格与选中态，只补面板内部排版 */
+.private-panel .muted{margin:4px 0}
+.private-panel .tag-cloud{margin-top:2px}
+.limit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;margin-top:4px}
 .tag-cloud{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 
 /* rc.22 堕落度第二轴 */
@@ -201,3 +204,19 @@ html[data-surface="phone"].theme-purple .phone{color-scheme:dark}
 .theme-purple .corruption-bar>div{background:linear-gradient(90deg,#c99ad8,#9c3d72)}
 .dual-axis{margin-top:8px}
 .dual-axis .muted{margin-top:6px}
+
+/* rc.25：财富与奖池改成上下双行大字号，金额不再挤成一团小字 */
+.pool .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid #ffffff29;padding-top:12px;margin-top:12px}
+.pool .split-item{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pool .split-item small{font-size:calc(11px * var(--cj-font-scale,1));color:var(--ui-pool-muted);opacity:.92}
+.pool .split-item strong{font:700 calc(15px * var(--cj-font-scale,1))/1.25 Georgia,"Noto Sans CJK SC",sans-serif;color:var(--ui-gold);letter-spacing:.3px;overflow-wrap:anywhere}
+/* rc.25：资产卡片改成上标题下描述两层，右侧不再留空白列 */
+.asset-tabs{display:flex;flex-wrap:wrap;gap:5px;margin:9px 0}
+.asset-tabs button{border:1px solid #dee5d9;background:#fffefa;color:#6d8071;border-radius:10px;padding:6px 9px;flex:1 1 calc(25% - 5px);min-width:64px;font-size:calc(11px * var(--cj-font-scale,1))}
+.asset-mini{display:flex;flex-direction:column;align-items:stretch;gap:6px;margin-bottom:8px;background:#fffdf7;border:1px solid #e6e9df;border-radius:12px;padding:11px 12px}
+.asset-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;width:100%}
+.asset-title{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.asset-title b{font-size:calc(13px * var(--cj-font-scale,1));line-height:1.35}
+.asset-description{margin:0;width:100%;line-height:1.65;overflow-wrap:anywhere}
+/* rc.25：经历与底线之间加一条分隔线 */
+.limit-sep{border-top:1px dashed var(--ui-line);margin:7px 0}
