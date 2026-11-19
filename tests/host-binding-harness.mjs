@@ -4,6 +4,8 @@ import {z} from 'zod';
 import {clone,requireRule} from '../src/core/engine.js';
 import {createSchema} from '../src/runtime/schema.js';
 import {settleNative,allowModelCommand,prepareModelCommand,refreshContext,withoutUpdates,replayPlayerCommand} from '../src/runtime/settlement.js';
+import {inlineManifest,resolvedManifest} from '../src/runtime/avatar-manifest.js';
+import {assignAll} from '../src/ui/avatar-pool.js';
 
 export function eventBus({brokenStop=false}={}){
  const listeners=new Map();
@@ -28,12 +30,12 @@ export async function hostBinding({source,sourceAnchor,body,bus=eventBus(),stora
  const schemas=createSchema(z),message={message_id:sourceAnchor.messageId,swipe_id:sourceAnchor.swipeId,role:'assistant',message:body,swipes_data:[]};
  const store={...storage};
  let nativeObject={events};
- const context=vm.createContext({clone,requireRule,settleNative,allowModelCommand,prepareModelCommand,refreshContext,withoutUpdates,replayPlayerCommand,
+ const context=vm.createContext({clone,requireRule,inlineManifest,resolvedManifest,assignAll,settleNative,allowModelCommand,prepareModelCommand,refreshContext,withoutUpdates,replayPlayerCommand,
   eventOn:bus.eventOn,eventRemoveListener:bus.eventRemoveListener,schemas:()=>schemas,native:()=>nativeObject,
   win:{localStorage:{getItem:k=>(k in store?store[k]:null),setItem:(k,v)=>{store[k]=String(v);}}},
   branch:()=>sourceAnchor.branchKey,messageList:()=>[message],textOf:m=>m.message,clean:s=>String(s).trim(),
   anchorOf:async()=>clone(sourceAnchor),digest:async s=>s,publish:()=>{},schedule:()=>{},console:{log:()=>{}}});
- vm.runInContext(`let disposed=false,mvuBusy=false,diagnostics=[],current=null;${declaration}\n${functions}\n globalThis.binding={bind:bindMvu,dispose(){disposed=true;stops.forEach(stop=>stop());},inspect(){return diagnostics;}};`,context);
+ vm.runInContext(`let disposed=false,mvuBusy=false,diagnostics=[],current=null,prefs={};${declaration}\n${functions}\n globalThis.binding={bind:bindMvu,dispose(){disposed=true;stops.forEach(stop=>stop());},inspect(){return diagnostics;}};`,context);
  return {bus,storage:store,bind:()=>context.binding.bind(),replaceNative(){nativeObject={events:{...events}};},dispose:()=>context.binding.dispose(),diagnostics:()=>clone(context.binding.inspect()),
   async run(before,patch){const vars={stat_data:{shenghao:clone(before)}},oldVars=clone(vars);
    const commands=Object.entries(patch).map(([path,value])=>({type:'set',args:['shenghao.'+path,JSON.stringify(value)]}));
@@ -43,3 +45,5 @@ export async function hostBinding({source,sourceAnchor,body,bus=eventBus(),stora
   }
  };
 }
+
+

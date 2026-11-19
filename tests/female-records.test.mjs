@@ -48,7 +48,7 @@ test('the projection sends private records only for present women and one off-st
   s=star(s);
   s.characters.char_b.offscreen='城南美术馆 · 正在布展';
   view=projection(s).characters.char_b;
-  assert.deepEqual(Object.keys(view).sort(),['affection','aliases','corruption','currentGoal','id','name','offscreen','relationshipLabel','starred','trackingState']);
+  assert.deepEqual(Object.keys(view).sort(),['affection','aliases','corruption','hiddenScar','id','name','offscreen','recentGoal','relationshipLabel','starred','trackingState']);
   assert.equal(view.offscreen,'城南美术馆 · 正在布展');assert.equal(view.starred,true);
   assert.equal(projection(s).characters.char_b.physiology,undefined);
   assert.equal(star(s).characters.char_b.starred,false);
@@ -121,8 +121,8 @@ test('the phone renders three axes, click blocks, star switch, off-stage line an
   ctx.expanded.add('char_a');
   const scene0=screens.scene();
   assert(scene0.includes('💭 心声：<i>他记得我不吃香菜</i>'));
-  assert(scene0.includes('♥ 好感 90/100 · ❖ 堕落 0/100 · 🌡️ 情动 0/100'));
-  assert(scene0.includes('🌡️ 情动度：0/100'));
+  assert(scene0.includes('♥ 好感 90/100 · ❖ 堕落 0/100 · 🌡️ 情欲 0/100'));
+  assert(scene0.includes('🌡️ 情欲值：0/100'));
   for(const label of ['🎬 此刻 · 动向','👗 行头 · 穿戴','📋 身姿 · 基础','🌹 欲念 · 私密'])assert(scene0.includes(label),label);
   assert(scene0.includes('data-scene-section="char_a:0"')&&scene0.includes('data-scene-section="char_a:3"'));
   assert(!scene0.includes('阴部户型与色泽'),'折叠时不再平铺 20 行文字');
@@ -133,7 +133,7 @@ test('the phone renders three axes, click blocks, star switch, off-stage line an
   assert(screens.scene().includes('（C 罩杯）'));
   s.characters.char_a.arousal=48;
   ({ctx,screens}=screensFor(s));ctx.expanded.add('char_a');
-  assert(screens.scene().includes('🌡️ 情动 48/100'));
+  assert(screens.scene().includes('🌡️ 情欲 48/100'));
   s.characters.char_a.currentThought='';
   s.characters.char_a.intimacy={attitude:'外冷内热',experience:'',fetishes:'',unlockedTags:['拥抱','留宿'],withUserCount:2,lastIntimate:'2026-01-05 · 玄关'};
   s.characters.char_a.physiology={cycle:'安全期',pregnancy:'未孕',virgin:false,hymenNote:'已有过往经历',chestDetail:'C罩杯饱满水滴型',vaginaLook:'饱满馒头穴，外唇丰润紧拢',vaginaState:'内壁温热紧箍',pubicHair:'天生白虎，耻骨光洁无毛',anusLook:'浅粉菊蕾紧缩',anusState:'紧致闭合',bodyScent:'清冽白茶',tattooScar:'',traits:'耳后敏感'};
@@ -211,11 +211,11 @@ test('the phone shows three axes and the new withdraw wording',()=>{
   const {ctx,screens}=screensFor(s);
   const detail=screens.detail(s.characters.char_a);
   assert(detail.includes('♥ 好感度：40/100 · 朋友与信任'));assert(detail.includes('❖ 堕落度：35/100 · 芳心暗摇'));
-  assert(detail.includes('🌡️ 情动度：12/100'));
+  assert(detail.includes('🌡️ 情欲值：12/100'));
   assert(detail.includes('♥ 好感达70 或 ❖ 堕落达60 解锁提现'));
   ctx.expanded.add('char_a');
   const scene=screens.scene();
-  assert(scene.includes('♥ 好感 40/100 · ❖ 堕落 35/100 · 🌡️ 情动 12/100'));
+  assert(scene.includes('♥ 好感 40/100 · ❖ 堕落 35/100 · 🌡️ 情欲 12/100'));
   assert(scene.includes('❖ 堕落度：35/100 · 芳心暗摇'));
   assert(screens.women().includes('♥ 40 · ❖ 35'));
   s.characters.char_a.corruption=60;
@@ -310,20 +310,37 @@ test('rc.24 付款证据不再误杀“准备好礼盒时她还没回过神”�
   assert.equal(r.state.user.cashCents,before.user.cashCents-2800000);
   assert.equal(poolParts(r.state,'char_a').spend,2800000);
 });
-test('rc.24 六位预设自带眼下心事，并进入投影与手机界面',()=>{
-  for(const p of contactPresets)assert(typeof p.currentGoal==='string'&&p.currentGoal.length>0&&p.currentGoal.length<=200,p.presetId);
+test('rc.30 六位预设自带近期目标/长期梦想/暗伤伏笔，手机只露前两者',()=>{
+  for(const p of contactPresets){
+    assert(typeof p.recentGoal==='string'&&p.recentGoal.length>0&&p.recentGoal.length<=200,p.presetId);
+    assert(typeof p.longTermDream==='string'&&p.longTermDream.length>0&&p.longTermDream.length<=200,p.presetId);
+    assert(typeof p.hiddenScar==='string'&&p.hiddenScar.length>0&&p.hiddenScar.length<=300,p.presetId);
+  }
   let s=initial();
-  s.characters.char_a.currentGoal=contactPresets[0].currentGoal;
-  s.characters.char_b.currentGoal=contactPresets[1].currentGoal;
+  s.characters.char_a.recentGoal=contactPresets[0].recentGoal;
+  s.characters.char_a.longTermDream=contactPresets[0].longTermDream;
+  s.characters.char_a.hiddenScar=contactPresets[0].hiddenScar;
+  s.characters.char_b.recentGoal=contactPresets[1].recentGoal;
+  s.characters.char_b.hiddenScar=contactPresets[1].hiddenScar;
   s=star(s,'char_b');
-  assert.equal(projection(s).characters.char_a.currentGoal,contactPresets[0].currentGoal);
-  assert.equal(projection(s).characters.char_b.currentGoal,contactPresets[1].currentGoal);
+  const present=projection(s).characters.char_a;
+  assert.equal(present.recentGoal,contactPresets[0].recentGoal);
+  assert.equal(present.longTermDream,contactPresets[0].longTermDream);
+  assert.equal(present.hiddenScar,contactPresets[0].hiddenScar);
+  const away=projection(s).characters.char_b;
+  assert.equal(away.recentGoal,contactPresets[1].recentGoal);
+  assert.equal(away.hiddenScar,contactPresets[1].hiddenScar);
   const {ctx,screens}=screensFor(s);
-  assert(!screens.scene().includes('眼下心事'));
+  assert(!screens.scene().includes(contactPresets[0].hiddenScar),'未展开时也不暴露暗伤');
   ctx.expanded.add('char_a');
   ctx.sceneSectionByChar.set('char_a',0);
-  assert(screens.scene().includes('🎯 眼下心事：'+contactPresets[0].currentGoal));
-  assert(screens.detail(s.characters.char_a).includes('🎯 眼下心事：'+contactPresets[0].currentGoal));
+  const sceneHtml=screens.scene();
+  assert(sceneHtml.includes('🎯 近期目标：'+contactPresets[0].recentGoal));
+  assert(!sceneHtml.includes(contactPresets[0].hiddenScar),'暗伤伏笔绝不出现在此刻页');
+  const detailHtml=screens.detail(s.characters.char_a);
+  assert(detailHtml.includes('🎯 近期目标：'+contactPresets[0].recentGoal));
+  assert(detailHtml.includes('✨ 长期梦想：'+contactPresets[0].longTermDream));
+  assert(!detailHtml.includes(contactPresets[0].hiddenScar),'暗伤伏笔绝不出现在人物详情');
 });
 
 // ----- rc.24 plan2: 男主性能力 / 四宫格底线 / 穿搭同步 / 实战兜底 -----
@@ -351,10 +368,10 @@ test('rc.24 limits derive from the two axes and unlocked tags jump to three',()=
   const c=clone(b);c.characters.char_a.intimacy={...c.characters.char_a.intimacy,unlockedTags:['后庭开发']};
   assert.equal(settleNative(b,c,anchor(),'本轮正文',schemas).state.characters.char_a.limits.anal,3);
 });
-test('rc.25 开局就有默认穿搭，outfit 与 currentClothes 双向补齐，情动补面色',()=>{
+test('rc.25 开局就有默认穿搭，outfit 与 currentClothes 双向补齐，情欲补面色',()=>{
   const b=schemas.state.parse(completeInitialState(fresh(),{startDate:'2026-01-05',startTime:'09:00'}));
   assert(b.characters.char_a.outfit.top.length>0,'开局 outfit.top 不再为空');
-  assert.equal(b.characters.char_a.currentClothes,b.characters.char_a.outfit.top);
+  assert(b.characters.char_a.currentClothes.includes(b.characters.char_a.outfit.top),'整套行头里应含上装');
   // 模型改写 currentClothes 后，outfit 里已有明确单品时以 outfit 为准。
   const c=clone(b);c.characters.char_a.outfit={...c.characters.char_a.outfit,top:'白衬衫',bottom:'包臀裙',socks:'黑丝',shoes:'细高跟'};c.characters.char_a.currentClothes='';
   const out=settleNative(b,c,anchor(),'本轮正文',schemas).state.characters.char_a;
@@ -362,7 +379,7 @@ test('rc.25 开局就有默认穿搭，outfit 与 currentClothes 双向补齐，
   // 两边都空时才用外貌/职业兜底。
   const e=clone(b);e.characters.char_a.currentClothes='';e.characters.char_a.outfit={style:'',complexion:'',top:'',bottom:'',lingerie:'',socks:'',shoes:'',makeup:'',accessories:''};
   const filled=settleNative(b,e,anchor(),'本轮正文',schemas).state.characters.char_a;
-  assert(filled.outfit.top.length>0);assert.equal(filled.currentClothes,filled.outfit.top);
+  assert(filled.outfit.top.length>0);assert(filled.currentClothes.includes(filled.outfit.top));
   const d=clone(b);d.characters.char_a.arousal=52;
   assert.equal(settleNative(b,d,anchor(),'本轮正文',schemas).state.characters.char_a.outfit.complexion,'双颊绯红，眼波含春，呼吸微促');
 });
@@ -379,7 +396,7 @@ test('rc.24 the phone shows his prowess and the dossier build seeds four panels'
   let s=initial();
   const {screens}=screensFor(s);
   const mine=screens.mine();
-  assert(mine.includes('性能力：70/100'));assert(mine.includes('堕落加成 +1'));assert(mine.includes('性器：18cm / 粗 4.8cm'));
+  assert(mine.includes('床笫战力')&&mine.includes('70/100')&&mine.includes('堕落加成 +1'));assert(mine.includes('性器规格')&&mine.includes('长 18cm ／ 粗 4.8cm'));
   // rc.25：四宫格已由脚本预播种，建档只补空白字段，不覆盖已有值。
   s.characters.char_a.physiology={cycle:'安全期',pregnancy:'未孕',virgin:null,hymenNote:'',chestDetail:'',vaginaLook:'',vaginaState:'',pubicHair:'',anusLook:'',anusState:'',bodyScent:'',tattooScar:'',traits:''};
   s.characters.char_a.intimacy={attitude:'',abilityComment:'',partnersCount:0,sexPartnerCount:0,firstTime:'',experience:'',fetishes:'',unlockedTags:[],withUserCount:0,lastIntimate:'',lastMasturbation:''};

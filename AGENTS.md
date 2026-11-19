@@ -10,8 +10,77 @@
 
 继续工作先读 HANDOFF.md，沿用现有 UI 与维护源码，保留已确认经济规则。密钥不得输出或入库。旧的 PROJECT_STATE.md 已废弃并归档到 docs/legacy/PROJECT_STATE_gpt-legacy.md，只作历史参考。
 
+## 文案署名规则（YG 2026-11-19 明令）
+
+- **DSH 不得自行撰写、续写或润色任何卡内文案。** 包括 `src/content/literary.json`（世界书）、`src/content/protocol.txt`（更新协议）、`src/content/state-context.txt`、开场白，以及面向玩家的界面提示文字。
+- 这些文案**只能逐字照抄 Gemini（agy）输出的定稿**：从它的方案 Markdown 代码块里用脚本抠出来写盘，一个字、一个标点都不改。
+- 需要改文案时，DSH 的职责是**把要求讲清楚**（哪一段、要达到什么效果、守哪条铁律），然后把活派给 agy；不许自己动手写一版"示意稿"当替代。
+- 已经写坏/写歪的稿件一律作废，不得混入源代码。
+
+## 外部方案代理调用速查（agy · 2026-11-19 实测固定）
+
+- **可执行文件**：`C:\Users\Administrator\.local\bin\agy.exe`。DSH 的 shell 里裸名 `agy` 用不了（PATH 是启动时快照），必须写绝对路径或先固定 `$AGY`。
+- **三家模型 id**（`--model` 参数原值，别拼错）：
+
+| 简称 | 模型 id | 后端标签 | 备注 |
+|---|---|---|---|
+| 4A | `gemini-4-argon-medium` | Gemini 4 Argon (Medium) | 探针间隔 **≥2 小时**，或 YG 明确要求才探 |
+| 4H | `gemini-4-hydrogen-medium` / `gemini-4-hydrogen-high` | Gemini 4 Hydrogen | 默认档，无需探针 |
+| **4Neon** | **`gemini-4-neon-medium`** | **Gemini 4 Neon (Medium)** | 探针间隔 **≥2 小时**（同 4A）；实测两次 5.3 秒 / 3.0 秒回字 |
+
+### 模型选型规则（YG 2026-11-19 定：DSH 每次调用前先推荐，最终由 YG 定）
+
+**证据来源**：`E:\AGY_ARCHIVE\MODEL_TEST\` 的 13 轮对照（rc.34–rc.46）＋ rc.33 实机补测（4N 出协议示例 14 秒一次过）。结论只作行为模型，不是服务端规则。
+
+| 任务类型 | 推荐 | 实测理由 |
+|---|---|---|
+| 卡内色情文案、床戏、露骨正文 | **4A** | 唯一能直写器官正名且不自我收紧；句子短促有冲击力。4N 在小说语境会被拦或退成代称 |
+| 协议 / 世界书 / 示例块 / 字段说明的定稿文案 | **4N** | 技术文档语境按字面执行，一次过、只给结果不夹带解释（rc.33 示例任务 14 秒、3 条 replace、零私密词） |
+| 字段与数据结构盘点、找幽灵字段/冗余/缺口 | **4N** | 盘点更细：女性档案 5 删 4 加、男性向 7 条缺口，比 4A 的审计更全 |
+| 找代码里的结构性 bug、架构取舍 | **4A** | 缺陷判断更准：看穿「赠礼存字段会账实不符」、当场发现现场面板缺字段 |
+| 万字级施工方案 | **4A** | 更彻底（11.2 万字 vs 5.2 万），但读全项目一次约 −9% Argon，先问 YG 值不值 |
+| 心理向 / 克制的短篇、续写、情绪戏 | **4N** | 这两档它赢过 4A：细节密度高、有余味 |
+| 要求「绕过/规避/别被拦」类 | **不发** | 4A 17 token 硬拒，4N 不适用；发了也是浪费额度 |
+
+**推荐流程（每次 YG 提「调用 agy / 用 4A / 用 4N」时执行）**
+
+1. 先给三行：**建议用哪家 + 一句话理由 + 费用与时序预估**（贵不贵、会不会读全项目、大概多久）。
+2. 同时给**备选**：换另一家的代价是什么（例如「换 4N 更便宜但会收紧成代称」「换 4A 更彻底但吃掉 9% Argon」）。
+3. **最终由 YG 定**。YG 已明确指定模型时，只在发现明显不匹配（如要写色情正文却指定 4N）时提一句，照他说的发。
+4. YG 未指定模型时**必须推荐，不许默默用默认档**。
+
+**费用参考**（rc.46 实测）：读全项目再出 2000–3500 字方案，4A 约 −6% Argon、4N 约 −9% Gemini 5 小时窗口；只给一段片段的小任务约 1% 以内。**贵的是「读」，不是「写」。**
+
+- **探针范围与频率（YG 2026-11-19 定，覆盖此前所有“调用前必探”的写法）**：**只有 4A 与 4N 需要探针**，两者**间隔都是至少 2 小时**；2 小时内连续调用同一家，直接发正式任务，不必再探。**4H 及其他模型（Claude / GPT 等）一律不探针**。只有 YG 明确说「探一下」时才即时探。探针失败照旧停手报 YG，不得换模型或改 prompt 重试。
+- **探针命令**（换 `--model` 即可，其余照抄）：
+
+```powershell
+$AGY='C:\Users\Administrator\.local\bin\agy.exe'
+& $AGY --print '只回复一个字：好' --model gemini-4-neon-medium --output-format json --print-timeout 60s --dangerously-skip-permissions
+```
+
+- **正式任务**：`--print-timeout 900s`，一律 `run_in_background` 后台跑，三路监控（`job_output` 轮询 + agy 日志 tail + `Get-Process agy` 的 CPU 增量），每 2 分钟看一次日志，不要用长 wait 睡过去。
+- **首次调用必须带 `--output-format json`**：`conversation_id` 只在 JSON 的 `result` 里；默认 `text` 格式拿不到 ID，后面就续接不了。
+- **续接**：`--conversation <ID>`，不要用 `-c` / `--continue`（它恢复“最近一次会话”，多任务并行会串上下文）。
+- **只读审查**：加 `--mode plan`；要它写文件时必须去掉这个参数。
+- **`--dangerously-skip-permissions` 必须加**：headless 无法弹审批，不加读不了也写不了文件。
+- **查额度**：`agy --print "/usage" --dangerously-skip-permissions`。这是斜杠命令不是子命令，`agy status` / `agy quota` 都不存在。
+- **日志**：`C:\Users\Administrator\.gemini\antigravity-cli\log\cli-*.log`，每次调用把日志路径写进交付物。
+- **报批与卡死处置**：任何一次调用（含探活、查额度、重试、续接）先把「目的 / 模型 / 要发的内容 / 最多几次」报 YG，等文字确认再发；超 10 分钟且日志无新行先取证再上报，决定权归 YG。
+
+## 测试策略（YG 2026-11-20 定：能零 API 就不花钱）
+
+- **ego space 纪律（2026-11-20 追加）**：一个测试目标只用一个 space。脚本里不许每次 `taskSpace(新名字)`，必须走 `scripts/noapi/runtime.mjs` 的 `attachSpace()`（复用同名 `NOAPI-HARNESS`）+ 结尾 `finishSpace(task)`。控制权在用户手里的 space（`ownership` 不是 `agent`）是硬停，**不许自行 takeOver 抢回**。遗留 space 用 `scripts/noapi/spaces.mjs` 清理（控制参数写 `.work/noapi/spaces-ctl.json`，env/argv 在 `ego-browser nodejs -e` 里不生效）。
+
+- **默认零 API**：凡是「答案取决于渲染与脚本」的验证——小手机出现、五页导航、轮盘全屏与握手、背包商城外观、赌场/商城/圣盘引擎结算、刷新回读、切聊天删楼回归——一律走 skill **`zero-api-card-test`**（预置存档注入 + `scripts/test-noapi-seed.mjs` / `scripts/test-noapi-run.mjs`），**不生成正文、不提交开局表单、不花 API**。
+- **纯 UI 迭代**先跑 `.work/harness/host.html` 假宿主；跨 iframe 身份、TavernHelper、MVU 这些只在真酒馆才出现的差异，再回 8001 用同一个 skill 验一遍。
+- **只有「答案取决于模型输出」才允许真实生成一轮**：改协议/世界书/正则后模型是否照字段写、生成后 `stat_data` 是否写回、生成期并发锁。一轮就够，不重试、不拿生成当调试手段。
+- 方法记录与实测证据：`reports/零API测试记录-20261120.md`；每轮零 API 验收必须报「断言清单 + 截图路径 + `apiCalls: 0`」。
+
 ## 主动维护交接
 
+- **模型产出必须落盘**：任何 agy 产出（作文、方案、审查、对话正文）拿到后，**第一时间写成 md 文件并 `present` 给 YG**，不要只在对话里贴节选或摘要就说完。对话里可以给判断和对比，但**原文必须能直接打开看**。
+- **测试类产出一律放在工作区外**（YG 2026-11-19 定）：凡是「模型能力测试」的产物——对比报告、样章、测试用小说、边界探测记录、模型画像——**一律放 `E:\AGY_ARCHIVE\MODEL_TEST\`**，索引见该目录的 `INDEX.md`。**不得留在 `E:\SHZDCHOSSS`**，因为 agy 会自动读取工作区，读到「哪家能写什么、边界在哪」会污染它对项目语境的判断。落在工作区 `reports/` 里的只能是项目产物：验收报告、构建记录、审查结论、方案文档。
 - 每次项目任务或可验收阶段结束前，主动更新 HANDOFF.md，不等用户提醒。
 - 记录本次改动、有效决定、当前版本和成品、实际验证与未验证项、Git与测试指针状态、明确下一步；未完成的工作如实标明。
 - 当前状态放在文档顶部，旧记录明确标为历史，避免接手者把历史版本当成当前版本。

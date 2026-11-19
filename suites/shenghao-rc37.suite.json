@@ -1,0 +1,618 @@
+{
+  "name": "神豪终端 rc.37 · 零 API 本地套件",
+  "note": "一条用例 = 一个预置 + 一串动作/断言。加功能只加用例，不改 run-suite.mjs。断言只认 data-* 契约与语义文本。",
+  "cases": [
+    {
+      "id": "nav.five-tabs",
+      "title": "五页导航顺序与激活态",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "nav.bottom .tab[data-tab]",
+          "kind": "count",
+          "equals": 5
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "nav.bottom .tab[data-tab=\"scene\"]",
+          "kind": "attr",
+          "name": "data-tab",
+          "equals": "scene"
+        },
+        {
+          "act": "tab",
+          "tab": "women"
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "nav.bottom .tab[data-tab=\"women\"]",
+          "kind": "attr",
+          "name": "aria-current",
+          "equals": "page"
+        },
+        {
+          "act": "tab",
+          "tab": "wealth"
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-asset-tab]",
+          "kind": "count",
+          "equals": 8
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-open-wheel]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-open-wheel]",
+          "kind": "visible",
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "wheel.play.spin",
+      "title": "命运轮盘：三环三模式 + 免费抽一次落盘",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openWheel",
+          "type": "play"
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfSvg .ring",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": ".wf-modes button[data-mode]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-pay]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfGo[data-go]",
+          "kind": "visible",
+          "equals": true
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfGo[data-go]",
+          "kind": "geometry",
+          "minSize": 40,
+          "insideViewport": true
+        },
+        {
+          "act": "click",
+          "frame": "wheel",
+          "selector": "#wfGo",
+          "settle": 800
+        },
+        {
+          "act": "waitForEl",
+          "frame": "wheel",
+          "selector": "#wfResult.on",
+          "timeout": 20000
+        },
+        {
+          "act": "assert",
+          "kind": "revIncreased"
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfResult.on",
+          "kind": "count",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "kind": "lastOp",
+          "status": "COMMITTED",
+          "type": "PLAYER_WHEEL_SPIN"
+        }
+      ]
+    },
+    {
+      "id": "wheel.pack.pools",
+      "title": "星愿卡包：两池（星尘 / 圣典）",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openWheel",
+          "type": "pack"
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-pool]",
+          "kind": "count",
+          "equals": 2
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-pool=\"low\"]",
+          "kind": "count",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-pool=\"high\"]",
+          "kind": "count",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfGo[data-go]",
+          "kind": "visible",
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "wheel.close-button",
+      "title": "轮盘关闭键：尺寸与在视口内",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openWheel",
+          "type": "play"
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": ".wf-close[data-close]",
+          "kind": "count",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": ".wf-close[data-close]",
+          "kind": "geometry",
+          "minSize": 36,
+          "insideViewport": true
+        }
+      ]
+    },
+    {
+      "id": "casino.bets",
+      "title": "暗夜赌场：三色押注 + 选卡后 GO 可用",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openWheel",
+          "type": "casino"
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-bet]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "[data-card]",
+          "kind": "count",
+          "min": 1
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfGo[data-go]",
+          "kind": "enabled",
+          "equals": false
+        },
+        {
+          "act": "click",
+          "frame": "wheel",
+          "selector": "[data-bet=\"red\"]",
+          "settle": 400
+        },
+        {
+          "act": "click",
+          "frame": "wheel",
+          "selector": "[data-card]",
+          "skipDisabled": true,
+          "settle": 500
+        },
+        {
+          "act": "assert",
+          "frame": "wheel",
+          "selector": "#wfGo[data-go]",
+          "kind": "enabled",
+          "equals": true
+        }
+      ]
+    },
+    {
+      "id": "bag.three-tabs",
+      "title": "背包：卡册 / 玩法券 / 奇物 三分类 + 图鉴计数",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openModal",
+          "modal": "open-bag",
+          "index": 0
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-bag-tab]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-card-id]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-lock-card]",
+          "kind": "count",
+          "min": 1
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-redeem-card]",
+          "kind": "count",
+          "min": 1
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "kind": "pageText",
+          "matches": "图鉴收录\\s*(1[0-2]|[0-9])\\s*/\\s*12"
+        }
+      ]
+    },
+    {
+      "id": "shop.catalog",
+      "title": "商城：三分类与 14 / 11 / 5 商品数",
+      "preset": "high_wealth",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openModal",
+          "modal": "open-shop"
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-shop-tab]",
+          "kind": "count",
+          "equals": 3
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-shop-buy]",
+          "kind": "count",
+          "equals": 14
+        },
+        {
+          "act": "click",
+          "frame": "phone",
+          "selector": "[data-shop-tab=\"consumable\"]",
+          "settle": 500
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-shop-buy]",
+          "kind": "count",
+          "equals": 11
+        },
+        {
+          "act": "click",
+          "frame": "phone",
+          "selector": "[data-shop-tab=\"permanent\"]",
+          "settle": 500
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": "[data-shop-buy]",
+          "kind": "count",
+          "equals": 5
+        }
+      ]
+    },
+    {
+      "id": "dock.bottom-bar",
+      "title": "底部停靠：折叠条高度与无滚动（56px 口径）",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "setDock",
+          "value": "bottom"
+        },
+        {
+          "act": "wait",
+          "ms": 900
+        },
+        {
+          "act": "click",
+          "frame": "phone",
+          "selector": "[data-act=\"fold\"]",
+          "settle": 900
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": ".folded-bar",
+          "kind": "count",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "frame": "phone",
+          "selector": ".folded-bar",
+          "kind": "geometry",
+          "heightLte": 60,
+          "noOverflow": true
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.reload",
+      "title": "刷新回读：重开页面后状态与操作记录仍在",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "expand"
+        },
+        {
+          "act": "tab",
+          "tab": "wheel"
+        },
+        {
+          "act": "openWheel",
+          "type": "play"
+        },
+        {
+          "act": "click",
+          "frame": "wheel",
+          "selector": "#wfGo",
+          "settle": 800
+        },
+        {
+          "act": "waitForEl",
+          "frame": "wheel",
+          "selector": "#wfResult.on",
+          "timeout": 20000
+        },
+        {
+          "act": "assert",
+          "kind": "lastOp",
+          "status": "COMMITTED"
+        },
+        {
+          "act": "observe",
+          "probe": "revision",
+          "label": "刷新前 revision"
+        },
+        {
+          "act": "reload"
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "initialized",
+          "equals": true
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "revision",
+          "gte": 2
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "hostReady",
+          "equals": true
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "phoneVisible",
+          "equals": true
+        },
+        {
+          "act": "assert",
+          "kind": "lastOp",
+          "status": "COMMITTED",
+          "type": "PLAYER_WHEEL_SPIN"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.del",
+      "title": "删楼：最后一楼被删后宿主不崩、楼层数递减",
+      "preset": "three_cards",
+      "steps": [
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "floors",
+          "equals": 2
+        },
+        {
+          "act": "expand"
+        },
+        {
+          "act": "observe",
+          "probe": "revision",
+          "label": "删楼前 revision"
+        },
+        {
+          "act": "slash",
+          "cmd": "/del 1",
+          "settle": 2000
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "floors",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "hostReady",
+          "equals": true
+        },
+        {
+          "act": "observe",
+          "probe": "initialized",
+          "label": "删楼后 initialized"
+        },
+        {
+          "act": "observe",
+          "probe": "revision",
+          "label": "删楼后 revision"
+        }
+      ]
+    },
+    {
+      "id": "lifecycle.swipe",
+      "title": "切 swipe：切到第二分支后宿主重建状态",
+      "preset": "three_cards",
+      "seedArgs": [
+        "--with-swipe-floor"
+      ],
+      "steps": [
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "swipeCount",
+          "equals": 2
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "swipeId",
+          "equals": 0
+        },
+        {
+          "act": "observe",
+          "probe": "fingerprint",
+          "label": "分支 A 锚点"
+        },
+        {
+          "act": "swipe",
+          "dir": "left",
+          "settle": 2000
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "swipeId",
+          "equals": 1
+        },
+        {
+          "act": "assert",
+          "kind": "pageProbe",
+          "probe": "initialized",
+          "equals": true
+        },
+        {
+          "act": "observe",
+          "probe": "fingerprint",
+          "label": "分支 B 锚点"
+        },
+        {
+          "act": "observe",
+          "probe": "revision",
+          "label": "切分支后 revision"
+        }
+      ]
+    }
+  ]
+}

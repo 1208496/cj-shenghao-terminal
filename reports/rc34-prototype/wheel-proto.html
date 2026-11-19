@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>命运轮盘 · 原型</title>
+<style>
+:root{
+  --ink:#e8e2d4; --sub:#9b9384; --gold:#d9b878; --gold-2:#f6e3b0;
+  --gray-a:#2a2d36; --gray-b:#383c48; --gray-line:#7b8294; --gray-sym:#cfd5e3;
+  --red-a:#5c1727; --red-b:#7d2036; --red-line:#d98a98; --red-sym:#ffd1d8;
+  --gold-a:#755318; --gold-b:#a67a26; --gold-line:#f6d786; --gold-sym:#fff0be;
+  --backdrop:rgba(9,7,11,.72);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 700px at 50% -10%,#2a2230 0%,#15121a 45%,#0b0910 100%);
+  color:var(--ink);
+  font-family:"Cinzel","Trajan Pro","Songti SC","Noto Serif SC",Georgia,serif;
+  overflow:hidden;
+}
+/* 遮罩层：整页压暗 + 轻微降饱和，模拟"跳脱手机"的独立浮层 */
+.backdrop{
+  position:fixed;inset:0;background:var(--backdrop);
+  backdrop-filter:blur(5px) saturate(.75);
+  display:grid;place-items:center;
+}
+.stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:14px}
+.title{font-size:15px;letter-spacing:.5em;color:var(--gold);text-indent:.5em;font-weight:600}
+.sub{font-size:11px;letter-spacing:.28em;color:var(--sub);text-indent:.28em}
+.modes{display:flex;gap:8px;margin-top:2px}
+.modes button{
+  font:inherit;font-size:11px;letter-spacing:.14em;padding:5px 14px;cursor:pointer;
+  color:var(--sub);background:rgba(255,255,255,.03);border:1px solid #3a3446;border-radius:999px;
+  transition:.25s;
+}
+.modes button.on{color:#1a1410;background:linear-gradient(180deg,var(--gold-2),var(--gold));border-color:var(--gold-2);font-weight:700}
+.wheel-wrap{position:relative;filter:drop-shadow(0 26px 60px rgba(0,0,0,.72))}
+svg.wheel{display:block;width:min(74vmin,620px);height:min(74vmin,620px);overflow:visible}
+.rotor{transform-origin:320px 320px;transition:transform 5.4s cubic-bezier(.13,.72,.05,1)}
+/* 中心 GO */
+.go{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:17%;aspect-ratio:1;border-radius:50%;cursor:pointer;border:none;
+  background:
+    radial-gradient(circle at 34% 28%,#fff6d8 0%,#e9c986 26%,#b98f45 58%,#6d4f1f 100%);
+  box-shadow:
+    0 0 0 2px #2a2013, 0 0 0 5px rgba(217,184,120,.55),
+    0 0 26px rgba(246,227,176,.4), inset 0 -6px 14px rgba(60,38,10,.75), inset 0 5px 10px rgba(255,247,220,.6);
+  color:#2b1f0c;font:inherit;font-weight:700;letter-spacing:.16em;text-indent:.16em;font-size:clamp(11px,2.1vmin,17px);
+  transition:transform .18s, box-shadow .25s;
+}
+.go:hover{transform:translate(-50%,-50%) scale(1.045);box-shadow:0 0 0 2px #2a2013,0 0 0 6px rgba(246,227,176,.7),0 0 40px rgba(246,227,176,.55),inset 0 -6px 14px rgba(60,38,10,.75),inset 0 5px 10px rgba(255,247,220,.6)}
+.go:active{transform:translate(-50%,-50%) scale(.97)}
+.go:disabled{filter:grayscale(.5) brightness(.8);cursor:default}
+/* 指针 */
+.spire{position:absolute;left:50%;top:-6.5%;transform:translateX(-50%);width:3.6%;height:17%;filter:drop-shadow(0 0 14px rgba(246,227,176,.9)) drop-shadow(0 3px 6px rgba(0,0,0,.8));pointer-events:none}
+/* 结果卡 */
+.card{
+  position:fixed;left:50%;bottom:5%;transform:translate(-50%,26px);
+  width:min(88vw,430px);padding:16px 20px 18px;border-radius:14px;text-align:center;
+  background:linear-gradient(180deg,rgba(32,26,22,.97),rgba(18,14,16,.98));
+  border:1px solid rgba(217,184,120,.42);
+  box-shadow:0 22px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,240,190,.18);
+  opacity:0;pointer-events:none;transition:.45s cubic-bezier(.2,.8,.2,1);
+}
+.card.show{opacity:1;transform:translate(-50%,0)}
+.card .no{font-size:11px;letter-spacing:.3em;color:var(--sub)}
+.card .nm{font-size:22px;margin:6px 0 10px;letter-spacing:.12em;color:var(--gold-2)}
+.card .tip{font-size:13px;line-height:1.75;color:#cfc8bb}
+.card .rar{display:inline-block;margin-top:12px;font-size:10px;letter-spacing:.24em;padding:3px 10px;border-radius:999px;border:1px solid currentColor}
+.hint{font-size:10.5px;letter-spacing:.2em;color:#6d6558}
+/* 假聊天背景：只为演示"浮层盖在正文上、背景压暗模糊"的效果 */
+.fake-chat{position:fixed;inset:0;padding:38px clamp(24px,6vw,120px);filter:saturate(.85)}
+.fc-bubble{max-width:min(760px,84vw);margin:0 auto 18px;padding:14px 18px;border-radius:14px;font-size:13.5px;line-height:1.85;color:#b9b2a6;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06)}
+.fc-bubble.me{margin-left:auto;margin-right:auto;background:rgba(120,150,190,.10);color:#a9b6c6}
+.fc-bubble span{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="fake-chat" aria-hidden="true">
+  <div class="fc-bubble">十一月的云澜市，晴空透着微凉的质感，微风从宽阔的江面拂过。阳光毫无遮拦地穿透两百三十八平米一线江景大平层的全景落地窗。</div>
+  <div class="fc-bubble me">我端着咖啡站在落地窗前，问她今天公司那笔融资谈得怎么样。</div>
+  <div class="fc-bubble">她今天穿了一身干练的炭灰色西装套裙，修身剪裁的西装外套敞着扣子。听见门口的动静，顾星遥抬起眼，目光正好撞上刚走进来的你。</div>
+  <div class="fc-bubble me">我换好衣服，在玄关镜子前理了理领口，抬手看表，准备出门去公司。</div>
+  <div class="fc-bubble">电梯门打开时，迎面是创联中心标志性的灰白极简风格大堂。几名挂着工牌的年轻职员正端着冰美式匆匆走过。</div>
+</div>
+<div class="backdrop">
+  <div class="stage">
+    <div class="title">命 运 轮 盘</div>
+    <div class="sub">FORTUNE WHEEL · 云澜</div>
+    <div class="modes">
+      <button id="mSingle" class="on">单圈 53 格</button>
+      <button id="mRings">三环同心</button>
+    </div>
+    <div class="wheel-wrap">
+      <svg class="wheel" viewBox="0 0 640 640" id="wheel"></svg>
+      <svg class="spire" viewBox="0 0 20 60" aria-hidden="true">
+        <path d="M10 0 L15 18 L12.5 22 L15 34 L10 60 L5 34 L7.5 22 L5 18 Z" fill="url(#spireGrad)" stroke="#2a2013" stroke-width="1"/>
+        <path d="M10 2 L13 19 L10 22 L7 19 Z" fill="rgba(255,250,225,.55)"/>
+      </svg>
+      <button class="go" id="go">GO</button>
+    </div>
+    <div class="hint">点 GO 试转 · 仅原型演示</div>
+  </div>
+</div>
+
+<div class="card" id="card">
+  <div class="no" id="cNo"></div>
+  <div class="nm" id="cName"></div>
+  <div class="tip" id="cTip"></div>
+  <div class="rar" id="cRar"></div>
+</div>
+
+<script>
+/* ---------- 53 个哥特符号（24×24，stroke=currentColor, fill=none） ---------- */
+const SYM = {
+ 1:"M8 4h8l-4 6 4 6H8l4-6z M8 20h8",
+ 2:"M12 4c-4 0-6 3-6 7s3 6 6 6 6-2 6-6-2-7-6-7z M12 6v9 M8 9l3 2 M16 9l-3 2",
+ 3:"M12 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M12 10v10 M10 20h4 M15 8l3-3 M16 11l3 2",
+ 4:"M12 4v16 M4 12h16 M12 4a8 8 0 1 1 0 16 8 8 0 0 1 0-16z",
+ 5:"M6 20V9a6 6 0 0 1 12 0v11 M9 13l3-3 3 3-3 3z",
+ 6:"M12 3v6 M12 15v6 M3 12h6 M15 12h6 M6 6l4 4 M18 6l-4 4 M6 18l4-4 M18 18l-4-4",
+ 7:"M5 16a7 7 0 0 1 14 0 M12 16v4 M12 20h6 M9 16v-3 M15 16v-3 M12 16v-5",
+ 8:"M6 18a6 6 0 0 1 12 0 z M12 6v2 M12 8a3 3 0 0 0-3 3 M4 18h16",
+ 9:"M7 5l10 10 M17 5L7 15 M6 18a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z M18 18a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z",
+ 10:"M6 8l2-4 4 3 4-3 2 4v6a6 6 0 0 1-12 0z M12 8v7",
+ 11:"M4 15a8 8 0 0 1 16 0 M4 18h16 M6 21c2-2 4 2 6 0s4 2 6 0 M15 5a5 5 0 0 0 0 6 5 5 0 0 1 0-6z",
+ 12:"M7 20V9l5-5 5 5v11 M7 20h10 M6 14c2-1.5 4 1.5 6 0s4 1.5 6 0",
+ 13:"M14 4l-6 14 M14 4c3 1 4 4 5 7 M9 12l5-1 M8 15l5-1 M7 18l5-1",
+ 14:"M5 14a7 7 0 0 0 14 0z M9 11c0-2 1-3 1-5 M12 10c0-2 1-3 1-5 M15 11c0-2 1-3 1-5",
+ 15:"M6 20V10l6-5 6 5v10 M12 5v15 M6 13l6-3 6 3 M3 9l3-3 M21 9l-3-3",
+ 16:"M12 3l3 9-3 9-3-9z M12 6v12 M12 12h-4 M12 12h4 M12 12v-4 M12 12v4",
+ 17:"M12 3l-8 17h16z M12 8v12 M12 3l3 4M12 3l-3 4",
+ 18:"M6 18L18 6 M16 4l4 4-2 2-4-4z M6 18l-2 2 M16 12c2 1 1 4-1 3",
+ 19:"M12 3v9 M7 6v6 M17 6v6 M12 12l-4 3 4 3 4-3z",
+ 20:"M4 8h9 M3 12h11 M4 16h9 M13 6l6 6-6 6z",
+ 21:"M7 5h10l-2 6a3 3 0 0 1-6 0z M12 14v5 M8 20h8 M12 3v-1",
+ 22:"M12 12l-6-4-2 4 2 4z M12 12l6-4 2 4-2 4z M12 10l1.6 2-1.6 2-1.6-2z",
+ 23:"M5 8h14v10H5z M5 8l7 6 7-6 M17 15a1.4 1.4 0 1 0 2.8 0 1.4 1.4 0 0 0-2.8 0z",
+ 24:"M6 6h12l-6 7z M12 13v6 M8 20h8 M18 7a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8z",
+ 25:"M9 12a4.4 4.4 0 1 1 8.8 0 4.4 4.4 0 0 1-8.8 0z M6 12a4.4 4.4 0 1 1 8.8 0 4.4 4.4 0 0 1-8.8 0z",
+ 26:"M7 19V9a3 3 0 0 1 6 0v10 M17 19V9a3 3 0 0 0-6 0",
+ 27:"M4 8h16v10H4z M4 8l8 5 8-5 M10 11l2 2 2-2",
+ 28:"M6 10h12v10H6z M6 10l6-4 6 4 M12 10v10 M9 6a2 2 0 1 1 3 2 M15 6a2 2 0 1 0-3 2",
+ 29:"M12 6c0 2 1 2 1 4 M12 6c0 2-1 2-1 4 M8 8c1 2 2 2 3 4 M16 8c-1 2-2 2-3 4 M6 11c2 1 3 1 6 1s4 0 6-1 M6 17c2-2 4 2 6 0s4 2 6 0",
+ 30:"M4 13a8 8 0 0 1 16 0z M12 13v6 M12 19a2 2 0 1 0 2 2 M7 5v2 M9.5 7v1.6",
+ 31:"M10 20V10l2-4 2 4v10z M8 20h8 M4 9l4 2 M20 9l-4 2 M3 14l4 1 M21 14l-4 1",
+ 32:"M4 20V11a8 8 0 0 1 16 0v9 M4 20h16 M12 6v14 M12 13l2 2-2 2-2-2z",
+ 33:"M5 15a7 7 0 0 1 14 0z M5 15h14 M7 15v4h10v-4 M9 8l1 2 2-2 2 2 1-2",
+ 34:"M4 17a8 4 0 0 1 16 0z M12 15V7 M12 7l-4 3 M12 7l4 3 M9 6h6 M5 11l-2-2 M19 11l2-2 M5 20c2 1 4-1 6 0s4-1 6 0",
+ 35:"M4 17a8 8 0 0 1 16 0z M7 18v-6a5 5 0 0 1 10 0v6 M6 8c2-2 4-2 6 0s4 1 6-1 M6 4c2-2 4-2 6 0",
+ 36:"M3 8h18 M5 5h14 M7 8v12 M17 8v12 M5 11h14",
+ 37:"M6 21l4-14 M18 21l-4-14 M4 21h16 M8 9l4-4 4 4",
+ 38:"M12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12z M12 8v4l3 2 M10 3h4 M10 21h4",
+ 39:"M4 7l8-3 8 3v6c0 4-3 7-8 8-5-1-8-4-8-8z M8 10l4 5-2 3 5-5-3-1z",
+ 40:"M6 9l9-4 3 6-9 4z M15 5l2 6 M9 15l4 6 M6 21c2-2 4-1 6-2s2-3 4-4",
+ 41:"M3 16l18-8-6 2-6-4 2 4-8 6z M12 12v6",
+ 42:"M3 19l5-9 3 4 3-7 7 12z M12 6l-1-3M13 6l1-3",
+ 43:"M12 19S4 14 4 9a4 4 0 0 1 8-1 4 4 0 0 1 8 1c0 5-8 10-8 10z M5 13l3 3-1 2 4-2 3 2-1-3 3-2",
+ 44:"M7 20V11l5-7 5 7v9z M12 13a2 2 0 1 1 0 4 2 2 0 0 1 0-4z M12 17v2",
+ 45:"M9 5a4 4 0 0 0 0 8 4 4 0 0 0 0-8z M15 5a4 4 0 0 1 0 8 4 4 0 0 1 0-8z M4 18c2-2 4 2 6 0s4 2 6 0 4 2 4-1",
+ 46:"M4 6h6v12H4z M14 6h6v12h-6z M10 6c2 2 2 10 0 12s-2-10 0-12z M12 9l2 2-2 2-2-2z",
+ 47:"M4 9l3-4 5 3 5-3 3 4v3H4z M5 20h14 M8 12v8 M16 12v8 M3 17c2 1 4-1 6 0s4-1 6 0",
+ 48:"M12 3v18 M8 21h8 M12 8a6 6 0 0 1 0 8 6 6 0 0 1 0-8z M12 3l6 5-6 3z",
+ 49:"M12 3l4 5v13H8V8z M9 12h6 M9 15h6 M9 18h6",
+ 50:"M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z M4 12a8 4 0 1 0 16 0 8 4 0 0 0-16 0z M5 6l1 1 M19 18l-1-1",
+ 51:"M4 6h16v12H4z M6 8v8 M18 8v8 M6 8l1 0 M17 8h1 M6 16h1 M17 16h1 M12 9l2 3-2 3-2-3z",
+ 52:"M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L5 8.3l5-.7z M4 20c3-2 5 2 8 0s5-2 8 0",
+ 53:"M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0z M4 12a4 4 0 1 10 8 0 4 4 0 0 0-8 0z M12 3l1.2 2.4L15.5 6l-1.8 1.9.4 2.6-2.1-1.2-2.1 1.2.4-2.6L8.5 6l1.3-.6z"
+};
+
+/* ---------- 53 条奖池（从 AGY_COPY_rc34_wheel.md 逐字读取） ---------- */
+let POOL = [];
+async function loadPool(){
+  const res = await fetch('./wheel-copy.md', {cache:'no-store'});
+  const txt = await res.text();
+  POOL = txt.split(/\r?\n/).map(l=>l.split('\t')).filter(c=>c.length>=5 && /^\d{2}$/.test(c[0].trim()))
+    .map(c=>({no:c[0].trim(), name:c[1].trim(), rar:c[2].trim(), tip:c[4].trim()}));
+  if(POOL.length!==53) console.warn('奖池条数异常', POOL.length);
+}
+
+const RAR = {
+  '灰':{a:'--gray-a', b:'--gray-b', line:'--gray-line', sym:'--gray-sym', key:'gray'},
+  '红':{a:'--red-a',  b:'--red-b',  line:'--red-line',  sym:'--red-sym',  key:'red'},
+  '金':{a:'--gold-a', b:'--gold-b', line:'--gold-line', sym:'--gold-sym', key:'gold'},
+  '虹':{a:'--rainbow-a', b:'--rainbow-b', line:'--gold-line', sym:'#fff', key:'rainbow'}
+};
+const cs = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const C = 320;                       // 圆心
+const ring = [                        // 三环定义（外→内）
+  {from:0,  to:30, r1:206, r2:292, symR:250, size:17},
+  {from:30, to:46, r1:132, r2:198, symR:166, size:19},
+  {from:46, to:52, r1:74,  r2:126, symR:100, size:21},
+];
+const CORE_R = {r1:56, r2:70};
+
+const polar = (r, deg) => { const a = (deg-90)*Math.PI/180; return [C+r*Math.cos(a), C+r*Math.sin(a)]; };
+function sectorPath(r1,r2,a0,a1){
+  const [x0,y0]=polar(r2,a0),[x1,y1]=polar(r2,a1),[x2,y2]=polar(r1,a1),[x3,y3]=polar(r1,a0);
+  const big = (a1-a0)>180?1:0;
+  return `M${x0} ${y0} A${r2} ${r2} 0 ${big} 1 ${x1} ${y1} L${x2} ${y2} A${r1} ${r1} 0 ${big} 0 ${x3} ${y3} Z`;
+}
+
+const el = (n,attrs)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;};
+
+function buildSingle(){
+  const g = document.getElementById('wheel'); g.innerHTML='';
+  g.appendChild(defs());
+  const rotor = el('g',{class:'rotor', id:'rotor'});
+  const step = 360/53, r1 = 86, r2 = 292, symR = 236;
+  POOL.forEach((p,i)=>{
+    const a0 = i*step, a1 = a0+step;
+    const rar = RAR[p.rar] || RAR['灰'];
+    const fill = i%2 ? cs(rar.b) : cs(rar.a);
+    rotor.appendChild(el('path',{d:sectorPath(r1,r2,a0,a1), fill, stroke:'rgba(217,184,120,.22)','stroke-width':.8}));
+    const [x,y]=polar(symR, a0+step/2);
+    const sg = el('g',{transform:`translate(${x} ${y}) rotate(${a0+step/2})`, stroke:cs(rar.sym), fill:'none','stroke-width':1.35,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.92});
+    const scale = 18/24;
+    sg.appendChild(el('path',{d:SYM[Number(p.no)], transform:`translate(-12 -12) scale(${scale})`, 'stroke-width':1.6}));
+    rotor.appendChild(sg);
+  });
+  g.appendChild(rotor);
+  decorate(g, 292, 'single');
+  window.__rings = null;
+  return {step, r2, offsets:[0]};
+}
+
+function buildRings(){
+  const g = document.getElementById('wheel'); g.innerHTML='';
+  g.appendChild(defs());
+  const groups = [], meta = [];
+  ring.forEach((cfg,idx)=>{
+    const n = cfg.to-cfg.from, step = 360/n;
+    const rg = el('g',{class:'rotor', id:'rotor'+idx});
+    for(let i=0;i<n;i++){
+      const p = POOL[cfg.from+i];
+      const a0 = i*step, a1 = a0+step;
+      const rar = RAR[p.rar] || RAR['灰'];
+      const fill = i%2 ? cs(rar.b) : cs(rar.a);
+      rg.appendChild(el('path',{d:sectorPath(cfg.r1,cfg.r2,a0,a1), fill, stroke:'rgba(217,184,120,.25)','stroke-width':.9}));
+      const [x,y]=polar(cfg.symR, a0+step/2);
+      const sg = el('g',{transform:`translate(${x} ${y}) rotate(${a0+step/2})`, stroke:cs(rar.sym), fill:'none','stroke-width':1.35,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.94});
+      sg.appendChild(el('path',{d:SYM[Number(p.no)], transform:`translate(-12 -12) scale(${cfg.size/24})`, 'stroke-width':1.6}));
+      rg.appendChild(sg);
+    }
+    g.appendChild(rg); groups.push(rg); meta.push({step, n, from:cfg.from});
+  });
+  // 星核虹环
+  const core = el('g',{});
+  core.appendChild(el('circle',{cx:C,cy:C,r:(CORE_R.r1+CORE_R.r2)/2,fill:'none',stroke:'url(#rainbow)','stroke-width':CORE_R.r2-CORE_R.r1,opacity:.85}));
+  g.appendChild(core);
+  decorate(g, 292, 'rings');
+  window.__rings = {groups, meta};
+  return {rings: meta};
+}
+
+function defs(){
+  const d = el('defs',{});
+  const lg = el('linearGradient',{id:'rainbow',x1:'0',y1:'0',x2:'1',y2:'1'});
+  [['0%','#8a5cff'],['25%','#3ad1e0'],['50%','#f6e3b0'],['75%','#ff8fc8'],['100%','#8a5cff']].forEach(([o,c])=>{
+    lg.appendChild(el('stop',{offset:o,'stop-color':c}));
+  });
+  d.appendChild(lg);
+  const sg = el('linearGradient',{id:'spireGrad',x1:'0',y1:'0',x2:'0',y2:'1'});
+  [['0%','#fff6d8'],['45%','#e9c986'],['100%','#8a6a2c']].forEach(([o,c])=>sg.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(sg);
+  // 体积罩：中心略暗、边缘更暗，模拟金属盘的下陷
+  const vg = el('radialGradient',{id:'vignette',cx:'50%',cy:'50%',r:'50%'});
+  [['58%','rgba(0,0,0,0)'],['86%','rgba(0,0,0,.18)'],['100%','rgba(0,0,0,.55)']].forEach(([o,c])=>vg.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(vg);
+  // 左上高光
+  const sh = el('radialGradient',{id:'sheen',cx:'32%',cy:'26%',r:'58%'});
+  [['0%','rgba(255,246,214,.22)'],['45%','rgba(255,246,214,.06)'],['100%','rgba(255,246,214,0)']].forEach(([o,c])=>sh.appendChild(el('stop',{offset:o,'stop-color':c})));
+  d.appendChild(sh);
+  return d;
+}
+
+function decorate(g, R, mode){
+  // 外双环
+  g.appendChild(el('circle',{cx:C,cy:C,r:R+6,fill:'none',stroke:'rgba(217,184,120,.55)','stroke-width':1.4}));
+  g.appendChild(el('circle',{cx:C,cy:C,r:R+13,fill:'none',stroke:'rgba(217,184,120,.26)','stroke-width':3}));
+  g.appendChild(el('circle',{cx:C,cy:C,r:R+17,fill:'none',stroke:'rgba(217,184,120,.12)','stroke-width':1}));
+  // 外圈刻度
+  const ticks = el('g',{stroke:'rgba(217,184,120,.4)','stroke-width':1});
+  for(let i=0;i<120;i++){
+    const a=i*3, long = i%10===0;
+    const [x1,y1]=polar(R+2,a), [x2,y2]=polar(R+(long?11:6),a);
+    ticks.appendChild(el('line',{x1,y1,x2,y2,opacity:long?.9:.4}));
+  }
+  g.appendChild(ticks);
+  // 立体：内暗外亮的罩层
+  g.appendChild(el('circle',{cx:C,cy:C,r:R,fill:'url(#vignette)',opacity:.9,'pointer-events':'none'}));
+  g.appendChild(el('circle',{cx:C,cy:C,r:R,fill:'url(#sheen)',opacity:.5,'pointer-events':'none'}));
+  if(mode==='single'){
+    g.appendChild(el('circle',{cx:C,cy:C,r:86,fill:'none',stroke:'rgba(217,184,120,.5)','stroke-width':1.4}));
+    g.appendChild(el('circle',{cx:C,cy:C,r:78,fill:'rgba(12,9,14,.94)',stroke:'rgba(217,184,120,.35)','stroke-width':1}));
+    g.appendChild(el('circle',{cx:C,cy:C,r:70,fill:'none',stroke:'rgba(217,184,120,.16)','stroke-width':1}));
+  }else{
+    g.appendChild(el('circle',{cx:C,cy:C,r:CORE_R.r2+3,fill:'none',stroke:'rgba(217,184,120,.45)','stroke-width':1.2}));
+    g.appendChild(el('circle',{cx:C,cy:C,r:CORE_R.r1-3,fill:'none',stroke:'rgba(217,184,120,.3)','stroke-width':1}));
+  }
+}
+
+/* ---------- 转动 ---------- */
+let mode='single', busy=false, accSingle=0, accRings=[0,0,0];
+
+function pickIndex(){
+  // 原型：按格子数均匀抽（真实实现会按稀有度权重 + 保底）
+  return Math.floor(Math.random()*53);
+}
+
+function spin(){
+  if(busy || POOL.length!==53) return;
+  busy = true;
+  document.getElementById('go').disabled = true;
+  document.getElementById('card').classList.remove('show');
+
+  const pick = pickIndex();
+  const p = POOL[pick];
+  const rarKey = (RAR[p.rar]||RAR['灰']).key;
+
+  if(mode==='single'){
+    const step=360/53, target = pick*step + step/2;      // 该格中心相对 12 点的顺时针角
+    const turns = 5 + Math.floor(Math.random()*2);
+    accSingle = accSingle + turns*360 + ((360 - target) - (accSingle % 360) + 360) % 360;
+    document.getElementById('rotor').style.transform = `rotate(${accSingle}deg)`;
+  }else{
+    const {groups, meta} = window.__rings;
+    // 逐环锁停：越稀有的环转得越久一点，营造"咔嗒"层次
+    groups.forEach((g,i)=>{
+      const m = meta[i];
+      const local = pick - m.from;
+      let idx = local, target;
+      if(local>=0 && local<m.n){ target = local*m.step + m.step/2; }
+      else { idx = Math.floor(Math.random()*m.n); target = idx*m.step + m.step/2; }
+      const turns = (i===0?4:i===1?5:6) + Math.floor(Math.random()*2);
+      const dir = i===1 ? -1 : 1;                          // 中环反转
+      accRings[i] = accRings[i] + dir*(turns*360) + dir*(((360 - target) - (accRings[i] % 360) + 360) % 360);
+      g.style.transform = `rotate(${accRings[i]}deg)`;
+      g.style.transitionDelay = `${i*0.12}s`;
+    });
+  }
+
+  const delay = mode==='single' ? 5600 : 6000;
+  setTimeout(()=>{
+    busy=false;
+    document.getElementById('go').disabled=false;
+    document.getElementById('cNo').textContent = `NO.${p.no}`;
+    document.getElementById('cName').textContent = p.name;
+    document.getElementById('cTip').textContent = p.tip;
+    const rarEl = document.getElementById('cRar');
+    rarEl.textContent = {gray:'灰 · 常见',red:'红 · 少见',gold:'金 · 稀有',rainbow:'虹 · 终极大奖'}[rarKey];
+    rarEl.style.color = {gray:'#9aa3b5',red:'#ff9fae',gold:'#f6d786',rainbow:'#b79bff'}[rarKey];
+    document.getElementById('card').classList.add('show');
+  }, delay);
+}
+
+/* ---------- 启动 ---------- */
+(async()=>{
+  await loadPool();
+  buildSingle();
+  document.getElementById('mSingle').onclick = ()=>{ mode='single'; document.getElementById('mSingle').classList.add('on'); document.getElementById('mRings').classList.remove('on'); buildSingle(); };
+  document.getElementById('mRings').onclick  = ()=>{ mode='rings';  document.getElementById('mRings').classList.add('on');  document.getElementById('mSingle').classList.remove('on'); buildRings(); };
+  document.getElementById('go').onclick = spin;
+})();
+</script>
+</body>
+</html>

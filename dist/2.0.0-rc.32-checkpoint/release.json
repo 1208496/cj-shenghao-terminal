@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.32",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "622d8bd0d7a96081ad436f185e00d59271c202684fb4666559d60d44a5e21854",
+  "sha256": "28dfa4d6fa956daaae7051487ca26ebc0e17f838a5244f34157430f3b492debe",
+  "notes": "rc.30：移除单一的「眼下心事（currentGoal）」，升级为表里三层心绪链——手机端展示「近期目标（recentGoal）+ 长期梦想（longTermDream）」，底层植入玩家不可见的「暗伤伏笔（hiddenScar）」，随双轴关系分三阶在互动中静默显影；实装暴击四重数值阀门（同人同日递减、旧标签复刷降档折半、开放档位越级拦截、单日45万软上限）；私密播种词库按五大性格原型扩充5倍并清零违禁套话；投影新增可读金额 cashYuan，转赠资产计入有效计级身家。"
+}

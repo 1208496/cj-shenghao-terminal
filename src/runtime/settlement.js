@@ -1,4 +1,4 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy,seedOutfit,abilityBonus,effectiveProwess} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -36,7 +36,10 @@ export function replayPlayerCommand(state,command,anchor,schemas){
   }
   requireRule(command.kind==='appointment','UNKNOWN_PLAYER_COMMAND');
   if(state.operationHistory[command.operationId])return state;
-  const s=clone(state),value=schemas.appointment.parse(command.value);s.calendar.appointments[value.id]=value;s.meta.revision++;
+  const s=clone(state),value=schemas.appointment.parse(command.value);s.calendar.appointments[value.id]=value;
+  // rc.37：日程一落地/取消就现场核销券状态，不等下一轮模型生成。
+  syncWheelInventory(s);
+  s.meta.revision++;
   s.operationHistory[command.operationId]={type:'PLAYER_APPOINTMENT',status:'COMMITTED',revision:s.meta.revision};return s;
 }
 export function settleNative(before,candidate,anchor,source,schemas){
@@ -49,17 +52,19 @@ export function settleNative(before,candidate,anchor,source,schemas){
   const positiveRounds=new Set();
   for(const e of queue)if(e&&['BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE'].includes(e.type)&&(Number(e.score)>=60||e.mode==='INTIMATE')&&typeof e.personRef==='string')positiveRounds.add(e.personRef);
   // These fields are written only by deterministic settlement or a confirmed player operation.
-  for(const k of ['schemaVersion','finance','rewardEvents','withdrawals','recoveries','operationHistory','notifications','facts','hiddenTemporary','identityMap'])s[k]=clone(before[k]);
+  for(const k of ['schemaVersion','finance','rewardEvents','withdrawals','recoveries','operationHistory','notifications','facts','hiddenTemporary','identityMap','wheel','inventory'])s[k]=clone(before[k]);
   s.meta=clone(before.meta);s.meta.branchKey=anchor.branchKey;
   for(const k of ['user','world','scene','calendar'])s[k]=acceptFields(s[k],before[k],schemas.state.shape[k],k,diagnostics);
   if(!s.characters||typeof s.characters!=='object'||Array.isArray(s.characters)){s.characters=clone(before.characters);diagnostics.push({field:'characters',code:'INVALID_FIELD'});}
-  for(const k of ['id','name','age','beautyScore','gender','appearance','body','occupation','background','housingMode','residenceDescription','workLifeDescription','initialCashCents','cashCents'])s.user[k]=clone(before.user[k]);
+  for(const k of ['id','name','age','beautyScore','gender','appearance','body','occupation','background','workLifeDescription','initialCashCents','cashCents','abilities'])s.user[k]=clone(before.user[k]);
+  for(const k of ['heightCm','weightKg','shoeSizeEu']){if(before.user[k]!==null&&before.user[k]!==undefined)s.user[k]=before.user[k];}
   for(const [cid,prior] of Object.entries(before.characters)){
     const proposed=s.characters[cid];
     if(!proposed||prior.trackingState==='HIDDEN'){s.characters[cid]=clone(prior);continue;}
     if(typeof proposed!=='object'||Array.isArray(proposed)){s.characters[cid]=clone(prior);diagnostics.push({person:cid,field:'characters.'+cid,code:'INVALID_FIELD'});continue;}
     // starred is a player switch: the mobile UI owns it, the model never does.
     for(const k of ['id','name','age','profileFixed','profileLocked','aliases','trackingState','starred','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+  proposed.lastSexSceneRevision=Number(prior.lastSexSceneRevision||0);
     // Initial acquaintances may have blanks. A normal story update fills only
     // missing basics; established author/player facts stay immutable.
     for(const k of ['beautyScore','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu']){
@@ -102,10 +107,24 @@ export function settleNative(before,candidate,anchor,source,schemas){
   s=schemas.state.parse(result.state);
   // Deterministic back-fill: the model writes the story, the script keeps the
   // private records consistent even when the model forgets those field paths.
-  syncPrivateRecords(s,before,queue);
+  syncPrivateRecords(s,before,queue,body);
   applyCycles(s,before);
+  // rc.34：日程被模型标为 COMPLETED 时，脚本自动核销对应背包票券；取消则退回背包。
+  syncWheelInventory(s);
   s=schemas.state.parse(s);refreshContext(s);
   return {state:s,diagnostics};
+}
+// 背包票券与日历的自动核销（铁律一：能由脚本算的绝不交给模型）。
+function syncWheelInventory(s){
+  if(!s.inventory)return;
+  for(const a of Object.values(s.calendar?.appointments||{})){
+    const itemId=a.sourceItemId;
+    if(!itemId)continue;
+    const item=s.inventory[itemId];
+    if(!item)continue;
+    if(a.status==='COMPLETED'&&item.status!=='USED'){item.status='USED';item.usedDate=s.world.date;item.scheduledAppointmentId=a.id;}
+    else if(a.status==='CANCELLED'&&item.status==='SCHEDULED'){item.status='READY';item.scheduledAppointmentId=null;}
+  }
 }
 
 function acceptFields(proposal,prior,schema,path,diagnostics){
@@ -125,7 +144,24 @@ function acceptFields(proposal,prior,schema,path,diagnostics){
 // ----- rc.23 deterministic private-record back-fill -----
 // The model reports story facts; these two passes keep physiology / intimacy
 // consistent from scores, dates and counts so blank fields never reach the UI.
-const REAL_SEX=/交欢|初夜|破处|首次|插入|做爱|内射|中出|本垒|云雨|同床|占有|承欢|留宿/;
+const REAL_SEX=/交欢|初夜|破处|插入|做爱|内射|中出|本垒|云雨|同床共枕|占有|承欢|留宿/;
+// rc.32：情欲值（arousal）五段护栏。协议里给模型数值锚点，这里管「模型忘了降」的兜底。
+// 分支互斥：续战 > 正戏 > 事后退潮 > 日常自然回落，其余情况保留模型原值。
+const AFTERGLOW_RE=/事后|完事|结束后|余韵|平复|沉睡|相拥而眠|各自歇息/;
+const ENCORE_RE=/再来一次|还要一次|继续要|再来一轮|第二回合|梅开二度|要不够/;
+export function arousalGuard({prior,current,behaviorText='',last='',lastChanged=false,score=0,body='',countIncreased=false,prevRoundHadSex=false,mode=''}){
+  const priorArousal=Number(prior)||0,currentArousal=Number(current)||0;
+  const wrote=currentArousal!==priorArousal;
+  const sexThisRound=Number(score)>=90||countIncreased||(lastChanged&&REAL_SEX.test(String(last)))||REAL_SEX.test(String(behaviorText));
+  const cue=`${behaviorText} ${lastChanged?last:''} ${String(body||'').slice(-400)}`;
+  const isEncore=ENCORE_RE.test(cue),isAfterglow=AFTERGLOW_RE.test(cue);
+  const continuedIntimate=sexThisRound||isEncore||(Number(score)>=60&&mode==='INTIMATE');
+  if(isEncore&&(sexThisRound||priorArousal>0||lastChanged))return Math.max(currentArousal,72);
+  if(sexThisRound&&!isAfterglow)return Math.max(currentArousal,88);
+  if((isAfterglow&&!isEncore&&(sexThisRound||priorArousal>=40))||(prevRoundHadSex&&!continuedIntimate))return wrote&&currentArousal<=20?currentArousal:12;
+  if(!sexThisRound&&Number(score)<60&&!lastChanged&&!wrote&&currentArousal>0)return Math.max(0,currentArousal-20);
+  return currentArousal;
+}
 const INTIMATE_TAG_RULES=[
   [/初夜|破处|首次交欢|第一次/,'初夜夺取'],
   [/湿吻|热吻|深吻|接吻|亲吻|索吻/,'深情热吻'],
@@ -149,7 +185,7 @@ function addTag(c,tag){
 }
 // Behaviour tags may arrive as an array or a delimited string; 60+ scores and a
 // changed lastIntimate also feed the keyword table so the tag cloud always fills.
-export function syncPrivateRecords(s,before,queue){
+export function syncPrivateRecords(s,before,queue,body=''){
   const behaviors=new Map();
   for(const e of Array.isArray(queue)?queue:[]){
     if(!e||!['BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE'].includes(e.type))continue;
@@ -181,7 +217,14 @@ export function syncPrivateRecords(s,before,queue){
       if(firstNight)addTag(c,'初夜夺取');
       if(firstNight&&(!c.physiology.hymenNote||/处女膜完好|未经人事/.test(c.physiology.hymenNote)))c.physiology.hymenNote='初夜已由你夺取';
       if((c.intimacy.sexPartnerCount||0)<1)c.intimacy.sexPartnerCount=1;
-      if(!c.intimacy.abilityComment&&(s.user?.prowessScore??70)>=75)c.intimacy.abilityComment='尺寸惊人且持久滚烫，每次深入都让她食髓知味、难以招架';
+      const prowess=s.user?.prowessScore??70;
+      if(!c.intimacy.abilityComment){
+        c.intimacy.abilityComment=prowess>=75
+          ?'尺寸惊人且持久滚烫，每次深入都让她食髓知味、难以招架'
+          :prowess>=50
+            ?'滚烫充实且节奏沉稳，紧密贴合的深入交融让她由衷迷恋'
+            :'虽非猛烈冲击，但细腻耐心的前戏爱抚与温存耳语依然让她羞耻动情';
+      }
     }
     if(behavior.score>=60||lastChanged){
       for(const [rule,tag] of INTIMATE_TAG_RULES)if(rule.test(text))addTag(c,tag);
@@ -191,26 +234,43 @@ export function syncPrivateRecords(s,before,queue){
         if(label)addTag(c,label);
       }
     }
-    // rc.25：下体状态随情动值与实战自动演进；模型本轮亲手写过的值优先保留。
+    // rc.25 / rc.30：下体状态随情动值、实战及玩家性能力档位自动演进；模型本轮亲手写过的值优先保留。
     const priorVagina=String(prior.physiology?.vaginaState||'');
     const wroteVagina=typeof c.physiology.vaginaState==='string'&&c.physiology.vaginaState.trim()&&c.physiology.vaginaState!==priorVagina;
-    if(realSex){
+    // rc.32：情欲值兜底放在气质判定之前，后续 vaginaState / complexion 才读得到降下来的值。
+    const countIncreased=(c.intimacy?.withUserCount||0)>(prior.intimacy?.withUserCount||0);
+    const prevRoundHadSex=Number(prior.lastSexSceneRevision||0)>0&&Number(prior.lastSexSceneRevision)===Number(before?.scene?.sceneRevision||0);
+    const cueText=`${behavior.text} ${lastChanged?last:''} ${String(body||'').slice(-400)}`;
+    const sexNow=behavior.score>=90||countIncreased||(lastChanged&&REAL_SEX.test(last))||REAL_SEX.test(behavior.text);
+    const inScene=s.scene.presentCharacterIds.includes(cid);
+    c.arousal=arousalGuard({prior:prior.arousal,current:c.arousal,behaviorText:behavior.text,last,lastChanged,score:behavior.score,body:inScene?body:'',countIncreased,prevRoundHadSex,mode:behavior.mode});
+    // rc.36：催情香（ab_scent）抬高情欲下限；只在已有情欲时生效，不凭空造情。
+    {const floor=abilityBonus(s,'ab_scent');if(floor&&Number(c.arousal)>0)c.arousal=Math.min(100,Math.max(Number(c.arousal),floor));}
+    if(sexNow&&(!AFTERGLOW_RE.test(cueText)||ENCORE_RE.test(cueText)))c.lastSexSceneRevision=s.scene.sceneRevision;
+    if(sexNow&&!wroteVagina){
+      const prowess=effectiveProwess(s);
       const creampie=(c.intimacy?.unlockedTags||[]).some(t=>/内射|灌满|中出/.test(t));
-      if(creampie)c.physiology.vaginaState='经受巨物深度开发，内壁滚烫痉挛，花穴微张、深处灌满浓稠精液';
-      else if(!wroteVagina)c.physiology.vaginaState='刚经受强悍肉体充分开发，内壁温热紧箍、春水泥泞泛红，余韵微颤';
-    }else if(!wroteVagina){
+      c.physiology.vaginaState=creampie
+        ?(prowess>=75
+          ?'经受巨物深度开发，内壁滚烫痉挛，花穴微张、深处灌满浓稠精液'
+          :'经受深入交合开发，内壁温热痉挛，花穴深处灌满滚烫精液')
+        :(prowess>=75
+          ?'刚经受强悍肉体充分开发，内壁温热紧箍、春水泥泞泛红，余韵微颤'
+          :'刚经历亲密交欢，内壁温热湿润、软肉轻颤，犹带缠绵余韵');
+    }else if(!sexNow&&!wroteVagina){
       const arousal=Number(c.arousal)||0;
       if(arousal>=65)c.physiology.vaginaState='情动难耐，透明爱液泌出湿透底裤，花唇充血微张、阴蒂敏感挺立';
       else if(arousal>=40)c.physiology.vaginaState='芳心微乱，秘处温热湿润，内壁随呼吸轻度收缩';
+      else c.physiology.vaginaState='';
     }
-    syncOutfit(c);
+    syncOutfit(c,prior);
     syncLimits(c);
   }
   return s;
 }
 // Outfit and currentClothes are mirrors of each other: whichever the model
 // filled last wins, and the other side is completed from it.
-function syncOutfit(c){
+function syncOutfit(c,prior={}){
   const o=c.outfit;if(!o)return;
   const clothes=String(c.currentClothes||'').trim();
   // rc.25 Bug #3：开局或换装后两边都空时，从外貌提取或按职业补一套，绝不空着。
@@ -220,7 +280,11 @@ function syncOutfit(c){
   const parts=[o.top,o.bottom,o.socks,o.shoes].filter(v=>typeof v==='string'&&v.trim());
   if(clothes&&!o.top)o.top=clothes.slice(0,200);
   if(!c.currentClothes&&parts.length)c.currentClothes=parts.join('；').slice(0,300);
-  if(Number(c.arousal)>=50&&!o.complexion)o.complexion='双颊绯红，眼波含春，呼吸微促';
+  // rc.33：seedOutfit 会先给一份静态气色，情动时按情欲值覆盖成动情气色。
+  const AROUSAL_COMPLEXION='双颊绯红，眼波含春，呼吸微促';
+  const wroteComplexion=typeof o.complexion==='string'&&o.complexion&&o.complexion!==String(prior.outfit?.complexion||'');
+  if(Number(c.arousal)>=50){if(!wroteComplexion)o.complexion=AROUSAL_COMPLEXION;}
+  else if(o.complexion===AROUSAL_COMPLEXION){o.complexion='';seedOutfit(c);}
 }
 // Level and the eight limits are derived, never asked of the model: openness
 // follows whichever axis moved further, and unlocked tags jump straight to 3.
@@ -337,7 +401,9 @@ export function allowModelCommand(command,before,{trustedInitialization=false}={
   if(!path.startsWith('shenghao.'))return false;
   const relative=path.slice('shenghao.'.length);
   if(relative.startsWith('world.')||relative==='world'||relative.startsWith('scene.')||relative==='scene'||relative.startsWith('calendar.')||relative==='calendar'||relative==='pendingEvents'||relative.startsWith('pendingEvents[')||relative.startsWith('pendingEvents.'))return true;
-  if(relative.startsWith('user.'))return /^user\.(?:location|city|currentClothes|currentPose|currentAction)$/.test(relative);
+  // rc.33：身高/体重/鞋码是开局可留空的字段，protocol 要求模型按 pendingProfileFields 补齐；
+  // 已填值由 settleNative 第 57 行锁住，模型只可能补空，改不了玩家已定的数据。
+  if(relative.startsWith('user.'))return /^user\.(?:location|city|currentClothes|currentPose|currentAction|heightCm|weightKg|shoeSizeEu)$/.test(relative);
   if(relative.startsWith('characters.')||relative==='characters'&&command.type==='insert') {
     const fields=relative.split('.');
     if(fields.length>=3&&['profileFixed','profileLocked'].includes(fields[2]))return false;

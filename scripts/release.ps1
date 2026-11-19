@@ -33,7 +33,9 @@ try {
     $remote = (& git remote get-url origin).Trim()
     if ($LASTEXITCODE -ne 0 -or $remote -ne ('https://github.com/' + $config.repository + '.git')) { throw 'Unexpected release remote.' }
     $branch = (& git branch --show-current).Trim()
-    if ($LASTEXITCODE -ne 0 -or $branch -ne 'main') { throw 'Release only from main.' }
+    # 本仓库的实际发布线是 release（origin/main 停在 rc.11 且与本线无共同祖先），
+    # 所以允许 main / release 两个分支；推送目标用当前分支，不写死。
+    if ($LASTEXITCODE -ne 0 -or $branch -notin @('main', 'release')) { throw 'Release only from main or release.' }
     & npm run test
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed; pointer was not changed.' }
     & node scripts/build.mjs --core-only
@@ -51,7 +53,7 @@ try {
         & git commit -m $Message
         if ($LASTEXITCODE -ne 0) { throw 'Commit failed; pointer was not changed.' }
     }
-    & git push origin main
+    & git push origin $branch
     if ($LASTEXITCODE -ne 0) { throw 'Push failed; pointer was not changed.' }
     $ref = (& git rev-parse HEAD).Trim()
     if ($ref -notmatch '^[a-f0-9]{40}$') { throw 'Invalid release commit.' }
@@ -105,7 +107,7 @@ try {
         & git commit -m ('Package fixed loader: ' + $Message)
         if ($LASTEXITCODE -ne 0) { throw 'Card commit failed; pointer unchanged.' }
     }
-    & git push origin main
+    & git push origin $branch
     if ($LASTEXITCODE -ne 0) { throw 'Card push failed; pointer unchanged.' }
 
     # The ONLY online switch is last. Never clear the emergency-off row here.
@@ -125,3 +127,4 @@ try {
     if ($tempMeta) { Remove-Item -LiteralPath $tempMeta -ErrorAction SilentlyContinue }
     $serviceKey = $null; $headers = $null
 }
+

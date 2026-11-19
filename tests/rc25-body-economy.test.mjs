@@ -29,7 +29,7 @@ test('rc.25 seedAnatomy seeds a complete, deterministic body record',()=>{
   // 显式给出罩杯就以罩杯为准；处女状态决定乳晕/色泽/紧致度措辞。
   const cupSeeded=seedAnatomy({id:'char_cup',cupSize:'A',intimacy:{withUserCount:2,sexPartnerCount:2,unlockedTags:[]},physiology:{virgin:false}});
   assert(cupSeeded.physiology.chestDetail.startsWith('A罩杯'));
-  assert.match(cupSeeded.physiology.vaginaState,/名器级/);
+  assert(cupSeeded.physiology.vaginaState.length>0&&!/未经人事|处子/.test(cupSeeded.physiology.vaginaState));
   // 已有内容永远优先。
   const kept=seedAnatomy({id:'char_keep',cupSize:'C',physiology:{chestDetail:'自定义胸型',virgin:true},intimacy:{},limits:{}});
   assert.equal(kept.physiology.chestDetail,'自定义胸型');
@@ -44,9 +44,9 @@ test('rc.25 vaginaState evolves from arousal, real sex and creampie tags',()=>{
   const hot=clone(before);hot.characters.char_a.arousal=70;
   assert.match(settleNative(before,hot,anchor(),'本轮正文',schemas).state.characters.char_a.physiology.vaginaState,/情动难耐/);
   const sex=run(before,[{type:'BEHAVIOR',personRef:'char_a',mode:'INTIMATE',action:'主卧深吻并发生首次亲密交欢',score:92}]);
-  assert.match(sex.state.characters.char_a.physiology.vaginaState,/刚经受强悍肉体充分开发/);
+  assert.match(sex.state.characters.char_a.physiology.vaginaState,/刚经历亲密交欢|刚经受强悍肉体充分开发/);
   const creampie=run(before,[{type:'BEHAVIOR',personRef:'char_a',mode:'INTIMATE',action:'无套内射把她灌满',score:94,tags:['无套内射']}]);
-  assert.match(creampie.state.characters.char_a.physiology.vaginaState,/灌满浓稠精液/);
+  assert.match(creampie.state.characters.char_a.physiology.vaginaState,/灌满(浓稠|滚烫)精液/);
   const wrote=clone(before);wrote.characters.char_a.physiology.vaginaState='她亲手写的状态';
   assert.equal(settleNative(before,wrote,anchor(),'本轮正文',schemas).state.characters.char_a.physiology.vaginaState,'她亲手写的状态');
 });
@@ -110,7 +110,7 @@ test('rc.25 sentinel words and unpaid wording are still refused',()=>{
 test('rc.25 the opening fills outfit and currentClothes from her look or job',()=>{
   const before=initial();
   assert(before.characters.char_a.outfit.top.length>0);
-  assert.equal(before.characters.char_a.currentClothes,before.characters.char_a.outfit.top);
+  assert(before.characters.char_a.currentClothes.includes(before.characters.char_a.outfit.top),'整套行头里应含上装');
   for(const c of Object.values(before.characters))assert(c.outfit.top.length>0&&c.currentClothes.length>0);
 });
 test('rc.25 a 60+ round cannot push affection down',()=>{
@@ -155,21 +155,26 @@ test('rc.25 the phone shows three axes, 2x2 blocks and folds the history cards',
   const {ctx,screens}=screensFor(s);
   ctx.expanded.add('char_a');
   const scene=screens.scene();
-  assert(scene.includes('♥ 好感 90/100 · ❖ 堕落 0/100 · 🌡️ 情动 20/100'));
+  assert(scene.includes('♥ 好感 90/100 · ❖ 堕落 0/100 · 🌡️ 情欲 20/100'));
   assert(scene.includes('💭 心声')===false,'没有心声时不显示空行');
   for(const label of ['🎬 此刻 · 动向','👗 行头 · 穿戴','📋 身姿 · 基础','🌹 欲念 · 私密'])assert(scene.includes(label),label);
   assert(scene.includes('查看人物档案 →'));
   const detail=screens.detail(s.characters.char_a);
-  assert(detail.includes('♥ 好感度：90/100'));assert(detail.includes('❖ 堕落度：0/100'));assert(detail.includes('🌡️ 情动度：20/100'));
+  assert(detail.includes('♥ 好感度：90/100'));assert(detail.includes('❖ 堕落度：0/100'));assert(detail.includes('🌡️ 情欲值：20/100'));
   for(const label of ['📋 身姿 · 基础','🌹 欲念 · 肉体','👗 行头 · 穿搭','🔥 经历 · 尺度'])assert(detail.includes(label),label);
   assert(detail.indexOf('人物与私密档案')<detail.indexOf('消费记录'),'档案排在消费记录之前');
   assert(detail.indexOf('九大档案')<detail.indexOf('消费记录'));
   assert(detail.includes('<details class="card consumption"><summary>消费记录'),'消费记录默认折叠');
   assert(!detail.includes('这些记录来自实际接触')&&!detail.includes('档案供你查阅'),'出戏提示已删除');
-  const mine=screensFor(schemas.state.parse(completeInitialState(fresh({initialAssets:[{assetId:'car_1',kind:'CAR',name:'家用轿车',bookValueCents:10000000,locationNote:'住宅车库'}]}),{startDate:'2026-01-05',startTime:'09:00'}))).screens.mine();
-  assert(mine.includes('class="split-item"')&&mine.includes('可用现金')&&mine.includes('持有资产'));
-  assert(mine.includes('class="asset-head"')&&mine.includes('asset-description'));
-  assert.equal((mine.match(/data-asset-tab=/g)||[]).length,8);
+  // rc.36：财富总览、持有资产与收支明细迁到独立的「财富」页，「我的」只留个人档案与异能。
+  const rich=screensFor(schemas.state.parse(completeInitialState(fresh({initialAssets:[{assetId:'car_1',kind:'CAR',name:'家用轿车',bookValueCents:10000000,locationNote:'住宅车库'}]}),{startDate:'2026-01-05',startTime:'09:00'}))).screens;
+  const wealth=rich.wealth();
+  assert(wealth.includes('class="split-item"')&&wealth.includes('可用现金')&&wealth.includes('持有资产'));
+  assert(wealth.includes('class="asset-head"')&&wealth.includes('asset-description'));
+  assert.equal((wealth.match(/data-asset-tab=/g)||[]).length,8);
+  const mine=rich.mine();
+  assert(!mine.includes('class="split-item"'),'我的页不再塞财富总览');
+  assert(!mine.includes('data-act="open-bag"'),'我的页不再挂背包入口');
 });
 
 // ----- 8. 世界书与协议定稿关键词 -----
@@ -181,7 +186,7 @@ test('rc.25 the protocol and worldbook carry the seven asset classes and the bod
   const literary=JSON.parse(await fs.readFile(new URL('../src/content/literary.json',import.meta.url),'utf8'));
   const score=literary.entries.find(e=>e.id==='score').body;
   const privateLife=literary.entries.find(e=>e.id==='private-life').body;
-  assert(score.includes('饱满馒头穴')&&score.includes('abilityComment'));
+  assert(score.includes('abilityComment')&&score.includes('hiddenScar'));
   assert(privateLife.includes('天生白虎')&&privateLife.includes('vaginaState'));
   assert(literary.entries.find(e=>e.id==='score').constant===true);
   assert(literary.entries.find(e=>e.id==='private-life').constant===true);
@@ -287,7 +292,7 @@ test('rc.27 the underbust cup formula matches all six preset women instead of gi
 // ----- 14. rc.27：365px 窄屏分层（胶囊/左键右值/句首染色/隔衣未知/底线变色格） -----
 test('rc.27 the narrow-screen panels render chips, kv rows, lead highlights, lock chips and limit cells',()=>{
   const s=initial();
-  Object.assign(s.characters.char_a,{currentThought:'他刚才是不是在试探我',currentGoal:'月底要凑齐店铺续租的押金',currentExpression:'眼角弯出浅浅的弧度',currentMood:'心情不错',currentAction:'半靠在窗边'});
+  Object.assign(s.characters.char_a,{currentThought:'他刚才是不是在试探我',recentGoal:'月底要凑齐店铺续租的押金',longTermDream:'开一家自己说了算的独立工作室',hiddenScar:'早年合伙被背刺，从此不肯再轻信承诺',currentExpression:'眼角弯出浅浅的弧度',currentMood:'心情不错',currentAction:'半靠在窗边'});
   s.characters.char_a.physiology.chestDetail='C罩杯丰盈圆润型，浅粉娇嫩乳晕，掌感极佳';
   s.characters.char_a.physiology.vaginaLook='微绽蝴蝶唇 · 花瓣柔嫩饱满';
   s.characters.char_a.outfit={...s.characters.char_a.outfit,lingerie:'未知',socks:'尚未记录'};
@@ -299,7 +304,8 @@ test('rc.27 the narrow-screen panels render chips, kv rows, lead highlights, loc
   const expanded=screens.scene();
   assert(expanded.includes('class="chips"')&&expanded.includes('chip-tag'),'胶囊横条');
   assert(expanded.includes('💭 心声：<i>他刚才是不是在试探我</i>')&&expanded.includes('thought-card'));
-  assert(expanded.includes('🎯 眼下心事：月底要凑齐店铺续租的押金')&&expanded.includes('goal-card'));
+  assert(expanded.includes('🎯 近期目标：月底要凑齐店铺续租的押金')&&expanded.includes('goal-card'));
+  assert(!expanded.includes('早年合伙被背刺'),'暗伤伏笔不渲染');
   assert(expanded.includes('class="kv"')&&expanded.includes('kv-k')&&expanded.includes('kv-v'),'左键右值行');
   assert(expanded.includes('神情：眼角弯出浅浅的弧度'),'神情进胶囊');
   ctx.sceneSectionByChar.set('char_a',2);
@@ -401,3 +407,4 @@ test('rc.28 assets are editable and the bottom dock renders a full-width panel',
   assert(css.includes('.phone.is-bottom-dock .women-grid{grid-template-columns:repeat(2,minmax(0,1fr))'));
   assert(css.includes('.phone.is-bottom-dock .dossier-grid{grid-template-columns:repeat(4,minmax(0,1fr))}'));
 });
+

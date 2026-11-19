@@ -13,7 +13,7 @@ const releaseConfig=await read('release/loader.config.json'),coreOnly=process.ar
 if(!coreOnly&&!process.argv.includes('--dry-run'))assertPublicConfig(releaseConfig);
 const checkpoint=process.argv.includes('--checkpoint');
 const output=path.join(root,'dist',cfg.version+(checkpoint?'-checkpoint':''));
-const targets=['神豪终端.json','worldbook.json','runtime.js','bootstrap-loader.js','release.json','schema.js','mvu-domestic.js','mvu-global.js','opening.html','phone.html','artifact-manifest.json'];
+const targets=['神豪终端.json','worldbook.json','runtime.js','bootstrap-loader.js','release.json','schema.js','mvu-domestic.js','mvu-global.js','opening.html','phone.html','wheel.html','artifact-manifest.json'];
 if(process.argv.includes('--dry-run')){console.log(JSON.stringify({root,version:cfg.version,writes:targets.map(x=>path.join(output,x)),policy:'New isolated project; no writes outside workspace.'},null,2));process.exit(0);}
 await fs.mkdir(output,{recursive:true});
 const css=(await fs.readFile(path.join(root,'src/ui/style.css'),'utf8')).replaceAll('\r\n','\n');
@@ -23,8 +23,14 @@ const ui=await build({entryPoints:[path.join(root,'src/ui/app.js')],bundle:true,
 const app=ui.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
 const html=async surface=>(await fs.readFile(path.join(root,'src/ui',surface+'.template.html'),'utf8')).replace('__STYLE__',css).replace('__APP__',app);
 const opening=await html('setup'),phone=await html('phone');
+// rc.36：全屏轮盘页单独打包，样式与脚本与本体重逢，由 host.js 作为顶层 iframe 的 srcdoc 注入。
+const wheelCss=(await fs.readFile(path.join(root,'src/ui/wheel.css'),'utf8')).replaceAll('\r\n','\n');
+const wheelUi=await build({entryPoints:[path.join(root,'src/ui/wheel-frame.js')],bundle:true,write:false,format:'iife',target:'es2022',minifyIdentifiers:true,minifySyntax:true,minifyWhitespace:false});
+const wheelApp=wheelUi.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
+const wheel=(await fs.readFile(path.join(root,'src/ui/wheel.template.html'),'utf8')).replace('__STYLE__',wheelCss).replace('__APP__',wheelApp);
 // Only generated intermediate within the workspace, excluded from source authority.
 await fs.writeFile(path.join(root,'src/ui/phone.html'),phone);
+await fs.writeFile(path.join(root,'src/ui/wheel.html'),wheel);
 const worldbookHash=crypto.createHash('sha256').update((await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/literary.json'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema-entry.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/mvu-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/script-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/update/release-contract.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/ui/setup.template.html'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/opening-display.js'),'utf8')).replaceAll('\r\n','\n')).update(String(cfg.cardContractRevision||1)).update(JSON.stringify(nativeDisplayRegexes())).update('mvu:d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc').digest('hex');
 const runtime=await build({entryPoints:[path.join(root,'src/runtime/host.js')],bundle:true,write:false,format:'esm',target:'es2022',loader:{'.html':'text','.txt':'text'},define:{__BOOK_HASH__:JSON.stringify(worldbookHash)},minify:true});
 const script='// CJ_SHENGHAO_TERMINAL_CORE\n;(async()=>{\n'+runtime.outputFiles[0].text+'\n})();\n';
@@ -69,7 +75,7 @@ if(checkpoint){
   data.extensions.cj_shenghao.update_delivery='embedded-checkpoint';
   Object.assign(data.extensions.tavern_helper.scripts[3],{name:'神豪终端 · 本地验收本体',info:'仅用于本次本地验收；内嵌当前本体，不读取Supabase指针。'});
 }
-await Promise.all([fs.writeFile(path.join(output,'神豪终端.json'),JSON.stringify(card,null,2)+'\n'),fs.writeFile(path.join(output,'worldbook.json'),JSON.stringify(book,null,2)+'\n'),fs.writeFile(path.join(output,'runtime.js'),script),fs.writeFile(path.join(output,'bootstrap-loader.js'),bootstrap),fs.writeFile(path.join(output,'release.json'),JSON.stringify(releaseMetadata,null,2)+'\n'),fs.writeFile(path.join(output,'schema.js'),schemaScript),fs.writeFile(path.join(output,'mvu-domestic.js'),domestic),fs.writeFile(path.join(output,'mvu-global.js'),globalLoader),fs.writeFile(path.join(output,'opening.html'),opening),fs.writeFile(path.join(output,'phone.html'),phone)]);
+await Promise.all([fs.writeFile(path.join(output,'神豪终端.json'),JSON.stringify(card,null,2)+'\n'),fs.writeFile(path.join(output,'worldbook.json'),JSON.stringify(book,null,2)+'\n'),fs.writeFile(path.join(output,'runtime.js'),script),fs.writeFile(path.join(output,'bootstrap-loader.js'),bootstrap),fs.writeFile(path.join(output,'release.json'),JSON.stringify(releaseMetadata,null,2)+'\n'),fs.writeFile(path.join(output,'schema.js'),schemaScript),fs.writeFile(path.join(output,'mvu-domestic.js'),domestic),fs.writeFile(path.join(output,'mvu-global.js'),globalLoader),fs.writeFile(path.join(output,'opening.html'),opening),fs.writeFile(path.join(output,'phone.html'),phone),fs.writeFile(path.join(output,'wheel.html'),wheel)]);
 const hashes={};for(const f of targets.filter(x=>x!=='artifact-manifest.json')){const b=await fs.readFile(path.join(output,f));hashes[f]={sha256:crypto.createHash('sha256').update(b).digest('hex'),bytes:b.length};}
 await fs.writeFile(path.join(output,'artifact-manifest.json'),JSON.stringify({schemaVersion:1,projectId:cfg.id,version:cfg.version,gate:'offline-candidate',files:hashes},null,2)+'\n');
 // updates/latest.json is a historical rc.5 artifact, never the new system's pointer.

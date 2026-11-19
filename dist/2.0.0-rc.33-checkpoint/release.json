@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.33",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "206123dee7175ad7eea9125662ababfbfcdc8dacb5f756d7760af4f1420d5844",
+  "sha256": "b5f101cfcadff30441ca9d6f5b49f7c2c0f57487e4745baf66d2d7e39f5bdb93",
+  "notes": "rc.34：新增命运轮盘（三环同心 53 格、哥特符号、无指针金光落点）与暗夜赌场（37 格铁珠、押红黑×2/绿×36、押错销毁）；星愿卡四档与星愿积分独立货币；「我的」页新增异能标签栏与背包/商城双入口；14 个都市异能（仅主角持有）与 16 件超现实奇物；确定性 FNV 随机与 10/30/60 抽保底。"
+}

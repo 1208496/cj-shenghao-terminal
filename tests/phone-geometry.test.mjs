@@ -14,6 +14,12 @@ test('viewport shrink is temporary and never changes the requested size',()=>{
  assert.equal(desired.scale,1);
 });
 test('folded phone also compensates zoom and positions remain in viewport',()=>{
- const g=phoneGeometry({width:74,height:108,scale:1,left:9999,top:-100},{innerWidth:800,innerHeight:500,devicePixelRatio:2,referenceDpr:1});
- assert.equal(g.ratio,.5);assert(g.left+74*g.ratio<=800);assert(g.top>=0);
+ const g=phoneGeometry({width:58,height:92,scale:1,left:9999,top:-100},{innerWidth:800,innerHeight:500,devicePixelRatio:2,referenceDpr:1});
+ assert.equal(g.ratio,.5);assert(g.left+58*g.ratio<=800);assert(g.top>=0);
+});
+test('missing left/top falls back inside viewport for both folded and expanded sizes',()=>{
+ for(const size of [{width:58,height:92,scale:1},{width:365,height:730,scale:.82}]){
+   const g=phoneGeometry(size,{innerWidth:800,innerHeight:600,devicePixelRatio:1,referenceDpr:1});
+   assert(g.left>=4);assert(g.left+size.width*g.ratio<=800);assert(g.top>=0);assert(g.top+size.height*g.ratio<=600||g.top<=44);
+ }
 });
