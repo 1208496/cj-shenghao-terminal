@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "06-imprint-bottom-actions",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/06-imprint-bottom-actions.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "GEOM_FAILED:INNER_EL_NOT_FOUND"
+  },
+  "error": "GEOM_FAILED:INNER_EL_NOT_FOUND",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-06-imprint-bottom-actions-full.png"
+}

@@ -2,7 +2,7 @@
 // 铁律三：文案只能来自方案定稿，本脚本不做任何改写、缩写或润色。
 import fs from 'node:fs';
 
-const PLAN = 'AGY_PLAN_rc37_packs.md';
+const PLAN = 'E:/AGY_ARCHIVE/SHZD_PLANS/AGY_PLAN_rc37_packs.md';
 const OUT = 'src/core/wheel-ui-copy.js';
 
 const plan = fs.readFileSync(PLAN, 'utf8');

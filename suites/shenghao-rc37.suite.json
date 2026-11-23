@@ -1,618 +1,6858 @@
 {
-  "name": "神豪终端 rc.37 · 零 API 本地套件",
-  "note": "一条用例 = 一个预置 + 一串动作/断言。加功能只加用例，不改 run-suite.mjs。断言只认 data-* 契约与语义文本。",
-  "cases": [
+ "name": "神豪终端 rc.37 · 零 API 本地套件",
+ "note": "一条用例 = 一个预置 + 一串动作/断言。加功能只加用例，不改 run-suite.mjs。断言只认 data-* 契约与语义文本。",
+ "cases": [
+  {
+   "id": "nav.five-tabs",
+   "title": "五页导航顺序与激活态",
+   "preset": "three_cards",
+   "steps": [
     {
-      "id": "nav.five-tabs",
-      "title": "五页导航顺序与激活态",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "nav.bottom .tab[data-tab]",
-          "kind": "count",
-          "equals": 5
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "nav.bottom .tab[data-tab=\"scene\"]",
-          "kind": "attr",
-          "name": "data-tab",
-          "equals": "scene"
-        },
-        {
-          "act": "tab",
-          "tab": "women"
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "nav.bottom .tab[data-tab=\"women\"]",
-          "kind": "attr",
-          "name": "aria-current",
-          "equals": "page"
-        },
-        {
-          "act": "tab",
-          "tab": "wealth"
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-asset-tab]",
-          "kind": "count",
-          "equals": 8
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-open-wheel]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-open-wheel]",
-          "kind": "visible",
-          "equals": true
-        }
-      ]
+     "act": "expand"
     },
     {
-      "id": "wheel.play.spin",
-      "title": "命运轮盘：三环三模式 + 免费抽一次落盘",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openWheel",
-          "type": "play"
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfSvg .ring",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": ".wf-modes button[data-mode]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-pay]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfGo[data-go]",
-          "kind": "visible",
-          "equals": true
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfGo[data-go]",
-          "kind": "geometry",
-          "minSize": 40,
-          "insideViewport": true
-        },
-        {
-          "act": "click",
-          "frame": "wheel",
-          "selector": "#wfGo",
-          "settle": 800
-        },
-        {
-          "act": "waitForEl",
-          "frame": "wheel",
-          "selector": "#wfResult.on",
-          "timeout": 20000
-        },
-        {
-          "act": "assert",
-          "kind": "revIncreased"
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfResult.on",
-          "kind": "count",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "kind": "lastOp",
-          "status": "COMMITTED",
-          "type": "PLAYER_WHEEL_SPIN"
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "nav.bottom .tab[data-tab]",
+     "kind": "count",
+     "equals": 5
     },
     {
-      "id": "wheel.pack.pools",
-      "title": "星愿卡包：两池（星尘 / 圣典）",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openWheel",
-          "type": "pack"
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-pool]",
-          "kind": "count",
-          "equals": 2
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-pool=\"low\"]",
-          "kind": "count",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-pool=\"high\"]",
-          "kind": "count",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfGo[data-go]",
-          "kind": "visible",
-          "equals": true
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "nav.bottom .tab[data-tab=\"scene\"]",
+     "kind": "attr",
+     "name": "data-tab",
+     "equals": "scene"
     },
     {
-      "id": "wheel.close-button",
-      "title": "轮盘关闭键：尺寸与在视口内",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openWheel",
-          "type": "play"
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": ".wf-close[data-close]",
-          "kind": "count",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": ".wf-close[data-close]",
-          "kind": "geometry",
-          "minSize": 36,
-          "insideViewport": true
-        }
-      ]
+     "act": "tab",
+     "tab": "women"
     },
     {
-      "id": "casino.bets",
-      "title": "暗夜赌场：三色押注 + 选卡后 GO 可用",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openWheel",
-          "type": "casino"
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-bet]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "[data-card]",
-          "kind": "count",
-          "min": 1
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfGo[data-go]",
-          "kind": "enabled",
-          "equals": false
-        },
-        {
-          "act": "click",
-          "frame": "wheel",
-          "selector": "[data-bet=\"red\"]",
-          "settle": 400
-        },
-        {
-          "act": "click",
-          "frame": "wheel",
-          "selector": "[data-card]",
-          "skipDisabled": true,
-          "settle": 500
-        },
-        {
-          "act": "assert",
-          "frame": "wheel",
-          "selector": "#wfGo[data-go]",
-          "kind": "enabled",
-          "equals": true
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "nav.bottom .tab[data-tab=\"women\"]",
+     "kind": "attr",
+     "name": "aria-current",
+     "equals": "page"
     },
     {
-      "id": "bag.three-tabs",
-      "title": "背包：卡册 / 玩法券 / 奇物 三分类 + 图鉴计数",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openModal",
-          "modal": "open-bag",
-          "index": 0
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-bag-tab]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-card-id]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-lock-card]",
-          "kind": "count",
-          "min": 1
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-redeem-card]",
-          "kind": "count",
-          "min": 1
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "kind": "pageText",
-          "matches": "图鉴收录\\s*(1[0-2]|[0-9])\\s*/\\s*12"
-        }
-      ]
+     "act": "tab",
+     "tab": "wealth"
     },
     {
-      "id": "shop.catalog",
-      "title": "商城：三分类与 14 / 11 / 5 商品数",
-      "preset": "high_wealth",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openModal",
-          "modal": "open-shop"
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-shop-tab]",
-          "kind": "count",
-          "equals": 3
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-shop-buy]",
-          "kind": "count",
-          "equals": 14
-        },
-        {
-          "act": "click",
-          "frame": "phone",
-          "selector": "[data-shop-tab=\"consumable\"]",
-          "settle": 500
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-shop-buy]",
-          "kind": "count",
-          "equals": 11
-        },
-        {
-          "act": "click",
-          "frame": "phone",
-          "selector": "[data-shop-tab=\"permanent\"]",
-          "settle": 500
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": "[data-shop-buy]",
-          "kind": "count",
-          "equals": 5
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-asset-tab]",
+     "kind": "count",
+     "equals": 8
     },
     {
-      "id": "dock.bottom-bar",
-      "title": "底部停靠：折叠条高度与无滚动（56px 口径）",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "setDock",
-          "value": "bottom"
-        },
-        {
-          "act": "wait",
-          "ms": 900
-        },
-        {
-          "act": "click",
-          "frame": "phone",
-          "selector": "[data-act=\"fold\"]",
-          "settle": 900
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": ".folded-bar",
-          "kind": "count",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "frame": "phone",
-          "selector": ".folded-bar",
-          "kind": "geometry",
-          "heightLte": 60,
-          "noOverflow": true
-        }
-      ]
+     "act": "tab",
+     "tab": "wheel"
     },
     {
-      "id": "lifecycle.reload",
-      "title": "刷新回读：重开页面后状态与操作记录仍在",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "expand"
-        },
-        {
-          "act": "tab",
-          "tab": "wheel"
-        },
-        {
-          "act": "openWheel",
-          "type": "play"
-        },
-        {
-          "act": "click",
-          "frame": "wheel",
-          "selector": "#wfGo",
-          "settle": 800
-        },
-        {
-          "act": "waitForEl",
-          "frame": "wheel",
-          "selector": "#wfResult.on",
-          "timeout": 20000
-        },
-        {
-          "act": "assert",
-          "kind": "lastOp",
-          "status": "COMMITTED"
-        },
-        {
-          "act": "observe",
-          "probe": "revision",
-          "label": "刷新前 revision"
-        },
-        {
-          "act": "reload"
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "initialized",
-          "equals": true
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "revision",
-          "gte": 2
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "hostReady",
-          "equals": true
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "phoneVisible",
-          "equals": true
-        },
-        {
-          "act": "assert",
-          "kind": "lastOp",
-          "status": "COMMITTED",
-          "type": "PLAYER_WHEEL_SPIN"
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-open-wheel]",
+     "kind": "count",
+     "equals": 3
     },
     {
-      "id": "lifecycle.del",
-      "title": "删楼：最后一楼被删后宿主不崩、楼层数递减",
-      "preset": "three_cards",
-      "steps": [
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "floors",
-          "equals": 2
-        },
-        {
-          "act": "expand"
-        },
-        {
-          "act": "observe",
-          "probe": "revision",
-          "label": "删楼前 revision"
-        },
-        {
-          "act": "slash",
-          "cmd": "/del 1",
-          "settle": 2000
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "floors",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "hostReady",
-          "equals": true
-        },
-        {
-          "act": "observe",
-          "probe": "initialized",
-          "label": "删楼后 initialized"
-        },
-        {
-          "act": "observe",
-          "probe": "revision",
-          "label": "删楼后 revision"
-        }
-      ]
-    },
-    {
-      "id": "lifecycle.swipe",
-      "title": "切 swipe：切到第二分支后宿主重建状态",
-      "preset": "three_cards",
-      "seedArgs": [
-        "--with-swipe-floor"
-      ],
-      "steps": [
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "swipeCount",
-          "equals": 2
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "swipeId",
-          "equals": 0
-        },
-        {
-          "act": "observe",
-          "probe": "fingerprint",
-          "label": "分支 A 锚点"
-        },
-        {
-          "act": "swipe",
-          "dir": "left",
-          "settle": 2000
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "swipeId",
-          "equals": 1
-        },
-        {
-          "act": "assert",
-          "kind": "pageProbe",
-          "probe": "initialized",
-          "equals": true
-        },
-        {
-          "act": "observe",
-          "probe": "fingerprint",
-          "label": "分支 B 锚点"
-        },
-        {
-          "act": "observe",
-          "probe": "revision",
-          "label": "切分支后 revision"
-        }
-      ]
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-open-wheel]",
+     "kind": "visible",
+     "equals": true
     }
-  ]
+   ]
+  },
+  {
+   "id": "wheel.play.spin",
+   "title": "命运轮盘：三环三模式 + 免费抽一次落盘",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "play"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfSvg .ring",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".wf-modes button[data-mode]",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-pay]",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "geometry",
+     "minSize": 40,
+     "insideViewport": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "timeout": 5000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfResult.on",
+     "timeout": 20000
+    },
+    {
+     "act": "assert",
+     "kind": "revIncreased"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfResult.on",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_WHEEL_SPIN"
+    }
+   ]
+  },
+  {
+   "id": "wheel.pack.pools",
+   "title": "星愿卡包：两池（星尘 / 圣典）",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "pack"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-pool]",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-pool=\"low\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-pool=\"high\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "visible",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "wheel.close-button",
+   "title": "轮盘关闭键：尺寸与在视口内",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "play"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".wf-close[data-close]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".wf-close[data-close]",
+     "kind": "geometry",
+     "minSize": 36,
+     "insideViewport": true
+    }
+   ]
+  },
+  {
+   "id": "casino.bets",
+   "title": "暗夜赌场：三色押注 + 选卡后 GO 可用",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "casino"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-bet]",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-card]",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-bet=\"red\"]",
+     "settle": 400
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-card]",
+     "skipDisabled": true,
+     "settle": 500
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "enabled",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "bag.two-tabs",
+   "title": "背包：玩法券 / 奇物 两分类 + 删除通道（卡册已独立成页）",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openModal",
+     "modal": "open-bag",
+     "index": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-bag-tab]",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-item-id]",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-delete-item]",
+     "kind": "count",
+     "min": 1
+    }
+   ]
+  },
+  {
+   "id": "shop.catalog",
+   "title": "商城：三分类与 12 / 11 / 2 商品数（rc.46 下架三件空壳持久奇物）",
+   "preset": "high_wealth",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openModal",
+     "modal": "open-shop"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-tab]",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 12
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"consumable\"]",
+     "settle": 500
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 11
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 500
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 3
+    }
+   ]
+  },
+  {
+   "id": "dock.bottom-bar",
+   "title": "底部停靠：折叠条高度与无滚动（56px 口径）",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "setDock",
+     "value": "bottom"
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "wait",
+     "ms": 500
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"fold\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".folded-bar",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".folded-bar",
+     "kind": "geometry",
+     "heightLte": 60,
+     "noOverflow": true
+    },
+    {
+     "act": "setDock",
+     "value": "float"
+    }
+   ]
+  },
+  {
+   "id": "lifecycle.reload",
+   "title": "刷新回读：重开页面后状态与操作记录仍在",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "play"
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "timeout": 5000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfResult.on",
+     "timeout": 20000
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED"
+    },
+    {
+     "act": "observe",
+     "probe": "revision",
+     "label": "刷新前 revision"
+    },
+    {
+     "act": "reload"
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "initialized",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "revision",
+     "gte": 2
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "hostReady",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "phoneVisible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_WHEEL_SPIN"
+    }
+   ]
+  },
+  {
+   "id": "lifecycle.del",
+   "title": "删楼：最后一楼被删后宿主不崩、楼层数递减",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "floors",
+     "equals": 2
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "observe",
+     "probe": "revision",
+     "label": "删楼前 revision"
+    },
+    {
+     "act": "slash",
+     "cmd": "/del 1",
+     "settle": 2000
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "floors",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "hostReady",
+     "equals": true
+    },
+    {
+     "act": "observe",
+     "probe": "initialized",
+     "label": "删楼后 initialized"
+    },
+    {
+     "act": "observe",
+     "probe": "revision",
+     "label": "删楼后 revision"
+    }
+   ]
+  },
+  {
+   "id": "lifecycle.swipe",
+   "title": "切 swipe：切到第二分支后宿主重建状态",
+   "preset": "three_cards",
+   "seedArgs": [
+    "--with-swipe-floor"
+   ],
+   "steps": [
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "swipeCount",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "swipeId",
+     "equals": 0
+    },
+    {
+     "act": "observe",
+     "probe": "fingerprint",
+     "label": "分支 A 锚点"
+    },
+    {
+     "act": "swipe",
+     "dir": "left",
+     "settle": 2000
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "swipeId",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "initialized",
+     "equals": true
+    },
+    {
+     "act": "observe",
+     "probe": "fingerprint",
+     "label": "分支 B 锚点"
+    },
+    {
+     "act": "observe",
+     "probe": "revision",
+     "label": "切分支后 revision"
+    }
+   ]
+  },
+  {
+   "id": "mine.no-shop-btn",
+   "title": "我的页：异能栏不再挂「前往星愿商城」重复入口",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "selector": "[data-tab=\"mine\"] .ability-shop-link",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "selector": "[data-tab=\"mine\"] .ability-card",
+     "kind": "visible",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "pack.five-float-cards",
+   "title": "星愿卡包：待机五卡悬浮阵（4 档稀有度 + 中心星愿秘印）",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "pack"
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#pkFloatArc",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#pkFloatArc .pk-float-slot",
+     "kind": "count",
+     "equals": 5
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-pack-phase=\"IDLE\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "visible",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "pack.full-flow",
+   "title": "星愿卡包全链路：确认 → 环绕 → 落台 → 撕开 → 全翻 → 收集",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "pack"
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#pkFloatArc",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#pkFloatArc .pk-float-slot",
+     "kind": "count",
+     "equals": 5
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "settle": 400
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "timeout": 5000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "settle": 600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#pkPack",
+     "timeout": 25000
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-quicktear]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": ".pk-fan",
+     "timeout": 15000
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".pk-slot",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-revealall]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".pk-slot.is-open",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-collect]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#pkFloatArc",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_PACK_DRAW"
+    }
+   ]
+  },
+  {
+   "id": "wheel.confirm-cancel",
+   "title": "确认弹窗点「再想想」：不落操作、不扣钱、不出结果",
+   "preset": "empty_bag",
+   "steps": [
+    {
+     "act": "reload"
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "play"
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "ops",
+     "equals": 0
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "settle": 500
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "timeout": 5000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"cancel\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"cancel\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfResult.on",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "ops",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "revision",
+     "equals": 1
+    }
+   ]
+  },
+  {
+   "id": "bag.use-to-input",
+   "title": "背包：立即使用玩法券 / 使用奇物 → 引导词落进聊天输入框",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-bag\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"prizes\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"prizes\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-now=\"prize_1\"]",
+     "settle": 700
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-prize=\"prize_1\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-prize=\"prize_1\"]",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【使用玩法券："
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_USE_WHEEL_PRIZE"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "settle": 600
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-item=\"surreal_1\"]",
+     "settle": 700
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item=\"surreal_1\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item=\"surreal_1\"]",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【使用奇物："
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_USE_SURREAL_ITEM"
+    }
+   ]
+  },
+  {
+   "id": "scene.two-women",
+   "title": "此刻页：两位人物同场，无重复标题与溢出",
+   "preset": "two_women",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "scene"
+    },
+    {
+     "act": "assert",
+     "selector": "nav.bottom .tab[data-tab]",
+     "kind": "count",
+     "equals": 5
+    },
+    {
+     "act": "assert",
+     "selector": "[data-expand]",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "现场的她们[\\s\\S]{0,20}\\(2\\)"
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "沈清弦"
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "陆晚晴"
+    },
+    {
+     "act": "assert",
+     "selector": "[data-expand]",
+     "kind": "visible",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "binder.standalone-and-card-fxq",
+   "title": "卡册独立页可达 + 统一卡面 + 卡面画质跨 iframe 同步",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-binder\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-screen=\"binder\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-binder-grid] .wc-card .wc-face",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-card-fxq=\"high\"]",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "html",
+     "kind": "attr",
+     "name": "data-cfxq",
+     "equals": "high"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"close-binder\"]",
+     "settle": 500
+    },
+    {
+     "act": "openWheel",
+     "type": "pack"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "html",
+     "kind": "attr",
+     "name": "data-cfxq",
+     "equals": "high"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#pkFloatArc .wc-card .wc-face",
+     "kind": "count",
+     "equals": 5
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfFx",
+     "kind": "visible",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "casino.bead-and-unified-card",
+   "title": "暗夜赌场：统一卡面 + 确认弹窗真实积分 + 钢珠落格",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "casino"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".bh-card .wc-card .wc-face",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-bet=\"red\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-card]",
+     "skipDisabled": true,
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".stake-card-wrap .wc-card .wc-face",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo",
+     "settle": 500
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfConfirm.on",
+     "timeout": 5000
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "settle": 600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "wheel",
+     "selector": "#wfResult.on",
+     "timeout": 20000
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#casinoBead",
+     "kind": "attr",
+     "name": "data-r",
+     "equals": "204.0"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfSvg .hit-wedge.on",
+     "kind": "count",
+     "equals": 1
+    }
+   ]
+  },
+  {
+   "id": "casino.stake-tabs",
+   "title": "暗夜赌场：三态下注台（卡/现金/资产），资产页常驻删档警示",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "casino"
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-stake-kind]",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-stake-kind=\"asset\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".asset-warn-bar",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": ".asset-warn-bar",
+     "kind": "text",
+     "includes": "永久删除"
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-stake-kind=\"cash\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-cash-chip]",
+     "kind": "count",
+     "min": 6
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-cash-input]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "[data-bet=\"green\"]",
+     "kind": "enabled",
+     "equals": true
+    }
+   ]
+  },
+  {
+   "id": "casino.cash-stake",
+   "title": "暗夜赌场：现金押注 — 选筹码、二次确认、真扣现金",
+   "preset": "high_wealth",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openWheel",
+     "type": "casino"
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-stake-kind=\"cash\"]",
+     "settle": 600
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-cash-chip=\"1000000\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-bet=\"red\"]",
+     "settle": 500
+    },
+    {
+     "act": "assert",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "kind": "enabled",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "#wfGo[data-go]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "wheel",
+     "selector": "[data-wf-confirm=\"ok\"]",
+     "settle": 3500
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_CASINO_BET"
+    }
+   ]
+  },
+  {
+   "id": "bag.undo-use",
+   "title": "背包：正文生成前可撤销使用，撤销后道具回 READY",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-bag\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"prizes\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"prizes\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-now=\"prize_1\"]",
+     "settle": 700
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-prize=\"prize_1\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-prize=\"prize_1\"]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_USE_WHEEL_PRIZE"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-undo-use=\"prize_1\"]",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-undo-use=\"prize_1\"]",
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-undo-use=\"prize_1\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-undo-use=\"prize_1\"]",
+     "settle": 1600
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_UNDO_ITEM_USE"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-undo-use=\"prize_1\"]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "#modal [data-act=\"cancel\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#modalOverlay",
+     "kind": "visible",
+     "equals": false
+    }
+   ]
+  },
+  {
+   "id": "asset.register-hint",
+   "title": "财富页：补录弹窗有档次下拉 + 禁赌提示，且没有金额输入框",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wealth"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-register-asset]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-register-asset]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "#f_la_tier",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#modal",
+     "kind": "text",
+     "includes": "不可用于暗夜赌场押注"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#f_la_tier option",
+     "kind": "count",
+     "equals": 4
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#modal input[type=\"number\"]",
+     "kind": "count",
+     "equals": 0
+    }
+   ]
+  },
+  {
+   "id": "mine.ability-cta",
+   "title": "我的页：已觉醒异能都带「发动」入口",
+   "preset": "high_wealth",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-use-ability]",
+     "kind": "count",
+     "min": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-use-ability=\"ab_voice\"]",
+     "kind": "visible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-use-ability=\"ab_voice\"]",
+     "kind": "text",
+     "equals": "发动"
+    }
+   ]
+  },
+  {
+   "id": "mine.three-device-cards",
+   "title": "我的页：私域装置三入口卡（rc.46）",
+   "preset": "three_cards",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-toylink",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-choker",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-imprint",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .device-badge svg",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-toylink-card]",
+     "kind": "count",
+     "equals": 0
+    }
+   ]
+  },
+  {
+   "id": "workshop.imprint-open",
+   "title": "印记工坊：独立全屏 iframe 打开、宽屏三栏与初始分组（rc.49）",
+   "preset": "two_women",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".workshop-page.is-imprint",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#impTitle",
+     "kind": "text",
+     "contains": "专属私密印记工坊"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#imprintStageSvg",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "[data-ws-group=\"chest_abdomen\"].on",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "[data-ws-place=\"lower_abdomen\"].on",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".imp-pat-grid .ws-pat-card",
+     "kind": "count",
+     "equals": 15
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".ws-font-row .chip",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".ws-target-strip .ws-char-chip",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#wsImprintText",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#placeQuotaHint",
+     "kind": "text",
+     "contains": "0/19 处"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#multiSummary",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnRemoveTop",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    }
+   ]
+  },
+  {
+   "id": "workshop.choker-open",
+   "title": "项圈工坊：7 款材质 + 档案预览块（rc.46 回抄验收）",
+   "preset": "two_women",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"]",
+     "settle": 1200
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-screen=\"workshop-choker\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".ws-scroll[data-workshop=\"choker\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "项圈材质样式"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".choker-style-grid .choker-style-btn",
+     "kind": "count",
+     "equals": 7
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#dossierPreview",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#dossierPreview",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#dossierPreview",
+     "kind": "text",
+     "contains": "女性档案胶囊预览"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#wsChokerIns",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#styleDesc",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"close-workshop\"]",
+     "settle": 800
+    }
+   ]
+  },
+  {
+   "id": "workshop.imprint-save-remove-all",
+   "title": "印记工坊：落库 → 抽屉展开 → 抹除全部（rc.49 独立 iframe）",
+   "preset": "two_women",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-place=\"lower_abdomen\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-pattern=\"tally_zheng\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-inspo]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "type": "PLAYER_IMPRINT_SET"
+    },
+    {
+     "act": "assert",
+     "kind": "revIncreased"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#toast.show",
+     "kind": "text",
+     "contains": "铭刻"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#multiSummary",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnRemoveTop",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#summaryDrawer",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#summaryDrawer .ws-summary-item",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnRemoveAll",
+     "kind": "visible"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnRemoveAll",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#modalOverlay.show #modalOk",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "type": "PLAYER_IMPRINT_SET"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#multiSummary",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#topStatusPill",
+     "kind": "text",
+     "contains": "尚未铭刻"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    }
+   ]
+  },
+  {
+   "id": "workshop.dock-mode",
+   "title": "停靠态：独立印记工坊全视口 + 项圈舞台高度（rc.49）",
+   "preset": "two_women",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "setDock",
+     "value": "bottom"
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "iframe[data-imprint-frame=\"1\"]",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".imp-workspace",
+     "kind": "visible"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"]",
+     "settle": 1200
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".phone.is-bottom-dock",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-screen=\"workshop-choker\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".ws-stage-card",
+     "kind": "geometry",
+     "heightEquals": 242
+    },
+    {
+     "act": "setDock",
+     "value": "side"
+    }
+   ]
+  },
+  {
+   "id": "workshop.choker-wear",
+   "title": "项圈佩戴 → 档案胶囊联动（已解锁态）",
+   "preset": "choker_unlocked",
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"]",
+     "settle": 1200
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#dossierPreview",
+     "kind": "text",
+     "contains": "女性档案胶囊预览"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-style=\"rose_gold_lock\"]",
+     "settle": 600
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-choker-save]",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-ws-choker=\"1\"]",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.worn",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.styleId",
+     "equals": "rose_gold_lock"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#dossierPreview",
+     "kind": "text",
+     "contains": "誓约项圈"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#wornSummary",
+     "kind": "text",
+     "includes": "已赐予"
+    }
+   ]
+  },
+  {
+   "id": "rc47.workshop-imprint-gate",
+   "title": "印记工坊：未达标禁用+差值 / 达标可刻 / 已刻跌破可抹（rc.49 独立 iframe）",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".ws-target-strip .ws-char-chip",
+     "kind": "count",
+     "equals": 2
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".ws-char-chip.is-blocked",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": ".ws-char-chip.is-blocked .gate-tag",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#gateBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "kind": "enabled"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-target=\"char_b\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#gateBanner",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#gateRule",
+     "kind": "text",
+     "contains": "需好感 ≥ 70 或堕落 ≥ 60"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#gateMetrics",
+     "kind": "text",
+     "contains": "差 22"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#gateMetrics",
+     "kind": "text",
+     "contains": "差 35"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#footerReason",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#footerReason",
+     "kind": "text",
+     "includes": "无法对"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnRemoveFoot",
+     "kind": "enabled"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#footerReason",
+     "kind": "text",
+     "matches": "好感 ≥ 70"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    }
+   ]
+  },
+  {
+   "id": "rc47.workshop-choker-gate",
+   "title": "项圈工坊：未达标禁用、已佩戴跌破可摘、解锁位生效",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"] .wcard-b-top",
+     "settle": 1200
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".ws-char-chip.is-blocked",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#gateBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-target=\"char_b\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#gateBanner",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnSave",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#footerReason",
+     "kind": "text",
+     "includes": "无法为"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnRemoveFoot",
+     "kind": "enabled"
+    }
+   ]
+  },
+  {
+   "id": "rc47.shop-permanent-hint",
+   "title": "星愿商城·持久奇物：三装置门槛总提示 + 单卡提示 + 已解锁态",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-threshold-banner",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-threshold-banner",
+     "kind": "text",
+     "includes": "好感 ≥ 70"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-threshold-note",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "count",
+     "equals": 2
+    }
+   ]
+  },
+  {
+   "id": "rc47.toylink-gate",
+   "title": "TOY·LINK：已解锁且存在达标目标时可正常呼出（无自戴入口由单测与残留检索守住）",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "TOY·LINK"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "kind": "enabled"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#gateBanner",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "kind": "pageText",
+     "matches": "TOY|终端|私域装置"
+    }
+   ]
+  },
+  {
+   "id": "rc50.toylink-scroll-keep",
+   "title": "TOY·LINK 子页：连点模式 / 强度 / 频率 / 距离后滚动位置不跳回顶部",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1400
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-toylink-panel=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "top": 150,
+     "append": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 140,
+     "lte": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-mode=\"rush\"]",
+     "settle": 320
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 140,
+     "lte": 160
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "top": 330,
+     "append": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 320,
+     "lte": 340
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 320
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 320,
+     "lte": 340
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 320
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 320,
+     "lte": 340
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "top": 380,
+     "append": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 370,
+     "lte": 390
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-here=\"away\"]",
+     "settle": 320
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "kind": "scrollTop",
+     "gte": 370,
+     "lte": 390
+    }
+   ]
+  },
+  {
+   "id": "rc50.toylink-stack-color",
+   "title": "TOY·LINK：rush 连续绝顶不停机，外环档位递增到 3，绝顶次数常驻",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1400
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-toylink-panel=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-wear=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-mode=\"rush\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-pow=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-freq=\"5\"]",
+     "settle": 160
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-start=\"1\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-start=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-stop=\"1\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlStageCard",
+     "kind": "attr",
+     "name": "data-tier",
+     "equals": "0"
+    },
+    {
+     "act": "wait",
+     "ms": 28000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlStageCard",
+     "kind": "attr",
+     "name": "data-tier",
+     "equals": "1"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlPeakBadge",
+     "kind": "text",
+     "matches": "绝顶 \\d+ 次"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-stop=\"1\"]",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "wait",
+     "ms": 22000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlStageCard",
+     "kind": "attr",
+     "name": "data-tier",
+     "equals": "2"
+    },
+    {
+     "act": "wait",
+     "ms": 19000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlStageCard",
+     "kind": "attr",
+     "name": "data-tier",
+     "equals": "3"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlPeakBadge",
+     "kind": "text",
+     "matches": "绝顶 [3-9] 次"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-stop=\"1\"]",
+     "kind": "count",
+     "equals": 1
+    }
+   ]
+  },
+  {
+   "id": "rc50.toylink-write-modes",
+   "title": "TOY·LINK：写进正文两种口径（在身边＝完整过程；别处＝先插她的视角段）",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1400
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-toylink-panel=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-wear=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-here=\"with\"]",
+     "settle": 250
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-write=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "完整写出本次操控从启动推进"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-here=\"away\"]",
+     "settle": 250
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-write=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "先在正文上方切出一段她所在之处的独立视角"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "完整过程"
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc51.toylink-tactics-and-scenes",
+   "title": "TOY·LINK：处境切换 / 实时体感监控窗 / 寸止锁 / 瞬时强刺 / 处境写进正文",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1400
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-toylink-panel=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-wear=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-here=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-mode=\"wave\"]",
+     "settle": 250
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-scene=\"with_dinner\"]",
+     "settle": 300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-scene=\"with_dinner\"]",
+     "kind": "attr",
+     "name": "class",
+     "equals": "tl-scene-btn on"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-scene=\"with_dinner\"]",
+     "kind": "text",
+     "equals": "餐厅桌下"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "top": 0,
+     "append": 0
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-start=\"1\"]",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlLiveFeed",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlFeedTag",
+     "kind": "text",
+     "matches": "\\S"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#tlFeedLine",
+     "kind": "text",
+     "matches": ".{10,}"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".tl-scroll",
+     "top": 170,
+     "append": 0
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-edge-lock=\"1\"]",
+     "settle": 300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-edge-lock=\"1\"]",
+     "kind": "attr",
+     "name": "class",
+     "equals": "tl-tac-btn on"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-edge-lock=\"1\"]",
+     "kind": "text",
+     "matches": "寸止锁死"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-shock=\"1\"]",
+     "settle": 200
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-shock=\"1\"]",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-write=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "餐厅桌下"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "潮汐"
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-wide-open",
+   "title": "TOY·LINK 独立宽屏：握手 + 主要状态与主操作同屏可见",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlStageCard",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlModeGrid",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlWriteBtn",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-workspace",
+     "kind": "geometry",
+     "noOverflow": true
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-wear-flow-with",
+   "title": "TOY·LINK 佩戴：确认框 → 现场 → 引导词进输入框、处境块隐藏",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【TOY·LINK佩戴："
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "· 现场】"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlSceneBlock",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-wear-flow-away",
+   "title": "TOY·LINK 佩戴：确认框 → 别处+高奢专柜 → 8 胶囊一屏",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"away\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-scene=\"away_boutique\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "高奢专柜"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlSceneBlock",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "[data-tl-scene]",
+     "kind": "count",
+     "equals": 8
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-here-toggle",
+   "title": "TOY·LINK 落点：现场隐藏处境，切别处恢复上次处境",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-here=\"away\"]",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlSceneBlock",
+     "kind": "visible"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-scene=\"away_cafe\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-here=\"with\"]",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlSceneBlock",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-here=\"away\"]",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "[data-tl-scene=\"away_cafe\"]",
+     "kind": "attr",
+     "name": "class",
+     "equals": "tl-scene-btn on"
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-live-tactics",
+   "title": "TOY·LINK 运行态：环动、心率、寸止锁/强刺、写进正文",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "matches": "运行中"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlFeedTele",
+     "kind": "text",
+     "matches": "心率 \\d+bpm"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnEdgeLock",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlBtnEdgeLock",
+     "kind": "text",
+     "matches": "寸止锁死"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnShock",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlBtnShock",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlWriteBtn",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【TOY·LINK："
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "settle": 400
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-unwear-clean",
+   "title": "TOY·LINK 摘下：撤回未发送的佩戴引导并清理输入框",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【TOY·LINK佩戴："
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "kind": "text",
+     "equals": "为她佩戴"
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc52.toylink-preview-and-gate",
+   "title": "TOY·LINK 预览锁定：横幅可见、操控禁用、前往商城收起宽屏",
+   "preset": "empty_bag",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlLockedBanner",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnShop",
+     "settle": 1200
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "body",
+     "kind": "pageText",
+     "matches": "星愿商城|持久奇物|兑换"
+    }
+   ]
+  },
+  {
+   "id": "rc53.toylink-lite-flow-and-no-input",
+   "title": "极简版四步：选人→戴上→开启→切档→关闭→摘下，全程零填字",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-unwear=\"1\"]",
+     "settle": 600
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 400
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 800
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "kind": "enabled"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "已佩戴"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-start=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "运行中"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-gear=\"3\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-gear-cur]",
+     "kind": "text",
+     "matches": "3 档 · 强烈"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "3 档"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-stop=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-state]",
+     "kind": "text",
+     "matches": "已佩戴"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-unwear=\"1\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-state]",
+     "kind": "text",
+     "matches": "未佩戴"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    }
+   ]
+  },
+  {
+   "id": "rc53.toylink-lite-lock-clear-to-lab",
+   "title": "极简版占用时实验版被拦 → 清空状态 → 实验版可开",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-unwear=\"1\"]",
+     "settle": 600
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 400
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 800
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "settle": 600
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-start=\"1\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lab-blocked-hint]",
+     "kind": "visible"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#cj-shenghao-toylink-frame",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]",
+     "kind": "text",
+     "matches": "空闲"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "empty": true
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 1400
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlStageCard",
+     "kind": "visible"
+    }
+   ]
+  },
+  {
+   "id": "rc53.toylink-lite-locked-preview",
+   "title": "未解锁预览态：横幅在、控件全灰、无商城跳转",
+   "preset": "choker_unlocked",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-lite-banner.is-locked",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-lite-banner.is-locked button",
+     "kind": "count",
+     "equals": 0
+    }
+   ]
+  },
+  {
+   "id": "rc53.shop-imprint-entry",
+   "title": "星愿商城持久奇物含印记条目（3000 分，可购买）",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "openModal",
+     "modal": "open-shop"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-item",
+     "kind": "count",
+     "equals": 3
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "kind": "attr",
+     "name": "data-price",
+     "equals": "3000"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "kind": "text",
+     "includes": "3000"
+    }
+   ]
+  },
+  {
+   "id": "rc54.device-shop-choker",
+   "title": "项圈：商城购买 → 解锁位真 → 我的页卡变态 → 工坊可用（清单 C-02 / C-05 / C-07 未解锁侧）",
+   "preset": "device_shop_choker",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.chokerUnlocked",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 12000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_choker\"]",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_choker\"]",
+     "kind": "attr",
+     "name": "data-price",
+     "equals": "1800"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_choker\"]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.chokerUnlocked",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 10200
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_SHOP_BUY"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_choker\"]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "count",
+     "equals": 1
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "text",
+     "includes": "已解锁"
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-choker",
+     "kind": "attr",
+     "name": "data-device-state",
+     "equals": "unlocked"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-choker .wcard-b-badge",
+     "kind": "text",
+     "equals": "可赐予"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-choker .wcard-b-meta",
+     "kind": "text",
+     "includes": "誓约权限已就绪"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"] .wcard-b-top",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnSave",
+     "kind": "enabled"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#footerReason",
+     "kind": "visible",
+     "equals": false
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-shop-imprint",
+   "title": "印记：商城购买 → 解锁位真 → 我的页卡变态 → 工坊可进（清单 I-02 / I-04）",
+   "preset": "device_shop_imprint",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.imprintUnlocked",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "kind": "attr",
+     "name": "data-price",
+     "equals": "3000"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.imprintUnlocked",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 9000
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_SHOP_BUY"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_imprint\"]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "text",
+     "includes": "已解锁"
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-imprint",
+     "kind": "attr",
+     "name": "data-device-state",
+     "equals": "unlocked"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-imprint .wcard-b-badge",
+     "kind": "text",
+     "equals": "可铭刻"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-imprint .wcard-b-meta",
+     "kind": "text",
+     "includes": "高定淫纹与刺青工坊"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1300
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "kind": "enabled"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-shop-toylink",
+   "title": "TOY·LINK：商城购买 → 解锁位真 → 我的页卡变已就绪 → 极简版无预览横幅（清单 T-02 / T-03）",
+   "preset": "device_shop_toylink",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"permanent\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.toyLinkUnlocked",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_toylink\"]",
+     "kind": "attr",
+     "name": "data-price",
+     "equals": "3600"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_toylink\"]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.toyLinkUnlocked",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 8400
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_SHOP_BUY"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_toylink\"]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-toylink",
+     "kind": "attr",
+     "name": "data-device-state",
+     "equals": "unlocked"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-toylink .wcard-b-badge",
+     "kind": "text",
+     "equals": "已就绪"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-toylink .wcard-b-meta",
+     "kind": "text",
+     "includes": "终极权限已激活"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-lite-banner.is-locked",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "kind": "enabled"
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-imprint-locked-save",
+   "title": "印记未解锁：工坊能进、保存被 IMPRINT_LOCKED 拦、提示指向商城、未落印（清单 I-05）",
+   "preset": "device_shop_locked",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1300
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "kind": "enabled"
+    },
+    {
+     "act": "observe",
+     "probe": "ops",
+     "label": "落印前 operationHistory 条数"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-place=\"lower_abdomen\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-pattern=\"tally_zheng\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-inspo]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "settle": 2000
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#wsTextErr",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#wsTextErr",
+     "kind": "text",
+     "includes": "星愿商城"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#topStatusPill",
+     "kind": "text",
+     "includes": "尚未铭刻"
+    },
+    {
+     "act": "assert",
+     "frame": "imprint",
+     "selector": "#multiSummary",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "observe",
+     "probe": "ops",
+     "label": "落印后 operationHistory 条数"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 800
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-choker-locked-workshop",
+   "title": "项圈未解锁：锁定横幅 + 前往星愿商城可点 + 保存禁用并给原因（清单 C-07 未解锁侧）",
+   "preset": "device_shop_locked",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-choker",
+     "kind": "attr",
+     "name": "data-device-state",
+     "equals": "locked"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"] .wcard-b-top",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "text",
+     "includes": "1,800✦"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnGoShop",
+     "kind": "enabled"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnSave",
+     "kind": "enabled",
+     "equals": false
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#btnSave",
+     "kind": "text",
+     "includes": "仅预览"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#footerReason",
+     "kind": "visible"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#footerReason",
+     "kind": "text",
+     "includes": "1,800✦"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "#btnGoShop",
+     "settle": 900
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_choker\"]",
+     "kind": "visible"
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-persist-reload",
+   "title": "三件落库后刷新：项圈/印记/配饰文本回读一致，TOY 只恢复佩戴、运行态复位（清单 C-11 / I-11 / T-15）",
+   "preset": "device_ready",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"] .wcard-b-top",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#lockedBanner",
+     "kind": "visible",
+     "equals": false
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-style=\"rose_gold_lock\"]",
+     "settle": 600
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-choker-save]",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-ws-choker=\"1\"]",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.worn",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.styleId",
+     "equals": "rose_gold_lock"
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.outfit.accessories",
+     "matches": "^【誓约项圈】"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"close-workshop\"]",
+     "settle": 900
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"imprint\"]",
+     "settle": 1300
+    },
+    {
+     "act": "waitForEl",
+     "frame": "imprint",
+     "selector": "#impOverlay:not([hidden])",
+     "timeout": 8000
+    },
+    {
+     "act": "wait",
+     "ms": 700
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-place=\"lower_abdomen\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-pattern=\"tally_zheng\"]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "[data-ws-inspo]",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnSave",
+     "settle": 2000
+    },
+    {
+     "act": "assert",
+     "kind": "lastOp",
+     "status": "COMMITTED",
+     "type": "PLAYER_IMPRINT_SET"
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.imprints.items.lower_abdomen.placement",
+     "equals": "lower_abdomen"
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.physiology.tattooScar",
+     "matches": "小腹耻骨"
+    },
+    {
+     "act": "click",
+     "frame": "imprint",
+     "selector": "#btnClose",
+     "settle": 900
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-select=\"char_a\"]",
+     "settle": 600
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-unwear=\"1\"]",
+     "settle": 600
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 400
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-wear=\"1\"]",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "已佩戴"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-lite-start=\"1\"]",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "运行中"
+    },
+    {
+     "act": "observe",
+     "probe": "revision",
+     "label": "刷新前 revision"
+    },
+    {
+     "act": "reload",
+     "settle": 2400
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "initialized",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "pageProbe",
+     "probe": "phoneVisible",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.worn",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.styleId",
+     "equals": "rose_gold_lock"
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.outfit.accessories",
+     "matches": "誓约项圈"
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.imprints.items.lower_abdomen",
+     "exists": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.physiology.tattooScar",
+     "matches": "小腹耻骨"
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-pill]",
+     "kind": "text",
+     "matches": "已佩戴"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-stop=\"1\"]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-tl-lite-start=\"1\"]",
+     "kind": "enabled"
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.device-bag-toylink-entry",
+   "title": "背包 it_toylink 入口现状取证：旧档空壳奇物载入即迁移成解锁位，背包不再出入口（清单 T-14）",
+   "preset": "device_bag_legacy",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.toyLinkUnlocked",
+     "equals": true
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-bag\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "kind": "count",
+     "equals": 0
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "kind": "attr",
+     "name": "data-bag-tab",
+     "equals": "surreal"
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".mine-device-stack .wcard-b.is-toylink",
+     "kind": "attr",
+     "name": "data-device-state",
+     "equals": "unlocked"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 260,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".tl-lite-banner.is-locked",
+     "kind": "count",
+     "equals": 0
+    }
+   ],
+   "seedArgs": [
+    "--unique"
+   ]
+  },
+  {
+   "id": "rc54.shop-consumables-all",
+   "title": "商城消耗奇物全表：11 件逐件购买 → 积分与背包条目对得上（清单 §八 第 4 条）",
+   "preset": "device_shop_bulk",
+   "seedArgs": [
+    "--unique"
+   ],
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"consumable\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-item",
+     "kind": "count",
+     "equals": 11
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 11
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 30000
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_whisky\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_incense\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 4,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_leave\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 96,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_umbrella\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 188,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_concealer\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 280,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_mirror\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 372,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_rose_seal\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 464,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_door_key\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 556,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_elixir\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 648,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_hourglass\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 740,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_perfume\"]",
+     "settle": 650
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 23730
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 11
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-bag\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".bag-item",
+     "kind": "count",
+     "equals": 11
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-use-item]",
+     "kind": "count",
+     "equals": 11
+    }
+   ]
+  },
+  {
+   "id": "rc54.shop-abilities-all",
+   "title": "商城异能全表：14 项逐项觉醒 → 全部转「已觉醒」、购买键归零（清单 §八 第 4 条）",
+   "preset": "device_shop_bulk",
+   "seedArgs": [
+    "--unique"
+   ],
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"ability\"]",
+     "settle": 700
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-item",
+     "kind": "count",
+     "equals": 14
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 14
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 30000
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_micro\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_sober\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 4,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_scent\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 96,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_voice\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 188,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_master\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 280,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_stealth\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 372,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_stamina\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 464,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_aura\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 556,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_fate\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 648,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_mind\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 740,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_memory\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 832,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_gaze\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 924,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_rewind\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 1016,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"ab_stop\"]",
+     "settle": 650
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "wheel.starPoints",
+     "equals": 8950
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": ".shop-owned",
+     "kind": "count",
+     "equals": 14
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "[data-shop-buy]",
+     "kind": "count",
+     "equals": 0
+    }
+   ]
+  },
+  {
+   "id": "rc54.shop-consumable-use-sampling",
+   "title": "消耗奇物使用通道抽样：连取当前第一件 ×3 → 引导词进输入框后清空（已用项不再渲染使用按钮）",
+   "preset": "device_shop_bulk",
+   "seedArgs": [
+    "--unique"
+   ],
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "wheel"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-shop\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-tab=\"consumable\"]",
+     "settle": 700
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_whisky\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 0,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_incense\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 4,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_leave\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 96,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_umbrella\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 188,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_concealer\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 280,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_mirror\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 372,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_rose_seal\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 464,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_door_key\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 556,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_elixir\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 648,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_hourglass\"]",
+     "settle": 650
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".shop-list",
+     "top": 740,
+     "settle": 150
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-shop-buy=\"it_perfume\"]",
+     "settle": 650
+    },
+    {
+     "act": "closeModal"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-act=\"open-bag\"]",
+     "settle": 900
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-bag-tab=\"surreal\"]",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-item]",
+     "index": 0,
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【使用奇物："
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-item]",
+     "index": 0,
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【使用奇物："
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-use-item]",
+     "index": 0,
+     "settle": 800
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "timeout": 8000
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-use-item]",
+     "settle": 1400
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【使用奇物："
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc54.toywide-nine-modes",
+   "title": "实验版九模逐个切换：每个模式按钮切换后顶栏 pill 跟着模式名变（清单外补测）",
+   "preset": "rc47_gate",
+   "steps": [
+    {
+     "act": "reload",
+     "settle": 1600
+    },
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-toylink]",
+     "settle": 1600
+    },
+    {
+     "act": "waitForEl",
+     "frame": "phone",
+     "selector": "[data-tl-lite-root=\"1\"]",
+     "state": "attached",
+     "timeout": 8000
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-tl-lite-reset=\"1\"]:not([disabled])",
+     "settle": 500
+    },
+    {
+     "act": "clickIf",
+     "frame": "phone",
+     "selector": "[data-confirm-tl-reset=\"1\"]",
+     "settle": 900
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-tl-open-lab=\"1\"]",
+     "settle": 1200
+    },
+    {
+     "act": "waitForEl",
+     "frame": "toylink",
+     "selector": "[data-screen=\"toylink-wide\"]",
+     "state": "attached",
+     "timeout": 12000
+    },
+    {
+     "act": "wait",
+     "ms": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "clickIf",
+     "frame": "toylink",
+     "selector": "#tlBtnWear.is-unwear",
+     "settle": 800
+    },
+    {
+     "act": "wait",
+     "ms": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlBtnWear",
+     "settle": 500
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 400
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-modal-loc=\"with\"]",
+     "settle": 300
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlModalOk",
+     "settle": 900
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "settle": 1600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "matches": "运行中"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn[data-tl-mode]",
+     "kind": "count",
+     "equals": 9
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"pulse\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "脉冲"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "pulse"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"wave\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "潮汐"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "wave"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"heart\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "心跳"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "heart"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"ramp\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "渐强"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "ramp"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"chaos\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "乱流"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "chaos"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"tease\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "撩拨"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "tease"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"storm\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "暴雨"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "storm"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"edge\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "临界"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "edge"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "[data-tl-mode=\"rush\"]",
+     "settle": 600
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": "#tlTopPill",
+     "kind": "text",
+     "includes": "冲刺"
+    },
+    {
+     "act": "assert",
+     "frame": "toylink",
+     "selector": ".tl-mode-btn.on",
+     "kind": "attr",
+     "name": "data-tl-mode",
+     "equals": "rush"
+    },
+    {
+     "act": "click",
+     "frame": "toylink",
+     "selector": "#tlMainBtn",
+     "settle": 400
+    },
+    {
+     "act": "clearInput",
+     "frame": "top",
+     "selector": "#send_textarea"
+    }
+   ]
+  },
+  {
+   "id": "rc55.choker-draft-and-fill-input",
+   "title": "项圈：已佩戴后换款预览即时跟手（B-10）+ 勾选「填入输入框」真的填（B-11）",
+   "preset": "choker_unlocked",
+   "seedArgs": [
+    "--unique"
+   ],
+   "steps": [
+    {
+     "act": "expand"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 420,
+     "settle": 200
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"]",
+     "settle": 1300
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#stageLeftCap",
+     "kind": "text",
+     "includes": "黑曜丝绒细链"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-choker-save]",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-ws-choker=\"1\"]",
+     "settle": 1800
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.worn",
+     "equals": true
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.styleId",
+     "equals": "obsidian_velvet"
+    },
+    {
+     "act": "tab",
+     "tab": "mine"
+    },
+    {
+     "act": "scrollTo",
+     "frame": "phone",
+     "selector": ".phone-screen",
+     "top": 420,
+     "settle": 200
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-open-workshop=\"choker\"]",
+     "settle": 1300
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-style=\"crimson_thorn\"]",
+     "settle": 800
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#stageLeftCap",
+     "kind": "text",
+     "includes": "绯红荆棘皮质颈环"
+    },
+    {
+     "act": "assert",
+     "frame": "phone",
+     "selector": "#styleDesc",
+     "kind": "text",
+     "includes": "绯红荆棘皮质颈环"
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "#wsFillInput",
+     "settle": 400
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-ws-choker-save]",
+     "settle": 800
+    },
+    {
+     "act": "click",
+     "frame": "phone",
+     "selector": "[data-confirm-ws-choker=\"1\"]",
+     "settle": 2000
+    },
+    {
+     "act": "assert",
+     "kind": "state",
+     "path": "characters.char_a.choker.styleId",
+     "equals": "crimson_thorn"
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "【佩戴项圈："
+    },
+    {
+     "act": "assert",
+     "frame": "top",
+     "selector": "#send_textarea",
+     "kind": "value",
+     "includes": "绯红荆棘皮质颈环"
+    }
+   ]
+  }
+ ]
 }

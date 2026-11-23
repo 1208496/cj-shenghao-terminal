@@ -1,16 +1,49 @@
 {
   "card": "神豪终端",
-  "version": "2.0.0-rc.37",
-  "avatar": "神豪终端5.png",
+  "version": "2.0.0-rc.39",
+  "avatar": "神豪终端7.png",
   "baseUrl": "http://127.0.0.1:8001/",
   "frames": {
     "top": [],
-    "phone": ["cj-shenghao-phone-frame"],
-    "wheel": ["cj-shenghao-wheel-frame"]
+    "phone": [
+      "cj-shenghao-phone-frame"
+    ],
+    "wheel": [
+      "cj-shenghao-wheel-frame"
+    ],
+    "imprint": [
+      "cj-shenghao-imprint-frame"
+    ],
+    "toylink": [
+      "cj-shenghao-toylink-frame"
+    ]
   },
-  "presets": ["empty_bag", "three_cards", "wish_unlocked", "high_wealth", "max_pity"],
+  "presets": [
+    "empty_bag",
+    "choker_unlocked",
+    "three_cards",
+    "wish_unlocked",
+    "high_wealth",
+    "max_pity",
+    "two_women",
+    "rc47_gate",
+    "rc47_gate_locked",
+    "device_shop",
+    "device_ready",
+    "device_bag_legacy"
+  ],
   "hostApi": "__CJ_SHENGHAO_V2__",
-  "seed": { "bin": "node", "args": ["scripts/test-noapi-seed.mjs", "--char", "{char}", "--preset", "{preset}"], "chatIdTemplate": "__NOAPI_TEST_{preset}" },
+  "seed": {
+    "bin": "node",
+    "args": [
+      "scripts/test-noapi-seed.mjs",
+      "--char",
+      "{char}",
+      "--preset",
+      "{preset}"
+    ],
+    "chatIdTemplate": "__NOAPI_TEST_{preset}"
+  },
   "note": "frames 是这张卡的已知 frame 路径；换卡只改这里，不动脚本。断言只认 data-* 契约与语义文本，不认样式类名的层级。",
   "contracts": {
     "surface": "[data-surface]",
@@ -35,4 +68,3 @@
     "foldBar": ".folded-bar"
   }
 }
-

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>神豪终端 · TOY·LINK 遥控终端</title>
+<style>__TOYLINK_CSS__</style>
+</head>
+<body>
+<div class="tl-overlay" id="tlOverlay" role="dialog" aria-modal="true" aria-labelledby="tlTitle">
+  <div class="tl-shell" data-screen="toylink-wide">
+    <!-- 顶栏 -->
+    <header class="tl-header">
+      <div class="tl-brand">
+        <div class="tl-brand-mark" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.5" stroke="#b47aff" stroke-width="1.6" stroke-dasharray="4 2.5"/>
+            <path d="M5 13h3l2-5 3 8 2-4h4" stroke="#ff8cc8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="tl-brand-text">
+          <h1 class="tl-title" id="tlTitle">TOY·LINK 遥控终端</h1>
+          <span class="tl-sub">九模变频 · 实时体感遥控</span>
+        </div>
+      </div>
+
+      <div class="tl-header-target">
+        <span class="tl-target-lbl">作用对象</span>
+        <div class="tl-target-strip" id="tlTargetStrip" role="radiogroup" aria-label="作用对象"></div>
+        <span class="tl-worn-cnt" id="tlWornCnt">已佩戴 0 人</span>
+      </div>
+
+      <div class="tl-header-acts">
+        <span class="tl-status-pill" id="tlTopPill">待机</span>
+        <button type="button" class="tl-close-btn" id="tlBtnClose" aria-label="关闭终端">
+          <span>✕ 关闭</span>
+          <kbd>Esc</kbd>
+        </button>
+      </div>
+    </header>
+
+    <!-- 预览锁定横幅 -->
+    <div class="tl-locked-banner" id="tlLockedBanner" hidden>
+      <span>🔒 预览模式 · 需在星愿商城兑换 TOY·LINK 终端控制（3,600✦）后方可操作</span>
+      <button type="button" class="tl-shop-btn" id="tlBtnShop">前往星愿商城</button>
+    </div>
+
+    <!-- 门槛拦截条 -->
+    <div class="tl-gate-banner" id="tlGateBanner" role="status" hidden>
+      <div class="tl-gate-left">
+        <div class="tl-gate-hd">
+          <span id="tlGateTitle"></span>
+          <span class="tl-gate-rule">需好感 ≥ 70 或堕落 ≥ 60</span>
+        </div>
+        <div class="tl-gate-desc" id="tlGateDesc"></div>
+      </div>
+      <div class="tl-gate-metrics" id="tlGateMetrics"></div>
+    </div>
+
+    <!-- 主体双栏工作区 -->
+    <main class="tl-workspace">
+      <!-- 左栏：对象佩戴条 + 双弧环舞台 + 监控窗 + 战术栏 + 手法轨迹 -->
+      <section class="tl-col-left" aria-label="体感监测与战术中枢">
+        <div class="tl-card tl-wear-card">
+          <div class="tl-wear-info">
+            <div class="tl-wear-av" id="tlWearAv"></div>
+            <div class="tl-wear-meta">
+              <div class="tl-wear-name-row">
+                <span class="tl-wear-name" id="tlWearName"></span>
+                <span class="tl-wear-tag" id="tlWearTag">未佩戴</span>
+              </div>
+              <span class="tl-wear-nums" id="tlWearNums"></span>
+            </div>
+          </div>
+          <button type="button" class="tl-wear-btn" id="tlBtnWear">为她佩戴</button>
+        </div>
+
+        <div class="tl-stage-card" id="tlStageCard" data-tier="0">
+          <div class="tl-peak-bar">
+            <span class="tl-peak-badge" id="tlPeakBadge">绝顶 0 次</span>
+            <span class="tl-stack-badge" id="tlStackBadge">初潮 · 1.00×</span>
+          </div>
+
+          <div class="tl-ring-wrap">
+            <svg class="tl-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" class="tl-tr-aro"/>
+              <circle cx="60" cy="60" r="52" class="tl-arc-base" id="tlRingBase"/>
+              <circle cx="60" cy="60" r="52" class="tl-arc-aro" id="tlRingAro" stroke-dasharray="0 326.7"/>
+              <circle cx="60" cy="60" r="44" class="tl-tr-env"/>
+              <circle cx="60" cy="60" r="44" class="tl-arc-env" id="tlRingEnv" stroke-dasharray="0 276.5"/>
+            </svg>
+            <div class="tl-ring-mid">
+              <b id="tlStageText">待机</b>
+              <small id="tlStageSub"></small>
+            </div>
+          </div>
+
+          <div class="tl-stage-meta" id="tlStageMeta">待机</div>
+          <div class="tl-stage-hint" id="tlStageHint" hidden></div>
+
+          <div class="tl-live-feed" id="tlLiveFeed">
+            <div class="tl-feed-top">
+              <span class="tl-feed-tag" id="tlFeedTag">待机监测</span>
+              <span id="tlFeedTele">心率 76bpm · 防线平稳</span>
+            </div>
+            <div class="tl-feed-line" id="tlFeedLine"></div>
+          </div>
+
+          <div class="tl-tactic-bar" id="tlTacticBar">
+            <button type="button" class="tl-tac-btn" id="tlBtnEdgeLock">🔒 寸止锁 · 关</button>
+            <button type="button" class="tl-tac-btn is-shock" id="tlBtnShock">💥 瞬时强刺</button>
+            <button type="button" class="tl-tac-btn is-burst" id="tlBtnBurst" hidden>⚡ 破顶释放 (×1.35)</button>
+          </div>
+
+          <div class="tl-stage-legend">
+            <span class="tl-leg-dots">
+              <span class="tl-leg-item"><i class="tl-dot is-aro"></i>外环 · 累积</span>
+              <span class="tl-leg-item"><i class="tl-dot is-env"></i>内环 · 实时波形</span>
+            </span>
+            <span id="tlLegendSpec">潮汐 · 55% · 2.4Hz</span>
+          </div>
+        </div>
+
+        <div class="tl-trace-bar">
+          <span class="tl-trace-lbl">手法轨迹</span>
+          <span class="tl-trace-val is-empty" id="tlTraceVal">启动后自动记录你的切换、寸止与强刺节奏</span>
+        </div>
+      </section>
+
+      <!-- 右栏：九模波形 + 参数失态 + 落点处境 + 底部固定主操作 -->
+      <section class="tl-col-right" aria-label="波形参数与落点控制">
+        <div class="tl-col-right-body">
+          <!-- 九模波形 -->
+          <div class="tl-card">
+            <div class="tl-card-hd">
+              <span>九模波形</span>
+              <small id="tlModeHdRight">潮汐 · 连续叠加</small>
+            </div>
+            <div class="tl-modes" id="tlModeGrid"></div>
+            <div class="tl-mode-note" id="tlModeNote"></div>
+          </div>
+
+          <!-- 参数与失态风险 -->
+          <div class="tl-card">
+            <div class="tl-card-hd">
+              <span>输出参数与失态风险</span>
+              <small>步进 5%</small>
+            </div>
+            <div class="tl-param-row">
+              <span class="tl-param-lbl">强度</span>
+              <button type="button" class="tl-step-btn" data-tl-pow="-5" aria-label="降低强度">−</button>
+              <div class="tl-bar"><i id="tlPowBar" style="width:55%"></i></div>
+              <b class="tl-param-val" id="tlPowVal">55%</b>
+              <button type="button" class="tl-step-btn" data-tl-pow="5" aria-label="提高强度">＋</button>
+            </div>
+            <div class="tl-param-row">
+              <span class="tl-param-lbl">频率</span>
+              <button type="button" class="tl-step-btn" data-tl-freq="-5" aria-label="降低频率">−</button>
+              <div class="tl-bar"><i id="tlFreqBar" style="width:40%"></i></div>
+              <b class="tl-param-val" id="tlFreqVal">2.4Hz</b>
+              <button type="button" class="tl-step-btn" data-tl-freq="5" aria-label="提高频率">＋</button>
+            </div>
+            <div class="tl-exp-row">
+              <span class="tl-param-lbl">失态风险</span>
+              <div class="tl-bar is-exp"><i id="tlExpBar" style="width:0%"></i></div>
+              <b class="tl-param-val" id="tlExpVal">0%</b>
+            </div>
+          </div>
+
+          <!-- 落点与别处处境 -->
+          <div class="tl-card">
+            <div class="tl-here-row">
+              <span class="tl-param-lbl">她在</span>
+              <div class="tl-here-pills" role="radiogroup" aria-label="她在">
+                <button type="button" class="tl-here-btn on" data-tl-here="with">现场</button>
+                <button type="button" class="tl-here-btn" data-tl-here="away">别处</button>
+              </div>
+              <span class="tl-here-hint" id="tlHereHint">紧接上一轮现场场景，无需另选处境</span>
+            </div>
+
+            <div class="tl-scene-block" id="tlSceneBlock" hidden>
+              <div class="tl-scene-hd">
+                <span>别处处境（选定后切她的独立视角）</span>
+                <span class="tl-scene-legend">
+                  <span><i class="tl-tier-dot is-low"></i>私密</span>
+                  <span><i class="tl-tier-dot is-mid"></i>半公开</span>
+                  <span><i class="tl-tier-dot is-high"></i>高危公开</span>
+                </span>
+              </div>
+              <div class="tl-scene-grid" id="tlSceneGrid"></div>
+              <div class="tl-scene-desc" id="tlSceneDesc"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部固定主操作栏 -->
+        <footer class="tl-footer">
+          <div class="tl-footer-hint" id="tlFooterHint" hidden></div>
+          <div class="tl-footer-acts">
+            <button type="button" class="tl-btn-main" id="tlMainBtn">启 动</button>
+            <button type="button" class="tl-btn-sub" id="tlWriteBtn">写进正文</button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <!-- 双步佩戴模态框 -->
+    <div class="tl-modal-overlay" id="tlModalOverlay" role="dialog" aria-modal="true" aria-labelledby="tlModalTitle">
+      <div class="tl-modal">
+        <span class="tl-modal-step" id="tlModalStep">步骤 1 / 2 · 佩戴确认</span>
+        <h3 id="tlModalTitle"></h3>
+        <p id="tlModalBody"></p>
+
+        <div class="tl-loc-grid" id="tlModalLocGrid" hidden>
+          <button type="button" class="tl-loc-card" data-modal-loc="with">
+            <b>现场 · 就在你面前</b>
+            <small>紧接当前场景，写出你在她身旁亲手替她戴上、或当面看着她羞耻置入的全过程。</small>
+          </button>
+          <button type="button" class="tl-loc-card" data-modal-loc="away">
+            <b>别处 · 远程指令佩戴</b>
+            <small>下一轮切到她的独立视角，写出她收到你的私密指令后，在指定处境下自行戴上的过程。</small>
+          </button>
+        </div>
+
+        <div class="tl-modal-scenes" id="tlModalScenes" hidden>
+          <span class="tl-modal-scenes-lbl">指定她此刻所在的别处处境</span>
+          <div class="tl-modal-scene-grid" id="tlModalSceneGrid"></div>
+        </div>
+
+        <div class="tl-modal-err" id="tlModalErr"></div>
+        <div class="tl-modal-row">
+          <button type="button" class="tl-mbtn" id="tlModalCancel">暂不佩戴</button>
+          <button type="button" class="tl-mbtn primary" id="tlModalOk">确认，选择落点</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="proto-io-body" id="protoIOBody">尚未触发写入正文或佩戴引导。</div>
+</div>
+
+<div class="tl-toast" id="tlToast" role="status" aria-live="polite"></div>
+
+<script>__TOYLINK_JS__</script>
+</body>
+</html>

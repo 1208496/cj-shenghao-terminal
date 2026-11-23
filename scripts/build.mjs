@@ -16,7 +16,8 @@ const output=path.join(root,'dist',cfg.version+(checkpoint?'-checkpoint':''));
 const targets=['神豪终端.json','worldbook.json','runtime.js','bootstrap-loader.js','release.json','schema.js','mvu-domestic.js','mvu-global.js','opening.html','phone.html','wheel.html','artifact-manifest.json'];
 if(process.argv.includes('--dry-run')){console.log(JSON.stringify({root,version:cfg.version,writes:targets.map(x=>path.join(output,x)),policy:'New isolated project; no writes outside workspace.'},null,2));process.exit(0);}
 await fs.mkdir(output,{recursive:true});
-const css=(await fs.readFile(path.join(root,'src/ui/style.css'),'utf8')).replaceAll('\r\n','\n');
+const cardFaceCss=(await fs.readFile(path.join(root,'src/ui/card-face.css'),'utf8')).replaceAll('\r\n','\n');
+const css=cardFaceCss+'\n'+(await fs.readFile(path.join(root,'src/ui/style.css'),'utf8')).replaceAll('\r\n','\n');
 // Keep spaces around operators: host message preprocessing may decode `&gt`
 // inside a compact expression such as `value&&gt(...)` into a literal `>`.
 const ui=await build({entryPoints:[path.join(root,'src/ui/app.js')],bundle:true,write:false,format:'iife',target:'es2022',minifyIdentifiers:true,minifySyntax:true,minifyWhitespace:false});
@@ -24,13 +25,25 @@ const app=ui.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
 const html=async surface=>(await fs.readFile(path.join(root,'src/ui',surface+'.template.html'),'utf8')).replace('__STYLE__',css).replace('__APP__',app);
 const opening=await html('setup'),phone=await html('phone');
 // rc.36：全屏轮盘页单独打包，样式与脚本与本体重逢，由 host.js 作为顶层 iframe 的 srcdoc 注入。
-const wheelCss=(await fs.readFile(path.join(root,'src/ui/wheel.css'),'utf8')).replaceAll('\r\n','\n');
+const wheelCss=cardFaceCss+'\n'+(await fs.readFile(path.join(root,'src/ui/wheel.css'),'utf8')).replaceAll('\r\n','\n');
 const wheelUi=await build({entryPoints:[path.join(root,'src/ui/wheel-frame.js')],bundle:true,write:false,format:'iife',target:'es2022',minifyIdentifiers:true,minifySyntax:true,minifyWhitespace:false});
 const wheelApp=wheelUi.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
 const wheel=(await fs.readFile(path.join(root,'src/ui/wheel.template.html'),'utf8')).replace('__STYLE__',wheelCss).replace('__APP__',wheelApp);
 // Only generated intermediate within the workspace, excluded from source authority.
 await fs.writeFile(path.join(root,'src/ui/phone.html'),phone);
 await fs.writeFile(path.join(root,'src/ui/wheel.html'),wheel);
+const imprintCss=(await fs.readFile(path.join(root,'src/ui/imprint.css'),'utf8')).replaceAll('\r\n','\n').replace(/<\/style/gi,'<\\/style');
+const imprintUi=await build({entryPoints:[path.join(root,'src/ui/imprint-frame.js')],bundle:true,write:false,format:'iife',target:'es2022',minify:true});
+const imprintApp=imprintUi.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
+const imprint=(await fs.readFile(path.join(root,'src/ui/imprint.template.html'),'utf8')).replace('__IMPRINT_CSS__',()=>imprintCss).replace('__IMPRINT_JS__',()=>imprintApp);
+await fs.writeFile(path.join(root,'src/ui/imprint.html'),imprint);
+
+// rc.52：TOY·LINK 独立宽屏（模板 + 样式 + 帧脚本 → 中间文件 toylink.html，由 host.js 内联）
+const toylinkCss=(await fs.readFile(path.join(root,'src/ui/toylink.css'),'utf8')).replaceAll('\r\n','\n').replace(/<\/style/gi,'<\\/style');
+const toylinkUi=await build({entryPoints:[path.join(root,'src/ui/toylink-frame.js')],bundle:true,write:false,format:'iife',target:'es2022',minify:true});
+const toylinkApp=toylinkUi.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
+const toylink=(await fs.readFile(path.join(root,'src/ui/toylink.template.html'),'utf8')).replace('__TOYLINK_CSS__',()=>toylinkCss).replace('__TOYLINK_JS__',()=>toylinkApp);
+await fs.writeFile(path.join(root,'src/ui/toylink.html'),toylink);
 const worldbookHash=crypto.createHash('sha256').update((await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/literary.json'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/schema-entry.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/mvu-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/script-loader.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/update/release-contract.js'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/ui/setup.template.html'),'utf8')).replaceAll('\r\n','\n')).update((await fs.readFile(path.join(root,'src/runtime/opening-display.js'),'utf8')).replaceAll('\r\n','\n')).update(String(cfg.cardContractRevision||1)).update(JSON.stringify(nativeDisplayRegexes())).update('mvu:d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc').digest('hex');
 const runtime=await build({entryPoints:[path.join(root,'src/runtime/host.js')],bundle:true,write:false,format:'esm',target:'es2022',loader:{'.html':'text','.txt':'text'},define:{__BOOK_HASH__:JSON.stringify(worldbookHash)},minify:true});
 const script='// CJ_SHENGHAO_TERMINAL_CORE\n;(async()=>{\n'+runtime.outputFiles[0].text+'\n})();\n';
@@ -43,12 +56,14 @@ const bootstrapBuild=checkpoint?null:await build({entryPoints:[path.join(root,'s
 const bootstrap=checkpoint?script:'// CJ_SHENGHAO_STABLE_LOADER\n;(async()=>{\n'+bootstrapBuild.outputFiles[0].text+'\n})().catch(e=>{console.log("[神豪终端 加载器] "+e.message);try{toastr.error("终端加载器未能启动，请检查配置与网络。","神豪终端");}catch{}});\n';
 const prose=await read('src/content/literary.json');
 const protocol=await fs.readFile(path.join(root,'src/content/protocol.txt'),'utf8');
+// rc.43：只放开 state-context → 4 条状态条目的递归，其余条目继续禁递归防级联。
+const RECURSIVE_TARGETS=new Set(['calendar','private-life','star-abilities','relationships-network']);
 const bodies=[{id:'state-context',title:'当前人物与现场资料',body:await fs.readFile(path.join(root,'src/content/state-context.txt'),'utf8')},...prose.entries.map(b=>({...b,title:'[mvu_plot] '+b.title})),{id:'protocol',title:'[mvu_update] 原生变量与结算事实协议',body:protocol},{id:'initvar',title:'[InitVar]',body:'{"shenghao":null}',disabled:true},{id:'config',title:'[config_override]',body:JSON.stringify({兼容性:{更新到聊天变量:false}}),disabled:true}];
-const book={name:'神豪终端 · v'+cfg.version,description:'原生MVU/Zod · 当代都市、人物自主、时间日历与专属奖池',scan_depth:2,recursive_scanning:false,
-  extensions:{project_id:cfg.id,version:cfg.version,scan_depth:2,recursive_scanning:false},
+const book={name:'神豪终端 · v'+cfg.version,description:'原生MVU/Zod · 当代都市、人物自主、时间日历与专属奖池',scan_depth:2,recursive_scanning:true,
+  extensions:{project_id:cfg.id,version:cfg.version,scan_depth:2,recursive_scanning:true},
   entries:bodies.map((b,i)=>({id:i+1,keys:b.keys||[],secondary_keys:[],comment:b.title,content:b.body,constant:b.constant!==false,selective:false,enabled:!b.disabled,
     insertion_order:100+i*10,position:'before_char',use_regex:false,
-    extensions:{position:b.id==='protocol'?4:0,exclude_recursion:true,prevent_recursion:true,scan_depth:2,depth:b.id==='protocol'?0:4,role:0,probability:100,useProbability:true,stable_id:b.id}}))};
+    extensions:{position:b.id==='protocol'?4:0,exclude_recursion:!RECURSIVE_TARGETS.has(b.id),prevent_recursion:b.id!=='state-context',scan_depth:2,depth:b.id==='protocol'?0:4,role:0,probability:100,useProbability:true,stable_id:b.id}}))};
 const schemaBuild=await build({entryPoints:[path.join(root,'src/runtime/schema-entry.js')],bundle:true,write:false,format:'esm',target:'es2022',minify:true});
 const schemaScript=schemaBuild.outputFiles[0].text;
 const mvuPin='d03b7dc8a6ebf9bd611c7e2dc91f3b35462deebc';

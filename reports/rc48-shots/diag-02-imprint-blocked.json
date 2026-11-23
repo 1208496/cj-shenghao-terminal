@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "02-imprint-blocked",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/02-imprint-blocked.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "CLICK_FAILED([data-ws-target=\"char_b\"]): F1"
+  },
+  "error": "CLICK_FAILED([data-ws-target=\"char_b\"]): F1",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-02-imprint-blocked-full.png"
+}

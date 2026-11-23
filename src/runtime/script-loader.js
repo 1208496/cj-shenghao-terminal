@@ -5,12 +5,23 @@ const log=m=>console.log('['+NAME+' 加载器] '+m);
 const escape=s=>String(s).replace(/[&<>"']/g,c=>String.fromCharCode(38)+({'&':'amp;','<':'lt;','>':'gt;','"':'quot;',"'":'#39;'}[c]));
 function say(kind,message){log(message);try{toastr[kind](escape(message),NAME,{timeOut:kind==='info'?0:15000});}catch{}}
 async function get(url,timeout,headers){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);try{const response=await fetch(url,{cache:'no-store',signal:controller.signal,headers});const text=await response.text();if(text.length>3000000)throw Error('RESPONSE_TOO_LARGE');return{ok:response.ok,status:response.status,text};}finally{clearTimeout(timer);}}
+const PTR_CACHE_KEY='cj-shenghao:ptr-cache:v1',PTR_TTL=10*60*1000,PTR_FAIL_TTL=5*60*1000;
+// rc.38 A-8：国内访问 Supabase 常年超时，原先 6 秒超时等于每次打开角色卡都白等 6 秒。
+// 改成 2.5 秒超时，并把指针结果（成功 10 分钟 / 失败 5 分钟）缓存在 sessionStorage 里，
+// 同一浏览器会话内刷新、切聊天都可直接走缓存，不再反复罚站。
+function readPtrCache(){try{const raw=window.sessionStorage.getItem(PTR_CACHE_KEY);if(!raw)return null;const v=JSON.parse(raw);if(!v||typeof v.at!=='number'||Date.now()-v.at>(v.fail?PTR_FAIL_TTL:PTR_TTL))return null;return v;}catch{return null;}}
+function writePtrCache(value,fail){try{window.sessionStorage.setItem(PTR_CACHE_KEY,JSON.stringify({ref:value?.ref||'',off:value?.off||'',at:Date.now(),fail:!!fail}));}catch{}}
 async function pointer(){
-  const r=await get(C.supabaseUrl+'/rest/v1/'+C.table+'?key=in.('+C.refKey+','+C.offKey+')&select=key,value',6000,publicHeaders(C.publishableKey));
-  if(!r.ok)throw Error('POINTER_HTTP_'+r.status);const rows=JSON.parse(r.text);if(!Array.isArray(rows)||rows.length>10)throw Error('POINTER_RESPONSE_INVALID');
+  const cached=readPtrCache();
+  if(cached){if(cached.fail)throw Error('POINTER_CACHED_UNAVAILABLE');return lastPointer={ref:cached.ref||'',off:cached.off||''};}
+  let r;
+  try{r=await get(C.supabaseUrl+'/rest/v1/'+C.table+'?key=in.('+C.refKey+','+C.offKey+')&select=key,value',2500,publicHeaders(C.publishableKey));}
+  catch(e){writePtrCache(null,true);throw e;}
+  if(!r.ok){writePtrCache(null,true);throw Error('POINTER_HTTP_'+r.status);}const rows=JSON.parse(r.text);if(!Array.isArray(rows)||rows.length>10)throw Error('POINTER_RESPONSE_INVALID');
   let ref='',off='';for(const row of rows){const value=String(row.value||'').trim();if(row.key===C.refKey)ref=value;if(row.key===C.offKey)off=value.slice(0,2000);}
   if(!off&&ref&&!isCommit(ref))throw Error('DIRTY_POINTER');
   if(off)ref='';
+  writePtrCache({ref,off},false);
   return lastPointer={ref,off};
 }
 async function metadata(ref){

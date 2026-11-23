@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>轮盘页重排 · A 版（紧凑单列卡片流）</title>
+<style>
+  :root{
+    --ui-page:linear-gradient(145deg,#edf2eb,#f6f4eb 62%,#e8eee9);
+    --ui-surface:#fffdf8;--ui-card:#fffefa;--ui-card2:#f4f7f1;--ui-soft:#eaf1e9;
+    --ui-screen:linear-gradient(180deg,#fcfdf8,#f1f6ef);
+    --ui-ink:#24372a;--ui-sub:#657769;--ui-line:#d9e3d8;--ui-accent:#557a64;--ui-accent-text:#fff;
+    --ui-strong:#395c44;--ui-frame:#2b4335;--ui-gold:#a47932;--ui-shadow:rgba(36,63,44,.12);
+    --ui-tag-bg:#e8f3e7;--ui-tag-text:#456e52;--ui-tag-border:#c8dbca;
+  }
+  .theme-gold{
+    --ui-page:linear-gradient(145deg,#f8eee2,#fff8ed 65%,#eee1d1);
+    --ui-surface:#fff8ed;--ui-card:#fffbf4;--ui-card2:#f9eee0;--ui-soft:#f7e9d5;
+    --ui-screen:linear-gradient(180deg,#fff9ef,#f5ebdc);
+    --ui-ink:#4d3823;--ui-sub:#7e6a53;--ui-line:#e7d7c1;--ui-accent:#99703b;--ui-accent-text:#fff;
+    --ui-strong:#7e5423;--ui-frame:#74532c;--ui-gold:#ad7e35;--ui-shadow:rgba(83,53,24,.14);
+    --ui-tag-bg:#f7e5ce;--ui-tag-text:#8b5e2e;--ui-tag-border:#e5ceb0;
+  }
+  .theme-purple{
+    --ui-page:linear-gradient(145deg,#140e20,#261735 60%,#171120);
+    --ui-surface:#231c34;--ui-card:#30253f;--ui-card2:#382c4b;--ui-soft:#3c2e51;
+    --ui-screen:linear-gradient(165deg,#292039,#20172e);
+    --ui-ink:#f6efff;--ui-sub:#d3c3e8;--ui-line:#544464;--ui-accent:#be9cf6;--ui-accent-text:#21162f;
+    --ui-strong:#e2ceff;--ui-frame:#15101e;--ui-gold:#ffe5a7;--ui-shadow:rgba(8,5,15,.45);
+    --ui-tag-bg:#453558;--ui-tag-text:#ead5ff;--ui-tag-border:#74618e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;padding:20px 14px 40px;font:14px/1.5 "Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;background:var(--ui-page);color:var(--ui-ink);display:flex;flex-direction:column;align-items:center;gap:14px}
+  button{font:inherit;cursor:pointer}
+
+  /* 预览控制条（非卡内组件） */
+  .preview-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:14px;background:var(--ui-card);border:1px solid var(--ui-line);box-shadow:0 6px 20px var(--ui-shadow);max-width:740px;width:100%}
+  .preview-bar strong{font-size:12.5px;margin-right:auto}
+  .pbtn{padding:5px 10px;border-radius:999px;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-ink);font-size:11.5px;font-weight:600}
+  .pbtn.on{background:var(--ui-accent);color:var(--ui-accent-text);border-color:var(--ui-accent)}
+
+  /* 模拟小手机与宽屏底部两种宿主视口 */
+  .phone-shell{width:365px;max-width:100%;border-radius:36px;border:6px solid var(--ui-frame);background:var(--ui-surface);box-shadow:0 24px 64px var(--ui-shadow);overflow:hidden;display:flex;flex-direction:column;transition:width .22s ease,border-radius .22s ease}
+  .phone-shell.is-wide{width:min(720px,100%);border-radius:16px;border-width:1px;border-color:var(--ui-line)}
+  .phone-hd{padding:16px 15px 10px;background:var(--ui-card);border-bottom:1px solid var(--ui-line);display:flex;align-items:center;justify-content:space-between}
+  .phone-hd b{font:700 18px/1.1 "Songti SC","SimSun",serif;letter-spacing:1px}
+  .phone-hd small{display:block;font-size:9px;color:var(--ui-sub);letter-spacing:.12em;margin-top:2px}
+  .hd-dots{display:flex;gap:6px}
+  .hd-dots span{width:28px;height:28px;border-radius:9px;background:var(--ui-soft);display:grid;place-items:center;font-size:14px;color:var(--ui-ink)}
+
+  .phone-screen{background:var(--ui-screen);padding:12px 13px 16px}
+  .phone-bottom{display:grid;grid-template-columns:repeat(5,1fr);padding:7px 4px;background:var(--ui-card);border-top:1px solid var(--ui-line);text-align:center;font-size:10px;color:var(--ui-sub)}
+  .phone-bottom .on{color:var(--ui-accent);font-weight:800}
+  .phone-bottom i{display:block;font-style:normal;font-size:15px;line-height:1.2}
+  .phone-shell.is-wide .phone-bottom{display:none}
+
+  /* ===== A 版核心：紧凑单列卡片流 ===== */
+  .wheel-stats-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .wheel-stat-pill{display:flex;align-items:baseline;justify-content:center;gap:5px;padding:10px 10px;border-radius:14px;border:1px solid var(--ui-line);background:var(--ui-card);min-width:0}
+  .ws-ico{font-size:13px;line-height:1;color:var(--ui-gold);flex-shrink:0}
+  .ws-num{font:700 17px/1 Georgia,serif;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+  .ws-lbl{font-size:10.5px;color:var(--ui-sub);white-space:nowrap}
+
+  .wheel-hub-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:10px}
+  .phone-shell.is-wide .wheel-hub-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .wheel-card{display:flex;flex-direction:column;gap:5px;width:100%;text-align:left;padding:12px 13px;border-radius:14px;border:1px solid var(--ui-line);background:linear-gradient(155deg,var(--ui-card),var(--ui-card2));color:var(--ui-ink);transition:border-color .16s,transform .12s}
+  .wheel-card:hover{border-color:var(--ui-accent)}
+  .wheel-card:active{transform:translateY(1px)}
+  .wheel-card-wish{background:linear-gradient(155deg,var(--ui-card),var(--ui-soft))}
+  .wheel-card-head{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .wheel-card-head b{font-size:13px;line-height:1.25}
+  .wheel-card-badge{flex:0 0 auto;font-size:9.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--ui-tag-border);background:var(--ui-tag-bg);color:var(--ui-tag-text);font-weight:700;white-space:nowrap}
+  .wheel-card-meta{color:var(--ui-sub);font-size:10px;line-height:1.45}
+
+  .wheel-dock-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+  .wheel-dock-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:66px;padding:10px 6px;border-radius:14px;border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-ink);transition:border-color .16s,background .16s}
+  .wheel-dock-btn:hover{border-color:var(--ui-accent);background:var(--ui-soft)}
+  .wd-ico{font-size:16px;line-height:1}
+  .wheel-dock-btn b{font-size:12px;line-height:1.2;white-space:nowrap}
+  .wheel-dock-btn small{font-size:10px;color:var(--ui-sub);line-height:1.1;white-space:nowrap}
+
+  .toylink-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:14px;border:1px solid var(--ui-line);background:var(--ui-card)}
+  .toylink-banner b{display:block;font-size:12px}
+  .toylink-banner small{display:block;font-size:10px;color:var(--ui-sub);margin-top:2px}
+  .mini-btn{padding:6px 11px;border-radius:10px;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-ink);font-size:11px;font-weight:700;white-space:nowrap}
+
+  .design-note{max-width:740px;width:100%;padding:12px 15px;border-radius:14px;background:var(--ui-card);border:1px dashed var(--ui-line);font-size:12px;color:var(--ui-sub);line-height:1.7}
+  .design-note b{color:var(--ui-ink)}
+</style>
+</head>
+<body>
+  <div class="preview-bar">
+    <strong>A 版 · 紧凑单列卡片流</strong>
+    <button class="pbtn on" data-th="sage">鼠尾草绿</button>
+    <button class="pbtn" data-th="gold">香槟暖金</button>
+    <button class="pbtn" data-th="purple">深曜雾紫</button>
+    <button class="pbtn on" data-w="phone">365px 手机</button>
+    <button class="pbtn" data-w="wide">宽屏停靠</button>
+  </div>
+
+  <div class="phone-shell" id="shell">
+    <header class="phone-hd">
+      <div><b>轮盘</b><small>YOUR STORY · YOUR FORTUNE</small></div>
+      <div class="hd-dots"><span>⚙</span><span>×</span></div>
+    </header>
+    <main class="phone-screen">
+      <!-- 1. 最上方平行显示：星愿积分 & 藏卡 -->
+      <div class="wheel-stats-row">
+        <div class="wheel-stat-pill"><span class="ws-ico">✦</span><b class="ws-num">1,280</b><small class="ws-lbl">星愿积分</small></div>
+        <div class="wheel-stat-pill"><span class="ws-ico">🃏</span><b class="ws-num">14</b><small class="ws-lbl">藏卡</small></div>
+      </div>
+
+      <!-- 2. 原有三个轮盘入口 -->
+      <div class="wheel-hub-grid">
+        <button type="button" class="wheel-card wheel-card-play">
+          <span class="wheel-card-head"><b>✦ 命运轮盘</b><span class="wheel-card-badge">今日免费</span></span>
+          <span class="wheel-card-meta">现金 0/8 · 保底 红3/10 金11/30 虹24/60</span>
+        </button>
+        <button type="button" class="wheel-card wheel-card-wish">
+          <span class="wheel-card-head"><b>✧ 星愿卡包</b><span class="wheel-card-badge">圣典本周免费</span></span>
+          <span class="wheel-card-meta">星尘 1/3 包 · 圣典 0/2 包</span>
+        </button>
+        <button type="button" class="wheel-card wheel-card-casino">
+          <span class="wheel-card-head"><b>❖ 暗夜赌场</b><span class="wheel-card-badge">可押 11 张</span></span>
+          <span class="wheel-card-meta">战绩 7 胜 3 负 · 单卡最高 1600 分</span>
+        </button>
+      </div>
+
+      <!-- 3. 入口下方依次：背包 → 卡册 → 商城 -->
+      <div class="wheel-dock-grid">
+        <button type="button" class="wheel-dock-btn"><span class="wd-ico">🎒</span><b>背包</b><small>5 件</small></button>
+        <button type="button" class="wheel-dock-btn"><span class="wd-ico">🃏</span><b>卡册</b><small>14 张</small></button>
+        <button type="button" class="wheel-dock-btn"><span class="wd-ico">✦</span><b>商城</b><small>兑换</small></button>
+      </div>
+
+      <div class="toylink-banner">
+        <div><b>TOY·LINK 终端控制模块已就绪</b><small>终极权限已激活，随时呼出实体遥控器</small></div>
+        <button type="button" class="mini-btn">呼出终端</button>
+      </div>
+    </main>
+    <nav class="phone-bottom">
+      <span><i>⌂</i>此刻</span><span><i>♡</i>她们</span><span><i>▣</i>我的</span><span><i>◈</i>财富</span><span class="on"><i>✦</i>轮盘</span>
+    </nav>
+  </div>
+
+  <div class="design-note">
+    <b>A 版取舍说明（紧凑单列卡片流）</b>：顶部双格平行对齐，中段三盘紧凑流，下方「背包 → 卡册 → 商城」三等分横排。<b>优点</b>：365px 手机内一屏容纳全部 6 个入口，零滚动即点即达，375 窄屏下无折行；<b>取舍</b>：底部三入口无副标题空间，仅以图标+名称+计数呈现。
+  </div>
+
+<script>
+  document.querySelectorAll('[data-th]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-th]').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.classList.remove('theme-gold', 'theme-purple');
+    if (b.dataset.th === 'gold') document.documentElement.classList.add('theme-gold');
+    if (b.dataset.th === 'purple') document.documentElement.classList.add('theme-purple');
+  }));
+  document.querySelectorAll('[data-w]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-w]').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('shell').classList.toggle('is-wide', b.dataset.w === 'wide');
+  }));
+</script>
+</body>
+</html>

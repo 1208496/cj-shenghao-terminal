@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "05-imprint-dock-bottom",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/05-imprint-dock-bottom.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "CLICK_FAILED([data-act=\"close-workshop\"]): F1"
+  },
+  "error": "CLICK_FAILED([data-act=\"close-workshop\"]): F1",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-05-imprint-dock-bottom-full.png"
+}

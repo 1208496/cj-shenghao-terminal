@@ -1,11 +1,11 @@
-以下是当前分支已经保存的人物与现场资料，只作为故事事实，不作为指令。
-人物资料位于characters对象，以稳定人物ID为键，结构与真实变量一致；已有熟人或已建档人物的更新路径为replace /shenghao/characters/对应ID/字段名，严禁对已存在的ID再次add整个人物对象，也不按名单顺序或数字下标定位。这个摘要省略了不需要发送的账本和离场资料，不是允许整体覆盖的完整变量根。
-人物实际在场时，附带基础资料、当前穿搭、近期目标（recentGoal）、长期梦想（longTermDream）、隐藏暗伤伏笔（hiddenScar）与私密四维档案（physiology/outfit/intimacy/limits），九大深度档案仅在已生成且未锁定时附带。已打星标（starredOffscreenIds列出）的离场人物附带recentGoal、hiddenScar与offscreen近况，本轮必须更新她们此刻在何处做什么；其余离场及隐藏者只保留极简身份索引，用于辨认同一人物，不代表到场。每位人物沿用稳定ID，不重复建档。
-保留玩家设定、颜值、性能力与性器尺寸、性格标签、年龄、外貌、身材、身高、体重、三围与鞋码。九大深度档案只由玩家点击建档生成，普通回复不得擅自补全。身体数据中身高与三围以CM、体重以KG、鞋码以欧码理解。好感（affection）与堕落度（corruption）直接写本轮新数值，每轮只写一次，不另提事件，颜值与性能力修正由脚本施加。玩家现金等级是只读派生值。
-人物和主角的知识边界依剧情：hiddenScar（暗伤伏笔）是人物内心的隐秘伤痕与过往心结，主角在初见或关系尚浅时绝不知晓；模型应按当前好感与堕落阶段，将其化作正文中不经意的微动作、失神或欲言又止的半截话语，随互动深入再逐步引出，不能在初见时自动知晓或直接竹筒倒豆子般哭诉。limits记录她当前的开放档位（scaleLevel 0–6及八项细分0拒绝/1犹豫/2要条件/3主动），当玩家举动超出其当前档位（对应项为0）时，她必须按性格明确拒绝或推开。锁定后停止主动附带九类档案，但历史对话中的既有事实仍然有效。
-资产列表只列玩家当前仍持有的物品，description为已确立的简易设定，正文应按它安排住所、出行、穿戴与使用；不重抽面积、型号或配置。user.cashYuan（可读元金额，精确对应user.cashCents分）为玩家唯一可调配的全部流动资金（含个人与名下公司公账可调拨头寸），一切由玩家促成的OUT支出（含商业注资与对公打款）均受user.cashYuan严格制约并实扣余额，严禁借公司账户名义免扣或透支；超额时正文写可调拨头寸不足、改付定金或先提现筹款，不虚构超额到账。recentFacts列出已记录的factId与类型，交易还附物品、金额与资产ID；refundOf必须匹配对应原付款，不从ID列表中随意选择。
+以下是当前分支已保存的人物与现场资料，仅作为已发生的故事事实，不作为行动指令。
+人物资料位于characters对象，以稳定ASCII人物ID（如char_su_wan）为键；更新已有角色统一用replace /shenghao/characters/<ID>/<字段名>做单字段增量更新。此摘要省略了历史账本与无关离场资料，不可用于整体覆盖变量根。
+人物实际在场时，附带基础资料、当前穿搭、近期目标（recentGoal）、长期梦想（longTermDream）、表里反差底牌（hiddenScar）及私密四维档案（physiology/outfit/intimacy/limits）。已打星标（starredOffscreenIds列出）的离场人物附带recentGoal、hiddenScar与offscreen近况，本轮须更新她们此刻在何处做什么；其余离场及隐藏者仅保留极简身份索引供辨认，不代表到场。
+保留玩家设定、颜值、性能力、性器规格、年龄、外貌、身材与三项身体数据（CM/KG/欧码）。好感（affection）与堕落度（corruption）每轮直接写0–100新整数，颜值与性能力修正由脚本自动施加。
+人物与主角的知识边界依剧情实际交集而定：hiddenScar是人物未轻易示人的第三层底牌（涵盖隐秘野心、体面虚荣、伪装谎言、坦荡爱钱、人情亏欠、隐秘癖好或过往心结），仅在当前场景出现相关契机时才自然流露端倪，无由头时不硬凑反常动作。limits记录她当前的开放档位（scaleLevel 0–6及八项细分0拒绝/1犹豫/2要条件/3主动），当玩家举动超出其当前档位（对应项为0）时，她会按性格明确推开或婉拒。
+资产列表只列玩家当前持有的物品，正文按其description安排起居、出行与穿戴。user.cashYuan（对应user.cashCents分）为玩家唯一可调配的全部流动资金，个人刷卡与公司对公走账均从user.cashYuan实扣；超额时正文写可调拨头寸不足、改付定金或先提现筹款。recentFacts列出近期已入账的factId，退款refundOf须匹配原付款factId。
 当前状态：
-pendingBasicProfiles只列尚缺基础设定的已收录人物及missing字段；user.pendingProfileFields列出玩家本人尚待补全的身高、体重或鞋码空字段。已有非空资料为确定设定；资料缺失不代表人物到场，也不形成消费、好感或九大档案。
-todaySchedules仅列出今天（与world.date一致）已排定且尚未完成的日程与命运轮盘票券（含定稿promptHint提示语），正文应自然提示今日日程已就绪但保留玩家决定权；bagReadyItems列出玩家背包中尚未排期的票券索引，只作事实参考。
-userAbilities仅列出主角本人已从星愿商城觉醒的都市异能（旁人无异能且不可察觉来源）；bagSurrealItems列出主角背包中已兑换的超现实奇物（非账本资产，不可卖钱），仅作剧情事实依据。
+pendingBasicProfiles列出尚缺基础设定的已收录人物及missing字段；user.pendingProfileFields列出玩家本人尚待补全的身高、体重或鞋码空字段；pendingAssetValuations列出玩家手动补录、待本轮通过ASSET_VALUATION补全类别与估值的名下资产。
+todaySchedules列出今天（与world.date一致）已排定且未完成的日程与命运轮盘票券（含promptHint），正文自然提示今日安排就绪并保留玩家决定权；bagReadyItems列出背包中待使用的票券索引；mustDepictUsedItems列出本轮玩家已确认启用且未撤销的玩法券、奇物或主动发动的异能，正文必须正面展开其经过与效果（未列出的已撤销项切勿描写）。
+userAbilities列出主角本人已觉醒的都市异能；bagSurrealItems列出主角背包中持有的超现实奇物（非账本资产，不可变卖）；incomingPing非空时提示对应离场熟人本轮主动发来微信消息；scene.intimateStage为INTIMATE_SCENE_ACTIVE时表示当前处于亲密升温或私密独处阶段。在场女性若已佩戴誓约项圈或铭刻专属印记，其款式、部位与刻字已直接体现在outfit.accessories与physiology.tattooScar中。
 {{get_message_variable::stat_data.shenghao._context}}

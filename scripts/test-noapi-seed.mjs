@@ -82,15 +82,81 @@ function buildPresetState(preset, initKey) {
     // 20 万起步、未提现、空背包、星愿圣盘锁定、命运轮盘免费可用
     s.user.cashCents = 20000000;
     s.user.initialCashCents = 20000000;
+  } else if (preset === 'many_cards') {
+    // rc.40：叠卡/上限/展开取证用——11 张灰 + 5 张红 + 1 金 + 1 虹（含锁定与连胜各一张）。
+    s.user.cashCents = 150000000;
+    s.wheel.starPoints = 900;
+    const mk = (itemId, rarity, points, extra = {}) => ({ itemId, source: 'CASINO_CARD', category: 'WISH_CARD', refId: `card_${rarity}`, rarity, obtainedDate: '2026-11-20', status: 'READY', currentPoints: points, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null, ...extra });
+    s.inventory = {};
+    for (let i = 0; i < 11; i++) s.inventory[`card_gray_${i + 1}`] = mk(`card_gray_${i + 1}`, 'gray', 20 + i, { serialNo: 100 + i });
+    for (let i = 0; i < 5; i++) s.inventory[`card_red_${i + 1}`] = mk(`card_red_${i + 1}`, 'red', 60 + i * 10, { serialNo: 200 + i });
+    s.inventory[`card_red_3`].locked = true;
+    s.inventory[`card_gray_2`].winStreak = 3;
+    s.inventory[`card_gold_1`] = mk('card_gold_1', 'gold', 200, { serialNo: 301, winStreak: 1 });
+    s.inventory[`card_rainbow_1`] = mk('card_rainbow_1', 'rainbow', 800, { serialNo: 401 });
   } else if (preset === 'three_cards') {
     s.user.cashCents = 150000000; // 150 万
     s.wheel.starPoints = 600;
+    // rc.38 B7：让 offstage 的 char_b 高好感，projection 才会生成 incomingPing。
+    s.characters.char_b.affection = 80;
     s.inventory = {
       card_gray_1: { itemId: 'card_gray_1', source: 'CASINO_CARD', category: 'WISH_CARD', refId: 'card_gray', rarity: 'gray', obtainedDate: '2026-11-20', status: 'READY', currentPoints: 20, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
       card_red_1:  { itemId: 'card_red_1',  source: 'CASINO_CARD', category: 'WISH_CARD', refId: 'card_red',  rarity: 'red',  obtainedDate: '2026-11-20', status: 'READY', currentPoints: 60, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
       card_gold_1: { itemId: 'card_gold_1', source: 'CASINO_CARD', category: 'WISH_CARD', refId: 'card_gold', rarity: 'gold', obtainedDate: '2026-11-20', status: 'READY', currentPoints: 200, winStreak: 1, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
       prize_1:     { itemId: 'prize_1',     source: 'WHEEL',       category: 'WHEEL_PRIZE', refId: 'w14',     rarity: 'red',  obtainedDate: '2026-11-20', status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
+      surreal_1:   { itemId: 'surreal_1',   source: 'SHOP',        category: 'SURREAL_ITEM', refId: 'it_perfume', rarity: 'red', obtainedDate: '2026-11-20', status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
     };
+  } else if (preset === 'two_women') {
+    // rc.38 A4：两位已收录人物同时在场，用来验「此刻」多女渲染与后宫张力前提。
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.scene.presentCharacterIds = ['char_a', 'char_b'];
+    s.characters.char_a.affection = 78; s.characters.char_a.corruption = 45;
+    s.characters.char_b.affection = 82; s.characters.char_b.corruption = 60;
+    s.wheel.starPoints = 300;
+  } else if (preset === 'rc47_gate' || preset === 'rc47_gate_locked') {
+    // rc.47：门槛用例 —— char_a 达标（好感 82）、char_b 未达标（48/25）；两人都已刻印/已佩戴，
+    // 用来验「历史跌破门槛不自动摘除，但新增/覆盖被拦，抹除与摘下仍可」。
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.scene.presentCharacterIds = ['char_a', 'char_b'];
+    s.wheel.chokerUnlocked = preset !== 'rc47_gate_locked';
+    s.wheel.toyLinkUnlocked = true;
+    s.wheel.starPoints = 800;
+    s.characters.char_a.affection = 82; s.characters.char_a.corruption = 10;
+    s.characters.char_b.affection = 48; s.characters.char_b.corruption = 25;
+    const mark = (p) => ({placement: p, patternEnabled: true, patternId: 'tally_zheng', patternScale: 'md', patternColor: 'crimson', textEnabled: true, text: '陆氏私有', textLayout: 'arc_wrap', textScale: 'md', textAngle: 0, font: 'script', textColor: 'gold', updatedDate: '2026-11-20'});
+    s.characters.char_a.imprints = {priorScar: '', items: {nape: mark('nape')}};
+    s.characters.char_b.imprints = {priorScar: '', items: {nape: mark('nape')}};
+    s.characters.char_a.choker = {worn: true, styleId: 'rose_gold_lock', inscription: 'Eternal', wornDate: '2026-11-20'};
+    s.characters.char_b.choker = {worn: true, styleId: 'obsidian_velvet', inscription: '', wornDate: '2026-11-20'};  } else if (preset.startsWith('device_shop') || preset === 'device_ready' || preset === 'device_bag_legacy') {
+    // rc.54：私域三装置「购买 → 解锁 → 界面变 → 工坊可用」端到端用例专用档。
+    // 星愿积分 12000（三件合计 8400，够连买）；两位已收录女性一达标一未达标。
+    // device_shop：三解锁位全 false（验购买链）；device_ready：三件全 true、未佩戴未落印（验落库与刷新回读）。
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.scene.presentCharacterIds = ['char_a', 'char_b'];
+    s.wheel.starPoints = preset === 'device_bag_legacy' ? 500 : (preset === 'device_shop_bulk' ? 30000 : 12000);
+    s.wheel.chokerUnlocked = preset === 'device_ready';
+    s.wheel.imprintUnlocked = preset === 'device_ready';
+    s.wheel.toyLinkUnlocked = preset === 'device_ready';
+    s.characters.char_a.affection = 82; s.characters.char_a.corruption = 10;
+    s.characters.char_b.affection = 48; s.characters.char_b.corruption = 25;
+    if (preset === 'device_bag_legacy') {
+      // 旧存档形态：背包里还留着 it_toylink 空壳奇物（rc.46 前的写法）。
+      // 用来验「载入即迁移成解锁位」与「背包入口是否还存在」。
+      s.inventory = {
+        item_legacy_toy: { itemId: 'item_legacy_toy', source: 'SHOP', category: 'SURREAL_ITEM', refId: 'it_toylink', rarity: 'rainbow', obtainedDate: '2026-11-20', status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
+      };
+    }
+  } else if (preset === 'choker_unlocked') {
+    // rc.46：项圈工坊「已解锁」态，用来验 佩戴 → 档案胶囊联动（不碰玩家存档）
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.wheel.chokerUnlocked = true;
+    s.wheel.starPoints = 500;
+    s.scene.presentCharacterIds = ['char_a', 'char_b'];
+    s.characters.char_a.affection = 70; s.characters.char_b.affection = 55;
   } else if (preset === 'wish_unlocked') {
     s.user.cashCents = 250000000; // 250 万 >= 100 万解锁星愿圣盘
     s.wheel.starPoints = 300;
@@ -109,6 +175,14 @@ function buildPresetState(preset, initKey) {
       asset_car_1:   { assetId: 'asset_car_1',   kind: 'CAR',   name: '保时捷 911 GT3',   ownerId: 'USER', bookValueCents: 260000000,  basisCents: 260000000,  status: 'OWNED', acquisitionEventId: 'init', acquisitionIsInitial: true, description: '哑光黑选装碳陶刹车', locationNote: '地下车库 B2', ownershipNote: '本人全额所有' },
     };
     s.wheel.starPoints = 1200;
+  } else if (preset === 'pack_crossperiod') {
+    // rc.55 / B-05：昨天买满 2 个付费包、昨天也领过免费包。今天进界面应当能重新领免费包，
+    // 领完后付费计数必须归零，否则下一次报价会把昨天的 2 次当成今天的，直接报「今日已满」。
+    s.world.date = '2026-01-05';
+    s.user.cashCents = 50000000;
+    s.wheel.lowPackTodayDate = '2026-01-04';
+    s.wheel.lowPackTodayFreeUsed = true;
+    s.wheel.lowPackTodayPaid = 2;
   } else if (preset === 'max_pity') {
     s.user.cashCents = 500000000; // 500 万
     s.wheel.starPoints = 4000;
@@ -123,7 +197,7 @@ function buildPresetState(preset, initKey) {
     s.wheel.wishWeekKey = '2026-W47';
     s.wheel.wishWeekFreeUsed = false;
   } else {
-    throw new Error(`未知 preset: ${preset}（可选：empty_bag | three_cards | wish_unlocked | high_wealth | max_pity）`);
+    throw new Error(`未知 preset: ${preset}（可选：empty_bag | three_cards | two_women | choker_unlocked | rc47_gate | rc47_gate_locked | device_shop | device_bag_legacy | wish_unlocked | high_wealth | max_pity）`);
   }
 
   // 账本恒等式兜底（2026-11-20 新增）：
@@ -239,7 +313,12 @@ if (args.target) {
     m.records.push({ kind: 'created', targetFile, at: new Date().toISOString() });
   }
 } else {
-  const chatName = `${TEST_PREFIX}${preset}.jsonl`;
+  // --unique：每次播种用一个新的聊天名（后缀取时间戳）。
+  // 用途：同一 preset 反复跑同一批用例时，卡内按 branch（characterId:chatId）缓存的
+  // 操作日志（host.js loadOpsLog）不会与上一次运行的日志撞键；否则状态已重置、
+  // 日志仍在，会被 applyMissingPlayerOps 重放回已购买/已佩戴的状态。
+  const tag = args.unique ? '__' + Date.now().toString(36) : '';
+  const chatName = `${TEST_PREFIX}${preset}${tag}.jsonl`;
   targetFile = assertSafePath(path.join(charDir, chatName));
   if (!m.records.some((r) => r.targetFile === targetFile)) {
     m.records.push({ kind: 'created', targetFile, at: new Date().toISOString() });

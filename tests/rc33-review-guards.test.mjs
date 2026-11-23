@@ -24,7 +24,7 @@ test('rc.33 M5/M6/H3：头像标记、签名、暗伤与亲密字段都不再丢
   const app=read('src/ui/app.js');
   assert(app.includes('data-rand-avatar='),'随机头像 img 需要标记');
   assert(app.includes("img[data-media],img[data-rand-avatar]"),'wireImages 要接管随机头像');
-  assert(app.includes('v.prefs.displayDock,v.prefs.randomAvatar,v.notice]'),'signature 必须含 randomAvatar');
+  assert(app.includes('v.prefs.displayDock,v.prefs.randomAvatar,v.prefs.wheelFxQuality,v.prefs.cardFxQuality,v.notice]'),'signature 必须含 randomAvatar');
   assert(app.includes("pendingHiddenScar=typeof v.hiddenScar==='string'"),'AI 补全的 hiddenScar 要暂存');
   assert(app.includes('hiddenScar:pendingHiddenScar||'),'保存时优先用暂存的 hiddenScar');
   assert(app.includes('intimacy:{attitude:val(\'c_attitude\').trim(),fetishes:val(\'c_fetishes\').trim()}'),'attitude/fetishes 要进草稿');

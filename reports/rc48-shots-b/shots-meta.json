@@ -1,0 +1,272 @@
+{
+  "runAt": "2026-11-21T18:59:33.231Z",
+  "base": "http://127.0.0.1:8001/",
+  "avatar": "神豪终端7.png",
+  "chat": "__NOAPI_TEST_rc47_gate",
+  "spaceName": "EGO-SHOT-RC48",
+  "probe": {
+    "setViewportSize": false,
+    "frameLocator": false,
+    "emulateMedia": false,
+    "cdp": true,
+    "screenshot": true,
+    "cdpReady": true
+  },
+  "apiCalls": 0,
+  "summary": {
+    "total": 4,
+    "pass": 0,
+    "fail": 4
+  },
+  "shots": [
+    {
+      "shotId": "01-imprint-eligible",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots-b/01-imprint-eligible.png",
+      "verified": false,
+      "fallback": true,
+      "route": "B-clip",
+      "viewport": {
+        "w": 1638,
+        "h": 802
+      },
+      "dpr": 1.5625,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 1184,
+        "y": 68,
+        "width": 292,
+        "height": 584
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 1516,
+        "clientHeight": 1516
+      },
+      "attempts": [
+        {
+          "route": "B-clip",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": false,
+          "detail": "got=292 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": false,
+          "detail": "got=584 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=20768"
+        }
+      ],
+      "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=20768\"}]"
+    },
+    {
+      "shotId": "02-imprint-blocked",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots-b/02-imprint-blocked.png",
+      "verified": false,
+      "fallback": true,
+      "route": "B-clip",
+      "viewport": {
+        "w": 1638,
+        "h": 802
+      },
+      "dpr": 1.5625,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 1184,
+        "y": 68,
+        "width": 292,
+        "height": 584
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 1639,
+        "clientHeight": 1639
+      },
+      "attempts": [
+        {
+          "route": "B-clip",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": false,
+          "detail": "got=292 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": false,
+          "detail": "got=584 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=21793"
+        }
+      ],
+      "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=21793\"}]"
+    },
+    {
+      "shotId": "03-choker-worn",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots-b/03-choker-worn.png",
+      "verified": false,
+      "fallback": true,
+      "route": "B-clip",
+      "viewport": {
+        "w": 1638,
+        "h": 802
+      },
+      "dpr": 1.5625,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 1184,
+        "y": 68,
+        "width": 292,
+        "height": 584
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 838,
+        "clientHeight": 838
+      },
+      "attempts": [
+        {
+          "route": "B-clip",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": false,
+          "detail": "got=292 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": false,
+          "detail": "got=584 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=21787"
+        }
+      ],
+      "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=21787\"}]"
+    },
+    {
+      "shotId": "04-choker-blocked",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots-b/04-choker-blocked.png",
+      "verified": false,
+      "fallback": true,
+      "route": "B-clip",
+      "viewport": {
+        "w": 1638,
+        "h": 802
+      },
+      "dpr": 1.5625,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 1184,
+        "y": 68,
+        "width": 292,
+        "height": 584
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 961,
+        "clientHeight": 961
+      },
+      "attempts": [
+        {
+          "route": "B-clip",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": false,
+          "detail": "got=292 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": false,
+          "detail": "got=584 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=23174"
+        }
+      ],
+      "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=23174\"}]"
+    }
+  ],
+  "violations": []
+}

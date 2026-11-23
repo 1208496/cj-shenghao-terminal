@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>命运轮盘 v2 原型复刻 · 三档画质同屏对比</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0910;color:#ece4d4;font-family:"Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;user-select:none}
+button{font:inherit;cursor:pointer}
+
+.wf-root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+.wf-backdrop{position:absolute;inset:0;background:radial-gradient(720px 720px at 50% 48%,rgba(130,190,152,.18),rgba(8,10,14,.94) 68%);transition:background .25s ease}
+
+/* 顶部控制栏 */
+.wf-bar{position:relative;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;padding:7px 12px;border-radius:999px;background:rgba(18,15,24,.9);border:1px solid rgba(217,184,120,.38);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.wf-bar b{font:700 13px/1 "Songti SC",Georgia,serif;letter-spacing:.2em;color:#fff0c4;margin-right:4px}
+.pill{padding:5px 12px;border-radius:999px;border:1px solid rgba(217,184,120,.35);background:rgba(255,255,255,.05);color:#cfc4ae;font-size:11.5px;font-weight:700;transition:.18s}
+.pill.on{background:linear-gradient(180deg,#f6e3b0,#c89a44);color:#241707;border-color:#fff0c4}
+.stat-chip{font-size:11px;color:#b8ae9c;padding:0 6px}
+.stat-chip em{font-style:normal;color:#ffe69b;font-weight:700}
+
+/* 轮盘主舞台 */
+.wf-stage{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;gap:10px}
+.wf-board{position:relative;width:min(74vmin,520px);height:min(74vmin,520px);display:grid;place-items:center;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.wf-svg{width:100%;height:100%;display:block;overflow:visible}
+.wf-svg path,.wf-svg circle{transition:opacity .22s ease}
+
+/* GO 按钮（原型黑曜鎏金立体感） */
+.go-btn{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:15.2%;aspect-ratio:1;min-width:48px;min-height:48px;border-radius:50%;border:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:radial-gradient(circle at 32% 24%,#fff8df 0%,#ecd08c 22%,#b78939 54%,#5e4116 86%,#2e1e0a 100%);
+  box-shadow:0 0 0 2px #20160b,0 0 0 4.5px rgba(246,215,134,.68),0 0 28px rgba(246,215,134,.42),inset 0 -7px 14px rgba(45,26,6,.78),inset 0 5px 10px rgba(255,250,224,.7);
+  color:#261808;z-index:5;transition:transform .16s ease,box-shadow .22s ease;
+}
+.go-btn .go-main{font:800 clamp(12px,2.1vmin,18px)/1 Georgia,serif;letter-spacing:.14em;text-indent:.14em}
+.go-btn .go-sub{font:700 clamp(8px,1.1vmin,10px)/1.1 sans-serif;opacity:.85;white-space:nowrap}
+.go-btn:hover:not(:disabled){transform:translate(-50%,-50%) scale(1.06)}
+.go-btn:active:not(:disabled){transform:translate(-50%,-50%) scale(.93)}
+.go-btn:disabled{filter:grayscale(.35) brightness(.78);cursor:default}
+
+/* 铭文环慢转 & 中奖四档震动 */
+.rune-orbit{transform-origin:340px 340px}
+@keyframes runeDrift{to{transform:rotate(360deg)}}
+@keyframes lockBreath{0%,100%{opacity:.94}50%{opacity:.54}}
+.beam-locked{animation:lockBreath 1.5s ease-in-out infinite}
+
+.wf-board.shake-gray{animation:shakeLight .28s ease-out}
+.wf-board.shake-red{animation:shakeMed .34s ease-out}
+.wf-board.shake-gold{animation:shakeHeavy .42s ease-out}
+.wf-board.shake-rainbow{animation:shakeEpic .52s ease-out}
+@keyframes shakeLight{0%,100%{transform:none}30%{transform:translate(-2px,1.5px)}60%{transform:translate(2px,-1.5px)}}
+@keyframes shakeMed{0%,100%{transform:none}20%{transform:translate(-4px,2.5px) rotate(-.35deg)}50%{transform:translate(4px,-2.5px) rotate(.35deg)}}
+@keyframes shakeHeavy{0%,100%{transform:none}20%{transform:translate(-6px,3.5px) rotate(-.6deg) scale(1.015)}50%{transform:translate(6px,-4px) rotate(.6deg) scale(1.01)}}
+@keyframes shakeEpic{0%,100%{transform:none}18%{transform:translate(-8px,4px) rotate(-.9deg) scale(1.028)}42%{transform:translate(8px,-5px) rotate(.9deg) scale(1.02)}70%{transform:translate(-4px,2px)}}
+
+/* ===== 三档画质：原型满血 → 逐级做减法（同一套 DOM） ===== */
+.wf-root[data-fxq="high"] .wf-backdrop{backdrop-filter:blur(7px) saturate(.75)}
+.wf-root[data-fxq="high"] .wf-board{filter:drop-shadow(0 28px 64px rgba(0,0,0,.82))}
+.wf-root[data-fxq="high"] .rune-orbit{animation:runeDrift 96s linear infinite}
+
+.wf-root[data-fxq="medium"] .wf-backdrop{backdrop-filter:none;background:radial-gradient(720px 720px at 50% 48%,rgba(34,30,44,.65),rgba(8,8,12,.98) 70%)}
+.wf-root[data-fxq="medium"] .wf-board{filter:none}
+.wf-root[data-fxq="medium"] .rune-orbit{animation:none}
+.wf-root[data-fxq="medium"] [data-fx-glow]{filter:none!important}
+.wf-root[data-fxq="medium"] .wf-sheen{opacity:.5}
+.wf-root[data-fxq="medium"] .wf-vig{opacity:.75}
+.wf-root[data-fxq="medium"] .beam-locked{animation:none}
+
+.wf-root[data-fxq="low"] .wf-backdrop{backdrop-filter:none;background:#09090e}
+.wf-root[data-fxq="low"] .wf-board{filter:none}
+.wf-root[data-fxq="low"] [data-gothic-deco],
+.wf-root[data-fxq="low"] .wf-sheen,
+.wf-root[data-fxq="low"] .wf-vig{opacity:0}
+.wf-root[data-fxq="low"] .rune-orbit,
+.wf-root[data-fxq="low"] .beam-locked{animation:none}
+.wf-root[data-fxq="low"] [data-fx-glow]{filter:none!important}
+.wf-root[data-fxq="low"] .ring-outer-a{fill:#20232b}.wf-root[data-fxq="low"] .ring-outer-b{fill:#282c36}
+.wf-root[data-fxq="low"] .ring-mid-a{fill:#42131f}.wf-root[data-fxq="low"] .ring-mid-b{fill:#521827}
+.wf-root[data-fxq="low"] .ring-in-a{fill:#593f14}.wf-root[data-fxq="low"] .ring-in-b{fill:#6e4f1a}
+
+/* 底部轻浮结果卡 */
+.result-card{
+  position:fixed;left:50%;bottom:16px;z-index:30;transform:translate(-50%,24px);
+  width:min(92vw,450px);padding:13px 16px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(28,22,32,.97),rgba(14,11,18,.99));
+  border:1px solid rgba(217,184,120,.52);box-shadow:0 22px 58px rgba(0,0,0,.78);
+  opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .26s ease;
+}
+.result-card.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.rc-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.rc-no{font:700 11px Georgia,serif;letter-spacing:.18em;color:#b8ae9c}
+.rc-name{font:700 18px "Songti SC",Georgia,serif;color:#fff2cc;letter-spacing:.08em}
+.rc-tip{margin-top:6px;padding:7px 10px;border-radius:10px;background:rgba(255,246,220,.055);border-left:2.5px solid #d9b878;font-size:12px;line-height:1.65;color:#f0e6d2;font-style:italic}
+.wf-meta{position:relative;z-index:10;font-size:11px;color:#b8ae9c;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.wf-meta b{color:#ffe69b}
+</style>
+</head>
+<body>
+<div class="wf-root" id="wfRoot" data-fxq="high">
+  <div class="wf-backdrop"></div>
+
+  <div class="wf-bar">
+    <b>命运轮盘 v2</b>
+    <button class="pill on" data-fxq-set="high">璀璨（原型满血）</button>
+    <button class="pill" data-fxq-set="medium">均衡（去滤镜）</button>
+    <button class="pill" data-fxq-set="low">极速（极简去装饰）</button>
+    <span class="stat-chip">SVG 节点：<em id="nodeCount">--</em></span>
+  </div>
+
+  <div class="wf-stage">
+    <div class="wf-board" id="wfBoard">
+      <svg class="wf-svg" id="wheelSvg" viewBox="0 0 680 680" aria-hidden="true"></svg>
+      <button type="button" class="go-btn" id="goBtn">
+        <span class="go-main">GO</span>
+        <span class="go-sub" id="goSub">今日免费</span>
+      </button>
+    </div>
+    <div class="wf-meta">
+      <span>红保底 <b>3/10</b></span>
+      <span>金保底 <b>11/30</b></span>
+      <span>虹保底 <b>24/60</b></span>
+      <span>点 GO 试转（三档实时无重建切换）</span>
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <div class="rc-top">
+      <span class="rc-no" id="rcNo">NO.48 · 金 · 传说</span>
+      <button class="pill" id="rcClose" style="padding:2px 9px">收起</button>
+    </div>
+    <div class="rc-name" id="rcName">百米游艇</div>
+    <div class="rc-tip" id="rcTip">「港口所有人都在看那艘船，船长站在甲板上朝你敬了个礼。」</div>
+  </div>
+</div>
+
+<script>
+const C = 340, NS = 'http://www.w3.org/2000/svg';
+const RINGS = {
+  outer:  { key:'outer',  n:30, step:12,   r1:212, r2:298, symR:256, symSize:20, clsA:'ring-outer-a', clsB:'ring-outer-b', gradA:'url(#gOuterA)', gradB:'url(#gOuterB)', symCol:'#d7deec' },
+  middle: { key:'middle', n:16, step:22.5, r1:136, r2:200, symR:168, symSize:23, clsA:'ring-mid-a',   clsB:'ring-mid-b',   gradA:'url(#gMidA)',   gradB:'url(#gMidB)',   symCol:'#ffd8de' },
+  inner:  { key:'inner',  n:6,  step:60,   r1:74,  r2:124, symR:99,  symSize:26, clsA:'ring-in-a',    clsB:'ring-in-b',    gradA:'url(#gInA)',    gradB:'url(#gInB)',    symCol:'#fff3c6' },
+  core:   { key:'core',   n:1,  step:360,  r1:52,  r2:66,  symR:59 }
+};
+const SAMPLE_PRIZES = [
+  { no:'05', name:'老影院包场夜', rar:'灰 · 常规', rarKey:'gray', ring:'outer', slot:4, tip:'整个放映厅只给你留了一排座，灯一暗，只剩你和你想叫来的那个人。' },
+  { no:'34', name:'海岛双人七日', rar:'红 · 珍稀', rarKey:'red', ring:'middle', slot:3, tip:'你手机里多了两张机票，同行人那一栏空着，等你填一个名字。' },
+  { no:'48', name:'百米游艇', rar:'金 · 传说', rarKey:'gold', ring:'inner', slot:1, tip:'港口所有人都在看那艘船，船长站在甲板上朝你敬了个礼。' },
+  { no:'53', name:'终端最终愿望', rar:'虹 · 终极大奖', rarKey:'rainbow', ring:'core', slot:0, tip:'终端屏幕整个黑了，只剩一行字在闪：说吧，你想要什么。' }
+];
+const SYMS = [
+  'M8 4h8l-4 6 4 6H8l4-6z M8 20h8','M12 3v6 M12 15v6 M3 12h6 M15 12h6 M6 6l4 4 M18 6l-4 4',
+  'M5 14a7 7 0 0 0 14 0z M9 11c0-2 1-3 1-5 M15 11c0-2 1-3 1-5','M7 5h10l-2 6a3 3 0 0 1-6 0z M12 14v5 M8 20h8',
+  'M12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12z M12 8v4l3 2','M4 9l3-4 5 3 5-3 3 4v3H4z M5 20h14',
+  'M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L5 8.3l5-.7z','M12 2l2.2 6.8L21 12l-6.8 3.2L12 22l-2.2-6.8L3 12l6.8-3.2z'
+];
+
+const polar = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [C + r * Math.cos(a), C + r * Math.sin(a)]; };
+function sector(r1, r2, a0, a1) {
+  const [x0, y0] = polar(r2, a0), [x1, y1] = polar(r2, a1), [x2, y2] = polar(r1, a1), [x3, y3] = polar(r1, a0);
+  const big = (a1 - a0) > 180 ? 1 : 0;
+  return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r2} ${r2} 0 ${big} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}A${r1} ${r1} 0 ${big} 0 ${x3.toFixed(1)} ${y3.toFixed(1)}Z`;
+}
+
+function buildWheel() {
+  let runeD = '', starD = '';
+  for (let i = 0; i < 72; i++) {
+    const deg = i * 5, rad = deg * Math.PI / 180;
+    const [cx, cy] = polar(314, deg);
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    const rot = (x, y) => [cx + x * cos - y * sin, cy + x * sin + y * cos];
+    if (i % 6 === 0) {
+      const p = [[0, -3.4], [2.4, 0], [0, 3.4], [-2.4, 0]].map(([x, y]) => rot(x, y));
+      starD += `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}L${p[1][0].toFixed(1)} ${p[1][1].toFixed(1)}L${p[2][0].toFixed(1)} ${p[2][1].toFixed(1)}L${p[3][0].toFixed(1)} ${p[3][1].toFixed(1)}Z`;
+    } else {
+      const [x1, y1] = rot(0, -3.2), [x2, y2] = rot(0, 3.2);
+      const [x3, y3] = rot(-1.8, i % 2 ? -1.4 : 1.4), [x4, y4] = rot(1.8, i % 2 ? -1.4 : 1.4);
+      runeD += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}M${x3.toFixed(1)} ${y3.toFixed(1)}L${x4.toFixed(1)} ${y4.toFixed(1)}`;
+    }
+  }
+
+  // 外-中 30 瓣尖拱 + 珠点合并
+  let archD = '', archDots = '';
+  for (let i = 0; i < 30; i++) {
+    const a0 = i * 12, aMid = a0 + 6, a1 = a0 + 12;
+    const [x0, y0] = polar(201.5, a0), [xm, ym] = polar(210.5, aMid), [x1, y1] = polar(201.5, a1);
+    const [cx1, cy1] = polar(207, a0 + 2), [cx2, cy2] = polar(207, a1 - 2);
+    archD += `M${x0.toFixed(1)} ${y0.toFixed(1)}Q${cx1.toFixed(1)} ${cy1.toFixed(1)} ${xm.toFixed(1)} ${ym.toFixed(1)}Q${cx2.toFixed(1)} ${cy2.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+    const [bx, by] = polar(205.5, aMid);
+    archDots += `M${bx.toFixed(1)} ${by.toFixed(1)}h.01`;
+  }
+  // 中-内 16 瓣玫瑰菱形窗合并
+  let roseD = '', roseDots = '';
+  for (let i = 0; i < 16; i++) {
+    const deg = i * 22.5 + 11.25, rad = deg * Math.PI / 180, [cx, cy] = polar(130, deg);
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    const rot = (x, y) => [cx + x * cos - y * sin, cy + x * sin + y * cos];
+    const p = [[-6.2, 0], [0, -4.2], [6.2, 0], [0, 4.2]].map(([x, y]) => rot(x, y));
+    roseD += `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}L${p[1][0].toFixed(1)} ${p[1][1].toFixed(1)}L${p[2][0].toFixed(1)} ${p[2][1].toFixed(1)}L${p[3][0].toFixed(1)} ${p[3][1].toFixed(1)}Z`;
+    const [qx, qy] = polar(130, i * 22.5);
+    roseDots += `M${qx.toFixed(1)} ${qy.toFixed(1)}h.01`;
+  }
+  // 内-核 24 齿环合并
+  let teethD = '';
+  for (let i = 0; i < 24; i++) {
+    const [x1, y1] = polar(67, i * 15), [x2, y2] = polar(73, i * 15);
+    teethD += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  }
+
+  let ringsHtml = '';
+  for (const cfg of [RINGS.outer, RINGS.middle, RINGS.inner]) {
+    let a = '', b = '', sep = '', syms = '';
+    for (let i = 0; i < cfg.n; i++) {
+      const a0 = i * cfg.step, a1 = a0 + cfg.step, mid = a0 + cfg.step / 2;
+      const seg = sector(cfg.r1, cfg.r2, a0, a1);
+      if (i % 2 === 0) a += seg; else b += seg;
+      const [sx1, sy1] = polar(cfg.r1, a0), [sx2, sy2] = polar(cfg.r2, a0);
+      sep += `M${sx1.toFixed(1)} ${sy1.toFixed(1)}L${sx2.toFixed(1)} ${sy2.toFixed(1)}`;
+      const [x, y] = polar(cfg.symR, mid);
+      syms += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${mid.toFixed(1)})" style="color:${cfg.symCol}"><use href="#sym${i % SYMS.length}" width="24" height="24" x="-12" y="-12" transform="scale(${(cfg.symSize / 24).toFixed(3)})"/></g>`;
+    }
+    ringsHtml += `<g id="ring-${cfg.key}">
+      <path class="${cfg.clsA}" d="${a}" fill="${cfg.gradA}"/>
+      <path class="${cfg.clsB}" d="${b}" fill="${cfg.gradB}"/>
+      <path d="${sep}" fill="none" stroke="rgba(8,6,12,.75)" stroke-width="1.8"/>
+      <path d="${sep}" fill="none" stroke="rgba(232,199,130,.46)" stroke-width=".7"/>
+      ${syms}
+    </g>`;
+  }
+
+  const svg = document.getElementById('wheelSvg');
+  svg.innerHTML = `<defs>
+    <radialGradient id="gOuterA" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="62%" stop-color="#1f232c"/><stop offset="76%" stop-color="#303542"/><stop offset="89%" stop-color="#252934"/><stop offset="98%" stop-color="#171a22"/></radialGradient>
+    <radialGradient id="gOuterB" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="62%" stop-color="#2a2f3b"/><stop offset="76%" stop-color="#3e4454"/><stop offset="89%" stop-color="#2f3442"/><stop offset="98%" stop-color="#1d202a"/></radialGradient>
+    <radialGradient id="gMidA" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="40%" stop-color="#440f1c"/><stop offset="52%" stop-color="#6c1a2e"/><stop offset="62%" stop-color="#501222"/><stop offset="68%" stop-color="#330b15"/></radialGradient>
+    <radialGradient id="gMidB" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="40%" stop-color="#591525"/><stop offset="52%" stop-color="#8b223b"/><stop offset="62%" stop-color="#66182c"/><stop offset="68%" stop-color="#410e1b"/></radialGradient>
+    <radialGradient id="gInA" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="22%" stop-color="#5a3d10"/><stop offset="31%" stop-color="#986c22"/><stop offset="38%" stop-color="#704e16"/><stop offset="42%" stop-color="#452d0a"/></radialGradient>
+    <radialGradient id="gInB" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="22%" stop-color="#765317"/><stop offset="31%" stop-color="#c18e32"/><stop offset="38%" stop-color="#8d631e"/><stop offset="42%" stop-color="#573b0f"/></radialGradient>
+    <radialGradient id="gBezel" cx="${C}" cy="${C}" r="335" gradientUnits="userSpaceOnUse"><stop offset="88%" stop-color="#16121a"/><stop offset="93%" stop-color="#3b2f21"/><stop offset="96%" stop-color="#70562f"/><stop offset="98.5%" stop-color="#d8b572"/><stop offset="100%" stop-color="#3d2c14"/></radialGradient>
+    <radialGradient id="gBeam" cx="${C}" cy="${C}" r="310" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fffbe4" stop-opacity=".95"/><stop offset="55%" stop-color="#ffe28a" stop-opacity=".72"/><stop offset="100%" stop-color="#d4972a" stop-opacity=".28"/></radialGradient>
+    <radialGradient id="gVignette" cx="50%" cy="50%" r="50%"><stop offset="52%" stop-color="#000" stop-opacity="0"/><stop offset="84%" stop-color="#000" stop-opacity=".22"/><stop offset="100%" stop-color="#000" stop-opacity=".56"/></radialGradient>
+    <radialGradient id="gSheen" cx="30%" cy="24%" r="58%"><stop offset="0%" stop-color="#fff6d6" stop-opacity=".22"/><stop offset="42%" stop-color="#fff2c2" stop-opacity=".06"/><stop offset="100%" stop-color="#fff2c2" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gRainbow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#9c6bff"/><stop offset="24%" stop-color="#3ad8e8"/><stop offset="50%" stop-color="#fff0b8"/><stop offset="76%" stop-color="#ff89c4"/><stop offset="100%" stop-color="#9c6bff"/></linearGradient>
+    <filter id="fGlow" x="-45%" y="-45%" width="190%" height="190%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    ${SYMS.map((d, i) => `<symbol id="sym${i}" viewBox="0 0 24 24"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/></symbol>`).join('')}
+  </defs>
+  <circle cx="${C}" cy="${C}" r="332" fill="url(#gBezel)" stroke="rgba(246,215,134,.55)" stroke-width="1.5"/>
+  <circle cx="${C}" cy="${C}" r="325" fill="#120f17" stroke="rgba(217,184,120,.38)" stroke-width="1"/>
+  <circle cx="${C}" cy="${C}" r="303" fill="#0e0b12" stroke="rgba(217,184,120,.55)" stroke-width="1.2"/>
+  <g class="rune-orbit" data-gothic-deco>
+    <circle cx="${C}" cy="${C}" r="321.5" fill="none" stroke="rgba(217,184,120,.26)" stroke-width=".7"/>
+    <circle cx="${C}" cy="${C}" r="306.5" fill="none" stroke="rgba(217,184,120,.26)" stroke-width=".7"/>
+    <path d="${runeD}" fill="none" stroke="rgba(232,199,130,.66)" stroke-width=".9" stroke-linecap="round"/>
+    <path d="${starD}" fill="rgba(246,222,158,.78)"/>
+  </g>
+  ${ringsHtml}
+  <g data-gothic-deco>
+    <circle cx="${C}" cy="${C}" r="206" fill="none" stroke="#130e17" stroke-width="12"/>
+    <path d="${archD}" fill="none" stroke="rgba(226,190,118,.72)" stroke-width="1.05"/>
+    <path d="${archDots}" fill="none" stroke="rgba(246,215,134,.8)" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="${C}" cy="${C}" r="212" fill="none" stroke="rgba(246,215,134,.72)" stroke-width="1.3"/>
+    <circle cx="${C}" cy="${C}" r="200" fill="none" stroke="rgba(246,215,134,.68)" stroke-width="1.3"/>
+    <circle cx="${C}" cy="${C}" r="130" fill="none" stroke="#150e18" stroke-width="12"/>
+    <path d="${roseD}" fill="rgba(140,34,58,.45)" stroke="rgba(246,215,134,.78)" stroke-width=".9"/>
+    <path d="${roseDots}" fill="none" stroke="rgba(255,236,184,.88)" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="${C}" cy="${C}" r="136" fill="none" stroke="rgba(246,215,134,.75)" stroke-width="1.3"/>
+    <circle cx="${C}" cy="${C}" r="124" fill="none" stroke="rgba(246,215,134,.78)" stroke-width="1.3"/>
+    <circle cx="${C}" cy="${C}" r="70" fill="none" stroke="#150e18" stroke-width="8"/>
+    <path d="${teethD}" fill="none" stroke="rgba(246,215,134,.64)" stroke-width="1.1"/>
+    <circle cx="${C}" cy="${C}" r="74" fill="none" stroke="rgba(255,232,168,.8)" stroke-width="1.3"/>
+    <circle cx="${C}" cy="${C}" r="66" fill="none" stroke="rgba(255,232,168,.65)" stroke-width="1.1"/>
+  </g>
+  <circle cx="${C}" cy="${C}" r="59" fill="none" stroke="url(#gRainbow)" stroke-width="13" opacity=".88"/>
+  <circle cx="${C}" cy="${C}" r="52" fill="#120d16" stroke="rgba(255,240,196,.55)" stroke-width="1"/>
+  <circle class="wf-vig" cx="${C}" cy="${C}" r="298" fill="url(#gVignette)" pointer-events="none"/>
+  <circle class="wf-sheen" cx="${C}" cy="${C}" r="298" fill="url(#gSheen)" pointer-events="none"/>
+  <g id="beamLayer" pointer-events="none"></g>
+  <g id="fxLayer" pointer-events="none"></g>`;
+
+  document.getElementById('nodeCount').textContent = svg.querySelectorAll('*').length;
+  renderBeam('outer', 0, [], true);
+}
+
+function renderBeam(ringKey, slotIdx, trail = [], locked = false) {
+  const layer = document.getElementById('beamLayer');
+  const fxq = document.getElementById('wfRoot').dataset.fxq;
+  const glowAttr = fxq === 'high' ? 'filter="url(#fGlow)"' : '';
+  let out = '';
+  trail.forEach((tr, idx) => {
+    const cfg = RINGS[tr.ring];
+    if (!cfg || tr.ring === 'core') return;
+    const op = Math.max(.06, .44 - idx * .105).toFixed(2);
+    out += `<path d="${sector(cfg.r1, cfg.r2, tr.slot * cfg.step, (tr.slot + 1) * cfg.step)}" fill="#f6cf73" opacity="${op}"/>`;
+  });
+  if (ringKey === 'core') {
+    out += `<g class="${locked ? 'beam-locked' : ''}"><circle cx="${C}" cy="${C}" r="59" fill="none" stroke="#fff7d6" stroke-width="16" opacity=".72" data-fx-glow ${glowAttr}/><circle cx="${C}" cy="${C}" r="59" fill="none" stroke="url(#gRainbow)" stroke-width="11"/></g>`;
+    layer.innerHTML = out; return;
+  }
+  const cfg = RINGS[ringKey], a0 = slotIdx * cfg.step, a1 = a0 + cfg.step;
+  out += `<g class="${locked ? 'beam-locked' : ''}">
+    <path d="${sector(cfg.r1 - 2, cfg.r2 + 2, a0 - .4, a1 + .4)}" fill="rgba(255,224,132,.3)" stroke="#fff2be" stroke-width="${locked ? 3 : 2}" data-fx-glow ${glowAttr}/>
+    <path d="${sector(cfg.r1 + 1, cfg.r2 - 1, a0 + .3, a1 - .3)}" fill="url(#gBeam)" opacity="${locked ? .62 : .46}"/>
+  </g>`;
+  layer.innerHTML = out;
+}
+
+let spinIdx = 0, spinning = false;
+document.getElementById('goBtn').addEventListener('click', () => {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('goBtn').disabled = true;
+  document.getElementById('resultCard').classList.remove('show');
+  const prize = SAMPLE_PRIZES[spinIdx++ % SAMPLE_PRIZES.length];
+  const fxq = document.getElementById('wfRoot').dataset.fxq;
+  const dur = fxq === 'high' ? 3200 : fxq === 'medium' ? 2400 : 800;
+  const t0 = performance.now();
+  const ringsSeq = ['outer', 'middle', 'inner', prize.ring];
+  const trail = [];
+  let prev = '';
+
+  function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    const segIdx = Math.min(3, Math.floor(p * 4));
+    const rKey = ringsSeq[segIdx];
+    const cfg = RINGS[rKey];
+    const ease = 1 - Math.pow(1 - p, 3);
+    const slot = rKey === 'core' ? 0 : (segIdx === 3 && p > .92 ? prize.slot : Math.floor((1 - ease) * cfg.n * 3 + prize.slot) % cfg.n);
+    const key = rKey + ':' + slot;
+    if (key !== prev) {
+      if (prev) { const [pr, ps] = prev.split(':'); trail.unshift({ ring: pr, slot: Number(ps) }); if (trail.length > 4) trail.pop(); }
+      prev = key;
+    }
+    renderBeam(rKey, slot, fxq === 'low' ? [] : trail.slice(0, fxq === 'high' ? 4 : 2), false);
+    if (p < 1) requestAnimationFrame(tick);
+    else {
+      spinning = false;
+      document.getElementById('goBtn').disabled = false;
+      renderBeam(prize.ring, prize.slot, [], true);
+      if (fxq === 'high') {
+        const bd = document.getElementById('wfBoard');
+        bd.classList.remove('shake-gray', 'shake-red', 'shake-gold', 'shake-rainbow');
+        void bd.offsetWidth;
+        bd.classList.add('shake-' + prize.rarKey);
+      }
+      document.getElementById('rcNo').textContent = `NO.${prize.no} · ${prize.rar}`;
+      document.getElementById('rcName').textContent = prize.name;
+      document.getElementById('rcTip').textContent = `「${prize.tip}」`;
+      document.getElementById('resultCard').classList.add('show');
+    }
+  }
+  requestAnimationFrame(tick);
+});
+
+document.getElementById('rcClose').addEventListener('click', () => document.getElementById('resultCard').classList.remove('show'));
+document.querySelectorAll('[data-fxq-set]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-fxq-set]').forEach((x) => x.classList.toggle('on', x === b));
+  document.getElementById('wfRoot').dataset.fxq = b.dataset.fxqSet;
+  renderBeam('outer', 0, [], true);
+}));
+
+buildWheel();
+</script>
+</body>
+</html>

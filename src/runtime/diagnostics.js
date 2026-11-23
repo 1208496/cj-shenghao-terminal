@@ -7,7 +7,9 @@ const CODE_LABELS={
   INVALID_TEXT:'文本为空、类型不符或过长（INVALID_TEXT）'
 };
 export function diagnosticMessage(items=[]){
-  items=items.filter(item=>['CASH_TRANSACTION','TRANSACTION_REFUND','ASSET_TRANSFER'].includes(item.eventType));
+  // rc.41：NO_NATIVE_COMMANDS / NATIVE_NOT_PROCESSED 不带 eventType，不能按事件类型过滤掉，
+  // 否则"模型没输出变量块"这条告警永远不会显示（死代码）。
+  items=items.filter(item=>['CASH_TRANSACTION','TRANSACTION_REFUND','ASSET_TRANSFER','ASSET_GRANT'].includes(item.eventType)||['NO_NATIVE_COMMANDS','NATIVE_NOT_PROCESSED'].includes(item.code));
   if(!items.length)return '';
   const codes=[...new Set(items.map(item=>item.code))];
   if(codes.every(code=>code==='EVIDENCE_NOT_IN_SOURCE'))return '有事件未记录：evidence 不是本轮正文中可匹配的原文。请把对应事件的 evidence 改为本轮正文的直接摘录，再在 MVU 面板重试。其他通过校验的变化已保留。';

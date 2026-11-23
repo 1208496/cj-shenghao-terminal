@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "proto-imprint": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-proto-imprint.png",
+      "rect": {
+        "x": 829,
+        "y": 171,
+        "w": 375,
+        "h": 812
+      }
+    },
+    "proto-choker": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-proto-choker.png",
+      "rect": {
+        "x": 829,
+        "y": 171,
+        "w": 375,
+        "h": 812
+      }
+    },
+    "card-imprint": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-card-imprint.png",
+      "rect": {
+        "x": 1184,
+        "y": 84,
+        "w": 299,
+        "h": 599
+      }
+    },
+    "card-imprint-gate": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-card-imprint-gate.png",
+      "rect": {
+        "x": 1184,
+        "y": 84,
+        "w": 299,
+        "h": 599
+      }
+    },
+    "card-choker": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-card-choker.png",
+      "rect": {
+        "x": 1184,
+        "y": 84,
+        "w": 299,
+        "h": 599
+      }
+    },
+    "card-choker-gate": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full-card-choker-gate.png",
+      "rect": {
+        "x": 1184,
+        "y": 84,
+        "w": 299,
+        "h": 599
+      }
+    }
+  },
+  "errors": []
+}

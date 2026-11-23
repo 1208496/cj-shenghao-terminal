@@ -186,10 +186,15 @@ test('rc.25 the protocol and worldbook carry the seven asset classes and the bod
   const literary=JSON.parse(await fs.readFile(new URL('../src/content/literary.json',import.meta.url),'utf8'));
   const score=literary.entries.find(e=>e.id==='score').body;
   const privateLife=literary.entries.find(e=>e.id==='private-life').body;
-  assert(score.includes('abilityComment')&&score.includes('hiddenScar'));
-  assert(privateLife.includes('天生白虎')&&privateLife.includes('vaginaState'));
+  // rc.38 B.4：score 条目删掉了重复的打分表与奖金数字（打分标准唯一权威在 protocol），
+  // 只保留双轴关系、性器贴合与底线档位准则。
+  assert(score.includes('abilityComment')&&score.includes('limits'));
+  // rc.38 B.3：世界书不再列举具体户型（防止模型盲抄「天生白虎/馒头穴」），只 instruct 读 _context。
+  assert(privateLife.includes('vaginaLook')&&privateLife.includes('vaginaState'));
   assert(literary.entries.find(e=>e.id==='score').constant===true);
-  assert(literary.entries.find(e=>e.id==='private-life').constant===true);
+  // rc.38 B.6：床戏白描条目改为情欲值×私密空间双联开关唤醒，不再常驻。
+  assert(literary.entries.find(e=>e.id==='private-life').constant===false);
+  assert(literary.entries.find(e=>e.id==='private-life').keys.includes('INTIMATE_SCENE_ACTIVE'));
 });
 
 // ----- 9. rc.26：prepareModelCommand 全路径归一化（根除 MVU 红字） -----
@@ -250,9 +255,10 @@ test('rc.26 the outfit panel never repeats currentClothes as the top item',()=>{
   s.characters.char_a.outfit={...s.characters.char_a.outfit,top:'白色真丝衬衫'};
   const {ctx,screens}=screensFor(s,{privateSection:2});
   const html=screens.detail(s.characters.char_a),flat=html.replace(/<[^>]*>/g,'');
+  // rc.39 问题 6：行头面板只以 outfit 为准，重复的「此刻穿着」已删。
   assert.equal(html.split('白色真丝衬衫').length-1,1,'同一句穿着只渲染一次');
-  assert(flat.includes('此刻穿着：白色真丝衬衫'));
-  assert(!html.includes('上装：白色真丝衬衫'));
+  assert(flat.includes('上装：白色真丝衬衫'));
+  assert(!flat.includes('此刻穿着'));
   ctx.sceneSectionByChar.set('char_a',1);
   ctx.expanded.add('char_a');
   const scene=screens.scene();

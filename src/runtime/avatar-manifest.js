@@ -20,6 +20,11 @@ export function avatarBase() {
   return resolvedBase;
 }
 
+// rc.41：交给 host 的 pruneStorage 保护当前这版清单，其余 <REF> 残留可回收。
+export function manifestCacheKey() {
+  return CACHE_KEY;
+}
+
 export function inlineManifest() {
   return INLINE_AVATAR_MANIFEST && INLINE_AVATAR_MANIFEST.schema ? INLINE_AVATAR_MANIFEST : null;
 }

@@ -67,22 +67,31 @@ test('rc.37 旧 PLAYER_CARD_DRAW 仍可调用，返回压轴卡的单卡字段',
   assert.equal(Object.values(s1.inventory).filter((i) => i.category === 'WISH_CARD').length, 3);
 });
 
-// ---------- 低阶卡进赌场：禁绿格 + 240 封顶 ----------
-test('rc.37 低阶星尘卡：禁押翡翠格、可达 240 封顶后不可再加押', () => {
+// ---------- 低阶卡进赌场：rc.42 起取消全部限制（YG 拍板：全卡都能押翡翠、不设上限） ----------
+test('rc.42 低阶星尘卡：翡翠格不再受限，240 分也不再卡押注', () => {
   let s = withCard(initial(), { rarity: 'red', points: 30, poolTier: 'low' });
-  assert.throws(() => run(s, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor: 'green' }), /LOW_CARD_NO_GREEN/);
+  const out = run(s, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor: 'green' });
+  assert(out.operationHistory[Object.keys(out.operationHistory).at(-1)].result, '翡翠押注必须能成立');
   s = withCard(initial(), { rarity: 'red', points: 240, poolTier: 'low' });
-  assert.throws(() => run(s, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor: 'red' }), /LOW_CARD_CAPPED/);
+  assert.doesNotThrow(() => run(s, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor: 'red' }));
 });
 
-test('rc.37 低阶星尘卡：赢分被 240 硬封顶，永远不会超过', () => {
+test('rc.42 低阶星尘卡：赢分按赔率翻倍，不再有 240 封顶', () => {
   const base = withCard(initial(), { rarity: 'red', points: 200, poolTier: 'low' });
-  for (const betColor of ['red', 'black']) {
-    const snap = JSON.parse(JSON.stringify(base));
-    let out;
-    try { out = run(snap, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor }); } catch { continue; }
-    if (out.inventory.card_t) assert(out.inventory.card_t.currentPoints <= 240, '低阶卡赢分不得超过 240');
+  let found = false;
+  for (let round = 0; round < 60 && !found; round += 1) {
+    for (const betColor of ['red', 'black']) {
+      const snap = JSON.parse(JSON.stringify(base));
+      snap.wheel = { ...(snap.wheel || {}), casinoRound: round };
+      const out = run(snap, 'PLAYER_CASINO_BET', { cardId: 'card_t', betColor });
+      const card = out.inventory.card_t;
+      if (!card) continue;
+      assert.equal(card.currentPoints, 400, '低阶卡命中应翻倍到 400，不得被 240 封顶');
+      found = true;
+      break;
+    }
   }
+  assert(found, '60 轮内应出现一次红黑命中');
 });
 
 test('rc.37 高阶卡仍是 2 倍无上限，押绿可用', () => {
@@ -182,7 +191,7 @@ test('rc.37 三页：轮盘页不再有第二层标题，背包商城都带分�
   assert(screens.includes("data-open-wheel=\\\"pack\\\"") || screens.includes('data-open-wheel="pack"'));
   const app = fs.readFileSync('src/ui/app.js', 'utf8');
   assert(app.includes('segTabs('), '背包与商城都要有分段切换');
-  assert(app.includes("bagTab = 'cards'") && app.includes("shopTab = 'ability'"));
+  assert(app.includes("bagTab = 'prizes'") && app.includes("shopTab = 'ability'"), 'rc.40：卡册独立成页后，背包默认落在玩法券');
   assert(app.includes('PLAYER_USE_WHEEL_PRIZE') && app.includes('PLAYER_USE_SURREAL_ITEM'));
 });
 

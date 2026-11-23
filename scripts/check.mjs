@@ -23,7 +23,9 @@ for(const surface of ['opening.html','phone.html']){
 }
 must(d.character_book.entries.length>=11,'substantive worldbook');
 must(d.extensions.world===d.character_book.name&&d.character_version===d.character_book.extensions.version,'book version alignment');
-for(const e of d.character_book.entries){if(['[InitVar]','[config_override]'].includes(e.comment)){must(!e.enabled,'native metadata must not enter prompt');JSON.parse(e.content);}else{must(e.content.length>150&&(e.enabled||e.extensions.stable_id==='extra-boundary')&&(e.constant||e.keys.length>0),'entry substantive');}must(e.extensions.scan_depth===2&&e.extensions.exclude_recursion&&e.extensions.prevent_recursion,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
+for(const e of d.character_book.entries){if(['[InitVar]','[config_override]'].includes(e.comment)){must(!e.enabled,'native metadata must not enter prompt');JSON.parse(e.content);}else{must(e.content.length>150&&(e.enabled||e.extensions.stable_id==='extra-boundary')&&(e.constant||e.keys.length>0),'entry substantive');}const RECURSIVE_TARGETS=new Set(['calendar','private-life','star-abilities','relationships-network']);
+    const recursiveOk=e.extensions.stable_id==='state-context'?(e.extensions.prevent_recursion===false):RECURSIVE_TARGETS.has(e.extensions.stable_id)?(e.extensions.exclude_recursion===false):(e.extensions.exclude_recursion&&e.extensions.prevent_recursion);
+    must(e.extensions.scan_depth===2&&recursiveOk,'activation settings');must(!e.content.includes('【候选提案】'),'author metadata leak');}
 const scripts=d.extensions.tavern_helper.scripts;
 must(scripts.length===4&&scripts.filter(s=>s.enabled).length===3,'native runtime dependency count');
 must(scripts[0].content.includes('registerMvuSchema')&&scripts[1].enabled&&!scripts[2].enabled,'schema and mutually exclusive regional loaders');
@@ -34,7 +36,7 @@ const packed=await fs.readFile(path.join(out,'runtime.js'),'utf8'),bootstrap=awa
 // MVU owns request mode and raw messages. Card-side filters must not suppress output.
 must(!/injectPrompts|setChatMessages|cj-native-extra-story-boundary|cj-native-inline-state-required|不输出UpdateVariable/.test(packed),'native generation ownership');
 const updateEntry=d.character_book.entries.find(e=>e.extensions.stable_id==='protocol');
-must(updateEntry?.enabled&&updateEntry.constant&&updateEntry.comment.includes('[mvu_update]')&&updateEntry.content.includes('正文回复的末尾附且只附一个'),'active native update protocol');
+must(updateEntry?.enabled&&updateEntry.constant&&updateEntry.comment.includes('[mvu_update]')&&updateEntry.content.includes('正文回复的末尾必须附且只附一个完整闭合的'),'active native update protocol');
 must(checkpoint?bootstrap===packed&&d.extensions.cj_shenghao.update_delivery==='embedded-checkpoint':bootstrap.startsWith('// CJ_SHENGHAO_STABLE_LOADER')&&!bootstrap.includes('raw.githubusercontent.com'),'declared loader delivery');
 must(packed.startsWith('// CJ_SHENGHAO_TERMINAL_CORE'),'core marker');new vm.Script(packed);new vm.Script(bootstrap);
 must(await fs.readFile(path.join(root,'dist/terminal.js'),'utf8')===packed,'canonical core parity');

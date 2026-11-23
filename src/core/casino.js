@@ -6,11 +6,10 @@ import { ABILITIES, ABILITY_BY_ID, SURREAL_ITEMS, SURREAL_ITEM_BY_ID, CARD_POINT
 
 export const CARD_RARITIES = ['gray', 'red', 'gold', 'rainbow'];
 // rc.37：一包 3 张，前 2 张走「常规位」权重，第 3 张走「压轴位」权重（两表各自合计 1000）。
-export const CARD_WEIGHT = { gray: 740, red: 210, gold: 45, rainbow: 5 };
-export const CARD_ANCHOR_WEIGHT = { gray: 620, red: 240, gold: 120, rainbow: 20 };
+export const CARD_WEIGHT = { red: 930, gold: 62, rainbow: 8 };
+export const CARD_ANCHOR_WEIGHT = { red: 800, gold: 175, rainbow: 25 };
 export const LOW_CARD_WEIGHT = { gray: 850, red: 150 };
 export const LOW_CARD_ANCHOR_WEIGHT = { gray: 750, red: 250 };
-export const CARD_PITY_RED = 4; // 连续 3 包未出红+，第 4 包压轴位必出红+
 export const CARD_PITY_GOLD = 10; // 连续 9 包未出金+，第 10 包压轴位必出金+
 export const PACK_SIZE = 3;
 // rc.37 低阶星尘卡包：开局即开、便宜、赌场硬封顶。
@@ -18,7 +17,6 @@ export const LOW_PACK_PITY_RED = 5; // 每 5 包压轴位必出红阶
 export const LOW_PACK_DAILY_PAID_LIMIT = 2; // 免费之外每天还能买 2 包
 export const LOW_PACK_CASH_PRICES_CENTS = [200000, 500000]; // ¥2,000 / ¥5,000
 export const LOW_CARD_POINTS = { gray: 10, red: 30 };
-export const LOW_CARD_CASINO_CAP = 240; // 低阶卡单卡赢分硬封顶
 
 // rc.36 星愿圣盘：限制多、要贵。承接原 2/4/8/12/18% 重资产阶梯。
 export const WISH_UNLOCK_BASIS_CENTS = 100000000; // 计级身家满 100 万解锁
@@ -44,7 +42,6 @@ function rollCardSlot({ seed, tier, anchor, pityRed = 0, pityGold = 0 }) {
   const points = low ? LOW_CARD_POINTS : CARD_POINTS;
   let pools = Object.keys(weights);
   if (anchor && !low && pityGold >= CARD_PITY_GOLD - 1) pools = ['gold', 'rainbow'];
-  else if (anchor && !low && pityRed >= CARD_PITY_RED - 1) pools = ['red', 'gold', 'rainbow'];
   else if (anchor && low && pityRed >= LOW_PACK_PITY_RED - 1) pools = ['red'];
   const total = pools.reduce((n, r) => n + weights[r], 0);
   let ticket = Number(fnv1a64(seed) % BigInt(total));
@@ -69,10 +66,7 @@ export function rollWishPack({ seed, poolTier = 'high', pityRed = 0, pityGold = 
     cards,
     nextPity: tier === 'low'
       ? { lowRed: hasRedPlus ? 0 : Math.min(pityRed + 1, LOW_PACK_PITY_RED - 1) }
-      : {
-        red: hasRedPlus ? 0 : Math.min(pityRed + 1, CARD_PITY_RED - 1),
-        gold: hasGoldPlus ? 0 : Math.min(pityGold + 1, CARD_PITY_GOLD - 1),
-      },
+      : { gold: hasGoldPlus ? 0 : Math.min(pityGold + 1, CARD_PITY_GOLD - 1) },
   };
 }
 
@@ -109,17 +103,21 @@ export function wishWheelQuote(wheel, worldDate, tierBasisCents, hasWithdrawal) 
 }
 
 // 赌场一局：种子必须含押注颜色，否则删楼改押就能稳赢。
-export function rollCasino({ seed, cardPoints, betColor }) {
+// rc.42：卡 / 现金 / 资产三种赌注都走这里，stakeValue 是作价（星愿分值或现金分）。
+export function rollCasino({ seed, cardPoints = 0, stakeValue, betColor }) {
+  const stake = Number(stakeValue ?? cardPoints) || 0;
   const hitIndex = Number(fnv1a64(seed) % BigInt(CASINO_SLOTS));
   const landedColor = CASINO_COLOR_OF_SLOT(hitIndex);
   const win = landedColor === betColor;
   const mult = win ? CASINO_MULT[betColor] : 0;
-  const nextPoints = win ? Number(cardPoints) * mult : 0;
+  const nextPoints = win ? stake * mult : 0;
   return { hitIndex, landedColor, win, mult, nextPoints };
 }
 
-export function casinoSeed({ branchKey, date, round, cardId, betColor }) {
-  return `${branchKey}|${date}|c${round}|${cardId}|bet:${betColor}`;
+// rc.42：现金局只拼 cash 标记、不拼金额 —— 删楼把注额从 1 万改成 100 万也摇不出第二种结果。
+export function casinoSeed({ branchKey, date, round, cardId, stakeKind = 'card', stakeKey = '', betColor }) {
+  const tag = stakeKind === 'cash' ? 'cash' : stakeKind === 'asset' ? `asset:${stakeKey}` : `card:${cardId ?? stakeKey}`;
+  return `${branchKey}|${date}|c${round}|${tag}|bet:${betColor}`;
 }
 
 export function drawSeed({ branchKey, date, index, total }) {
@@ -134,15 +132,9 @@ export function wheelPointsSeed({ branchKey, date, index, total }) {
 export function abilityById(id) { return ABILITY_BY_ID[id] || null; }
 export function itemById(id) { return SURREAL_ITEM_BY_ID[id] || null; }
 
-// 升级价：Lv1→2 = 原价×0.8，Lv2→3 = 原价×1.4（取整至十位）
-export function upgradeCost(ability, fromLevel) {
-  const raw = ability.price * (fromLevel === 1 ? 0.8 : 1.4);
-  return Math.round(raw / 10) * 10;
-}
-
 export function shopOffers() {
   return [
-    ...ABILITIES.map((a) => ({ kind: 'ABILITY', id: a.abilityId, name: a.name, tag: a.tag, price: a.price, rarity: a.rarity, upgradable: a.upgradable })),
+    ...ABILITIES.map((a) => ({ kind: 'ABILITY', id: a.abilityId, name: a.name, tag: a.tag, price: a.price, rarity: a.rarity })),
     ...SURREAL_ITEMS.map((i) => ({ kind: 'ITEM', id: i.itemId, name: i.name, tag: i.tag, price: i.price, rarity: i.rarity, consumable: i.consumable })),
   ];
 }

@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>暗夜赌场原型复刻 · 37 格铁珠盘 + 赌桌下注台</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#09080e;color:#f3ead8;font-family:"Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;user-select:none}
+button{font:inherit;cursor:pointer}
+
+.wf-root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+.wf-backdrop{position:absolute;inset:0;background:radial-gradient(760px 760px at 42% 48%,rgba(160,120,210,.16),rgba(7,6,12,.96) 68%)}
+
+.wf-bar{position:relative;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;margin-bottom:10px;padding:7px 12px;border-radius:999px;background:rgba(18,14,24,.92);border:1px solid rgba(217,184,120,.4);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.wf-bar b{font:700 13px/1 "Songti SC",Georgia,serif;letter-spacing:.18em;color:#fff0c4;margin-right:4px}
+.pill{padding:5px 11px;border-radius:999px;border:1px solid rgba(217,184,120,.35);background:rgba(255,255,255,.05);color:#cfc4ae;font-size:11px;font-weight:700}
+.pill.on{background:linear-gradient(180deg,#f6e3b0,#c89a44);color:#241707;border-color:#fff0c4}
+.pts-pill{padding:4px 11px;border-radius:999px;background:rgba(246,215,134,.14);border:1px solid rgba(246,215,134,.45);color:#ffe8a8;font:700 12px Georgia,serif}
+
+/* 主舞台：左轮盘 + 右下注台 */
+.casino-grid{position:relative;z-index:10;width:min(96vw,920px);display:grid;grid-template-columns:minmax(290px,460px) minmax(280px,1fr);gap:18px;align-items:center}
+@media(max-width:800px){.casino-grid{grid-template-columns:1fr;overflow:auto;max-height:84dvh}}
+
+.wheel-wrap{position:relative;width:min(66vmin,448px);height:min(66vmin,448px);margin:0 auto;display:grid;place-items:center}
+svg.casino-svg{width:100%;height:100%;display:block;overflow:visible}
+
+.go-btn{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:19%;aspect-ratio:1;min-width:52px;min-height:52px;border-radius:50%;border:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  background:radial-gradient(circle at 32% 24%,#fff8df 0%,#ecd08c 22%,#b78939 54%,#5e4116 86%,#2e1e0a 100%);
+  box-shadow:0 0 0 2px #20160b,0 0 0 4.5px rgba(246,215,134,.72),0 0 28px rgba(246,215,134,.45),inset 0 -7px 14px rgba(45,26,6,.78);
+  color:#261808;z-index:4;transition:transform .16s,filter .2s;
+}
+.go-btn .go-main{font:800 17px/1 Georgia,serif;letter-spacing:.12em}
+.go-btn .go-sub{font:700 9.5px/1.1 sans-serif;opacity:.85}
+.go-btn:hover:not(:disabled){transform:translate(-50%,-50%) scale(1.06)}
+.go-btn:disabled{filter:grayscale(.55) brightness(.72);cursor:not-allowed}
+
+/* 震动 */
+.wheel-wrap.shake-win{animation:shakeWin .45s ease-out}
+.wheel-wrap.shake-green{animation:shakeGreen .6s ease-out}
+.wheel-wrap.shake-lose{animation:shakeLose .42s ease-out}
+@keyframes shakeWin{0%,100%{transform:none}25%{transform:scale(1.02) rotate(-.5deg)}60%{transform:scale(1.01) rotate(.5deg)}}
+@keyframes shakeGreen{0%,100%{transform:none}20%{transform:scale(1.035) rotate(-1deg)}45%{transform:scale(1.025) rotate(1deg)}}
+@keyframes shakeLose{0%,100%{transform:none}20%{transform:translate(-6px,2px)}50%{transform:translate(6px,-2px)}80%{transform:translate(-3px,1px)}}
+
+/* 右侧独立「赌桌下注台」 */
+.bet-console{background:linear-gradient(180deg,rgba(26,20,34,.96),rgba(14,11,20,.98));border:1px solid rgba(217,184,120,.46);border-radius:20px;padding:15px 16px;box-shadow:0 20px 54px rgba(0,0,0,.68);display:flex;flex-direction:column;gap:11px}
+.console-hd{display:flex;align-items:center;justify-content:space-between}
+.console-hd b{font:700 14px "Songti SC",Georgia,serif;letter-spacing:.14em;color:#fff0c4}
+
+.stake-zone{display:flex;align-items:center;gap:12px;padding:10px;border-radius:14px;border:1.5px dashed rgba(246,215,134,.45);background:radial-gradient(circle at 30% 50%,rgba(246,215,134,.08),rgba(8,6,12,.6));min-height:172px;transition:border-color .2s,background .2s}
+.stake-zone.drag-over{border-color:#ffe69b;background:rgba(246,215,134,.16)}
+.stake-placeholder{width:104px;height:156px;border-radius:11px;flex-shrink:0;border:1px dashed rgba(246,215,134,.38);display:grid;place-items:center;text-align:center;padding:8px;font-size:11px;color:#b8ae9c;line-height:1.5}
+.stake-meta{flex:1;min-width:0}
+.stake-val-big{font:800 26px/1.1 Georgia,serif;color:#ffe69b;text-shadow:0 0 18px rgba(246,215,134,.42);margin-top:2px}
+.stake-val-big.flash{animation:numPulse .55s ease}
+@keyframes numPulse{0%{transform:scale(1)}40%{transform:scale(1.24);color:#fff}100%{transform:scale(1)}}
+.streak-badge{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;background:rgba(246,215,134,.18);color:#ffe49c;border:1px solid rgba(246,215,134,.48)}
+.stake-btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.c-btn{border:1px solid rgba(246,215,134,.45);background:rgba(255,255,255,.06);color:#f4ead6;border-radius:10px;padding:6px 11px;font-size:11px;font-weight:700}
+.c-btn.primary{background:linear-gradient(135deg,#e4c078,#a07222);color:#201406;border-color:transparent}
+.c-btn:disabled{opacity:.42;cursor:not-allowed}
+
+/* 三色押注框：严格只写色区名（不含 ×2 / 18/37 格） */
+.bet-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.bet-box{border-radius:13px;padding:12px 6px;text-align:center;border:1.5px solid transparent;color:#fff;transition:transform .16s,box-shadow .2s,border-color .2s}
+.bet-box.red{background:linear-gradient(145deg,#8d1c34,#4b0d1b);border-color:rgba(240,126,148,.45)}
+.bet-box.black{background:linear-gradient(145deg,#2a2e39,#12141a);border-color:rgba(164,174,196,.42)}
+.bet-box.green{background:linear-gradient(145deg,#176d49,#0a3623);border-color:rgba(104,230,172,.5)}
+.bet-box.selected{transform:translateY(-2px);border-color:#fff0be;box-shadow:0 0 22px rgba(246,215,134,.48),inset 0 0 12px rgba(255,244,200,.24)}
+.bet-box b{display:block;font:700 13.5px "Songti SC",Georgia,serif;letter-spacing:.12em}
+
+/* 2:3 塔罗星愿卡 */
+.wish-card-wrap{perspective:900px;width:104px;height:156px;position:relative;cursor:pointer;flex-shrink:0}
+.wish-card-wrap.sm{width:76px;height:114px}
+.wish-card-wrap.in-slot{opacity:.32;pointer-events:none;transform:scale(.92)}
+.wc-face{position:absolute;inset:0;border-radius:11px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:6px;border:1.5px solid var(--wc-border);background:var(--wc-bg);box-shadow:0 10px 24px rgba(0,0,0,.46),inset 0 1px 0 rgba(255,255,255,.2)}
+.wc-face::before{content:"";position:absolute;inset:3.5px;border-radius:7.5px;border:1px solid var(--wc-inner);pointer-events:none}
+.wc-face::after{content:"";position:absolute;inset:-40%;pointer-events:none;background:linear-gradient(125deg,transparent 38%,var(--wc-sheen) 50%,transparent 62%);animation:cardSheen var(--wc-dur,4.6s) linear infinite}
+@keyframes cardSheen{0%{transform:translateX(-65%) rotate(12deg)}100%{transform:translateX(65%) rotate(12deg)}}
+
+.wc-gray{--wc-bg:radial-gradient(circle at 30% 20%,#454a57,#262932 58%,#16181f);--wc-border:#8e96a8;--wc-inner:rgba(196,204,222,.32);--wc-accent:#b8c0d4;--wc-sheen:rgba(220,228,245,.14);--wc-dur:6s}
+.wc-red{--wc-bg:radial-gradient(circle at 30% 18%,#8f2037,#4e1120 56%,#21080f);--wc-border:#e28a9a;--wc-inner:rgba(255,196,206,.38);--wc-accent:#ffbac7;--wc-sheen:rgba(255,212,220,.22);--wc-dur:4.4s}
+.wc-gold{--wc-bg:radial-gradient(circle at 28% 18%,#c49334,#6f4d14 55%,#261806);--wc-border:#f8db8c;--wc-inner:rgba(255,240,188,.48);--wc-accent:#ffe69b;--wc-sheen:rgba(255,246,206,.3);--wc-dur:3.6s}
+.wc-rainbow{--wc-bg:radial-gradient(circle at 22% 18%,rgba(164,118,255,.55),transparent 52%),radial-gradient(circle at 80% 78%,rgba(86,232,218,.48),transparent 55%),radial-gradient(circle at 50% 50%,#3d2058,#1b102c 62%,#0f091a);--wc-border:#f2d8ff;--wc-inner:rgba(255,232,255,.54);--wc-accent:#aef6ff;--wc-sheen:rgba(255,255,255,.36);--wc-dur:2.8s}
+.wc-rainbow .wc-face{border-color:transparent;background-image:var(--wc-bg),conic-gradient(from 0deg,#ff80c8,#ffe082,#72f7e0,#9d8cff,#ff80c8);background-origin:border-box;background-clip:padding-box,border-box}
+
+.wc-top{display:flex;justify-content:space-between;font:700 8px/1 Georgia,serif;color:var(--wc-accent);position:relative;z-index:2}
+.wc-art{flex:1;display:grid;place-items:center;position:relative;z-index:2;color:var(--wc-accent)}
+.wc-art svg{width:60%;height:60%}
+.wc-foot{position:relative;z-index:2;text-align:center;padding:3px;border-radius:6px;background:rgba(0,0,0,.48);border:1px solid var(--wc-inner)}
+.wc-name{font:700 9px/1.15 "Songti SC",serif;color:#fff6e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-val{font:800 13px/1.15 Georgia,serif;color:var(--wc-accent)}
+.wish-card-wrap.sm .wc-face{padding:4px;border-radius:9px}.wish-card-wrap.sm .wc-val{font-size:11.5px}
+
+/* 胜/负卡牌动效 */
+.wish-card-wrap.win-pop{animation:winPop .68s cubic-bezier(.22,1.35,.36,1)}
+@keyframes winPop{0%{transform:scale(1)}35%{transform:scale(1.16) rotate(-2deg);filter:brightness(1.45)}65%{transform:scale(.96) rotate(1.5deg)}100%{transform:scale(1)}}
+.wish-card-wrap.lose-shatter{animation:loseShatter 1s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes loseShatter{0%{transform:scale(1);opacity:1}20%{transform:translate(-5px,2px) rotate(-4deg);filter:grayscale(.7) contrast(1.4)}50%{transform:translate(5px,-3px) rotate(5deg) scale(.94);filter:grayscale(1) brightness(.5)}100%{transform:translateY(32px) scale(.55) rotate(14deg);filter:grayscale(1) brightness(.15) blur(3px);opacity:0}}
+.crack-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:0}
+.wish-card-wrap.lose-shatter .crack-overlay{animation:crackShow .9s ease forwards}
+@keyframes crackShow{0%{opacity:0}18%{opacity:1}70%{opacity:.95}100%{opacity:0}}
+
+.hand-tray{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 6px;scrollbar-width:thin}
+.outcome-banner{padding:9px 11px;border-radius:12px;font-size:11.5px;line-height:1.55;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.32);color:#d7cebe}
+.outcome-banner.win{border-color:rgba(246,215,134,.68);background:rgba(217,168,72,.16);color:#fff2cc}
+.outcome-banner.lose{border-color:rgba(224,78,96,.68);background:rgba(130,22,38,.26);color:#ffd2d8}
+
+/* 三档画质降级 */
+.wf-root[data-fxq="high"] .wheel-wrap{filter:drop-shadow(0 26px 58px rgba(0,0,0,.8))}
+.wf-root[data-fxq="medium"] .wheel-wrap,
+.wf-root[data-fxq="low"] .wheel-wrap{filter:none}
+.wf-root[data-fxq="medium"] .wc-face::after,
+.wf-root[data-fxq="low"] .wc-face::after{animation:none;opacity:0}
+.wf-root[data-fxq="low"] [data-gothic-deco]{opacity:0}
+</style>
+</head>
+<body>
+<div class="wf-root" id="wfRoot" data-fxq="high">
+  <div class="wf-backdrop"></div>
+
+  <div class="wf-bar">
+    <b>暗夜赌场原型复刻</b>
+    <button class="pill on" data-fxq-set="high">璀璨</button>
+    <button class="pill" data-fxq-set="medium">均衡</button>
+    <button class="pill" data-fxq-set="low">极速</button>
+    <button class="pill" id="btnForceWin">下局必中</button>
+    <button class="pill" id="btnForceLose">下局必输</button>
+    <span class="pts-pill" id="topPts">✦ 420 星愿积分</span>
+  </div>
+
+  <div class="casino-grid">
+    <div class="wheel-wrap" id="casinoWrap">
+      <svg class="casino-svg" id="casinoSvg" viewBox="0 0 680 680"></svg>
+      <button class="go-btn" id="btnGo" disabled>
+        <span class="go-main">GO</span>
+        <span class="go-sub" id="goSub">请先放卡</span>
+      </button>
+    </div>
+
+    <section class="bet-console">
+      <div class="console-hd">
+        <b>❖ 赌桌下注台</b>
+        <span style="font-size:11px;color:#b8ae9c" id="handCount">4 张可用</span>
+      </div>
+
+      <div class="stake-zone" id="stakeZone">
+        <div id="stakeCardSlot" class="stake-placeholder">点击或拖入<br>下方星愿卡<br>作为赌注</div>
+        <div class="stake-meta">
+          <div style="font-size:11px;color:#b8ae9c">当前赌注价值</div>
+          <div class="stake-val-big" id="stakeValBig">—</div>
+          <div id="stakeStreak" style="font-size:11px;color:#9e9484;margin-top:4px">尚未放入赌注</div>
+          <div class="stake-btns">
+            <button class="c-btn primary" id="btnCashOut" disabled>收手兑换</button>
+            <button class="c-btn" id="btnReturn" disabled>收回背包</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新产品决定：按钮只留色区名 -->
+      <div class="bet-choices">
+        <button type="button" class="bet-box red selected" data-bet="red"><b>绯红框</b></button>
+        <button type="button" class="bet-box black" data-bet="black"><b>黑曜框</b></button>
+        <button type="button" class="bet-box green" data-bet="green"><b>翡翠框</b></button>
+      </div>
+
+      <div>
+        <div style="font-size:11px;color:#bfb49f;margin-bottom:4px">背包星愿卡（点击或拖拽上桌）</div>
+        <div class="hand-tray" id="handTray"></div>
+      </div>
+
+      <div class="outcome-banner" id="outcomeBanner">
+        押中翻倍（绯红/黑曜 ×2，翡翠 ×36），押错整张销毁。低阶星尘卡禁押翡翠格且封顶 240 分；高阶圣典卡不设上限。
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const CX = 340, CY = 340, STEP = 360 / 37;
+const RED_NUMS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const EURO_SEQ = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const POCKETS = EURO_SEQ.map((n, idx) => ({ idx, color: n === 0 ? 'green' : RED_NUMS.has(n) ? 'red' : 'black' }));
+const ART = {
+  gray: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="22" stroke-dasharray="3 3" opacity=".55"/><polygon points="32,10 42,32 32,54 22,32" fill="rgba(255,255,255,.06)"/><circle cx="32" cy="32" r="5"/></svg>',
+  red: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="23" opacity=".5"/><path d="M32 10 C42 20 46 30 32 52 C18 30 22 20 32 10 Z" fill="rgba(255,160,180,.14)"/><circle cx="32" cy="30" r="3.5" fill="currentColor"/></svg>',
+  gold: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="24" stroke-dasharray="2 3" opacity=".65"/><polygon points="32,7 37,25 55,32 37,39 32,57 27,39 9,32 27,25" fill="rgba(255,230,150,.18)"/><circle cx="32" cy="32" r="4" fill="currentColor"/></svg>',
+  rainbow: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="25" opacity=".7"/><polygon points="32,5 38,24 58,32 38,40 32,59 26,40 6,32 26,24" fill="rgba(255,255,255,.16)"/><circle cx="32" cy="32" r="4" fill="#fff"/></svg>'
+};
+const TIER_NAME = { gray:['灰阶·I','灰烬星愿卡'], red:['红阶·II','绯红星愿卡'], gold:['金阶·III','鎏金星愿卡'], rainbow:['虹阶·IV','虹光星愿卡'] };
+
+const st = {
+  pts: 420, selectedBet: 'red', stakedId: null, spinning: false, force: null,
+  cards: [
+    { id:'c1', rarity:'red', value:60, streak:0 },
+    { id:'c2', rarity:'gold', value:200, streak:0 },
+    { id:'c3', rarity:'rainbow', value:800, streak:0 },
+    { id:'c4', rarity:'gray', value:20, streak:0 }
+  ]
+};
+
+const polar = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [CX + r * Math.cos(a), CY + r * Math.sin(a)]; };
+function sector(rIn, rOut, a0, a1) {
+  const [x1, y1] = polar(rOut, a0), [x2, y2] = polar(rOut, a1), [x3, y3] = polar(rIn, a1), [x4, y4] = polar(rIn, a0);
+  return `M${x1.toFixed(1)},${y1.toFixed(1)} A${rOut},${rOut} 0 0 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${x3.toFixed(1)},${y3.toFixed(1)} A${rIn},${rIn} 0 0 0 ${x4.toFixed(1)},${y4.toFixed(1)} Z`;
+}
+
+function buildCasino() {
+  let pockets = '', diamonds = '';
+  for (const p of POCKETS) {
+    const a0 = p.idx * STEP - STEP / 2, a1 = a0 + STEP, mid = p.idx * STEP;
+    const fill = p.color === 'green' ? 'url(#gGreen)' : p.color === 'red' ? 'url(#gRed)' : 'url(#gBlack)';
+    const col = p.color === 'green' ? '#82f5be' : p.color === 'red' ? '#e89aa8' : '#7c8498';
+    const [gx, gy] = polar(214, mid);
+    pockets += `<g class="pocket-g" data-pcolor="${p.color}">
+      <path d="${sector(158, 250, a0, a1)}" fill="${fill}" stroke="#d9b878" stroke-width=".9"/>
+      <path d="${sector(158, 174, a0, a1)}" fill="rgba(0,0,0,.38)" stroke="rgba(217,184,120,.38)" stroke-width=".6"/>
+      <circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="3.2" fill="none" stroke="${col}" stroke-width="1.3"/>
+    </g>`;
+  }
+  for (let i = 0; i < 8; i++) {
+    const [dx, dy] = polar(288, i * 45);
+    diamonds += `<g transform="translate(${dx.toFixed(1)},${dy.toFixed(1)}) rotate(${i * 45})"><polygon points="0,-7 4,0 0,7 -4,0" fill="url(#gGold)" stroke="#241708" stroke-width=".8"/></g>`;
+  }
+  document.getElementById('casinoSvg').innerHTML = `<defs>
+    <radialGradient id="gWood" cx="35%" cy="28%"><stop offset="0%" stop-color="#3a2926"/><stop offset="55%" stop-color="#1b141a"/><stop offset="100%" stop-color="#0b090e"/></radialGradient>
+    <radialGradient id="gTrack" cx="50%" cy="50%"><stop offset="72%" stop-color="#18121b"/><stop offset="88%" stop-color="#2b212a"/><stop offset="100%" stop-color="#110d14"/></radialGradient>
+    <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff4cc"/><stop offset="45%" stop-color="#d8ad56"/><stop offset="100%" stop-color="#6d4b14"/></linearGradient>
+    <radialGradient id="gRed" cx="50%" cy="30%"><stop offset="0%" stop-color="#a8203c"/><stop offset="100%" stop-color="#4e0c1a"/></radialGradient>
+    <radialGradient id="gBlack" cx="50%" cy="30%"><stop offset="0%" stop-color="#2c303c"/><stop offset="100%" stop-color="#101218"/></radialGradient>
+    <radialGradient id="gGreen" cx="50%" cy="30%"><stop offset="0%" stop-color="#219665"/><stop offset="100%" stop-color="#0a422a"/></radialGradient>
+    <radialGradient id="gBall" cx="32%" cy="28%"><stop offset="0%" stop-color="#fff"/><stop offset="30%" stop-color="#dce4f0"/><stop offset="70%" stop-color="#7c8799"/><stop offset="100%" stop-color="#272c36"/></radialGradient>
+  </defs>
+  <circle cx="${CX}" cy="${CY}" r="326" fill="url(#gWood)" stroke="url(#gGold)" stroke-width="5"/>
+  <circle cx="${CX}" cy="${CY}" r="312" fill="none" stroke="rgba(246,215,134,.34)" stroke-width="1.2" stroke-dasharray="3 5" data-gothic-deco/>
+  <circle cx="${CX}" cy="${CY}" r="298" fill="url(#gTrack)" stroke="#6d501d" stroke-width="2"/>
+  <circle cx="${CX}" cy="${CY}" r="260" fill="none" stroke="rgba(246,215,134,.45)" stroke-width="1.5"/>
+  <g data-gothic-deco>${diamonds}</g>
+  <g id="casinoRotor" transform="rotate(0 ${CX} ${CY})">
+    ${pockets}
+    <circle cx="${CX}" cy="${CY}" r="158" fill="#17121b" stroke="url(#gGold)" stroke-width="2.6"/>
+    <circle cx="${CX}" cy="${CY}" r="128" fill="none" stroke="rgba(246,215,134,.3)" stroke-width="1" stroke-dasharray="4 4" data-gothic-deco/>
+    <g stroke="url(#gGold)" stroke-width="3" opacity=".82"><line x1="${CX}" y1="${CY-152}" x2="${CX}" y2="${CY+152}"/><line x1="${CX-152}" y1="${CY}" x2="${CX+152}" y2="${CY}"/></g>
+    <circle cx="${CX}" cy="${CY}" r="88" fill="#1b1420" stroke="url(#gGold)" stroke-width="2"/>
+  </g>
+  <g id="ballTrail" pointer-events="none"></g>
+  <g id="steelBall" transform="translate(${CX},${CY - 274})">
+    <circle r="11.2" fill="rgba(0,0,0,.45)" cx="2" cy="3"/>
+    <circle r="10" fill="url(#gBall)" stroke="#eef4ff" stroke-width=".7"/>
+    <circle r="2.8" cx="-3.2" cy="-3.4" fill="#fff" opacity=".9"/>
+  </g>`;
+}
+
+function cardHtml(c, sm = false) {
+  const [tier, name] = TIER_NAME[c.rarity];
+  return `<div class="wish-card-wrap wc-${c.rarity} ${sm ? 'sm' : ''} ${sm && c.id === st.stakedId ? 'in-slot' : ''}" draggable="${sm}" data-card-id="${c.id}">
+    <div class="wc-face">
+      <div class="wc-top"><span>${tier}</span><span>✦</span></div>
+      <div class="wc-art">${ART[c.rarity]}</div>
+      <div class="wc-foot"><div class="wc-name">${name}</div><div class="wc-val">${c.value} 分</div></div>
+      <svg class="crack-overlay" viewBox="0 0 100 150" preserveAspectRatio="none"><path d="M52 0 L44 38 L66 64 L32 98 L58 150 M44 38 L12 52 M66 64 L96 80" stroke="#ff687c" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
+    </div>
+  </div>`;
+}
+
+function syncUI() {
+  document.getElementById('topPts').textContent = `✦ ${st.pts} 星愿积分`;
+  document.getElementById('handCount').textContent = `${st.cards.length} 张可用`;
+  const card = st.cards.find((x) => x.id === st.stakedId);
+  const slot = document.getElementById('stakeCardSlot');
+  const mult = st.selectedBet === 'green' ? 36 : 2;
+  if (card) {
+    slot.className = '';
+    slot.innerHTML = cardHtml(card, false);
+    document.getElementById('stakeValBig').textContent = `${card.value} 分`;
+    document.getElementById('stakeStreak').innerHTML = card.streak ? `<span class="streak-badge">🔥 连胜 ×${card.streak} · 再中 → ${card.value * mult}</span>` : `押中后 → <b style="color:#ffe69b">${card.value * mult} 分</b>`;
+  } else {
+    slot.className = 'stake-placeholder';
+    slot.innerHTML = '点击或拖入<br>下方星愿卡<br>作为赌注';
+    document.getElementById('stakeValBig').textContent = '—';
+    document.getElementById('stakeStreak').textContent = '尚未放入赌注';
+  }
+  document.getElementById('btnCashOut').disabled = !card || st.spinning;
+  document.getElementById('btnReturn').disabled = !card || st.spinning;
+  document.getElementById('btnGo').disabled = !card || st.spinning;
+  document.getElementById('goSub').textContent = st.spinning ? '转动中…' : card ? '开始押注' : '请先放卡';
+
+  const tray = document.getElementById('handTray');
+  tray.innerHTML = st.cards.map((c) => cardHtml(c, true)).join('');
+  tray.querySelectorAll('.wish-card-wrap').forEach((el) => {
+    el.addEventListener('click', () => { if (!st.spinning) { st.stakedId = el.dataset.cardId; syncUI(); } });
+    el.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', el.dataset.cardId));
+  });
+  document.querySelectorAll('.pocket-g').forEach((g) => { g.style.opacity = g.dataset.pcolor === st.selectedBet ? '1' : '.68'; });
+}
+
+let rotorAngle = 0, ballAngle = 0;
+document.getElementById('btnGo').addEventListener('click', () => {
+  const card = st.cards.find((x) => x.id === st.stakedId);
+  if (!card || st.spinning) return;
+  st.spinning = true;
+  syncUI();
+  const fxq = document.getElementById('wfRoot').dataset.fxq;
+  const dur = fxq === 'high' ? 4200 : fxq === 'medium' ? 3000 : 1000;
+  const wantWin = st.force ? st.force === 'win' : Math.random() < (st.selectedBet === 'green' ? 0.15 : 0.55);
+  st.force = null;
+  const pool = POCKETS.filter((p) => (wantWin ? p.color === st.selectedBet : p.color !== st.selectedBet));
+  const hit = pool[Math.floor(Math.random() * pool.length)];
+
+  const startR = rotorAngle % 360, endR = startR + 720 + 70;
+  const targetDeg = (endR + hit.idx * STEP) % 360;
+  const startB = ((ballAngle % 360) + 360) % 360;
+  const endB = startB - (((startB - targetDeg) % 360 + 360) % 360) - 360 * (fxq === 'low' ? 2 : 5);
+  const t0 = performance.now(), trail = [];
+
+  function frame(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    rotorAngle = startR + (endR - startR) * (1 - Math.pow(1 - t, 2.2));
+    document.getElementById('casinoRotor').setAttribute('transform', `rotate(${rotorAngle.toFixed(1)} ${CX} ${CY})`);
+    const bDeg = startB + (endB - startB) * (1 - Math.pow(1 - t, 3.6));
+    let r = 274;
+    if (t > .58 && t < .9) { const dt = (t - .58) / .32; r = 274 - 68 * (1 - Math.pow(1 - dt, 2)) + Math.abs(Math.sin(dt * Math.PI * 3.5)) * (1 - dt) * 14; }
+    else if (t >= .9) r = 206;
+    ballAngle = bDeg;
+    const [bx, by] = polar(r, bDeg);
+    document.getElementById('steelBall').setAttribute('transform', `translate(${bx.toFixed(1)},${by.toFixed(1)})`);
+    if (fxq !== 'low') {
+      trail.push([bx, by]); if (trail.length > (fxq === 'high' ? 7 : 3)) trail.shift();
+      document.getElementById('ballTrail').innerHTML = t > .95 ? '' : trail.map((pt, i) => `<circle cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="${4.5 + i * .8}" fill="#e6f0ff" opacity="${((i + 1) / (trail.length + 1) * .38).toFixed(2)}"/>`).join('');
+    }
+    if (t < 1) requestAnimationFrame(frame);
+    else finish(card, hit);
+  }
+  requestAnimationFrame(frame);
+});
+
+function finish(card, hit) {
+  const won = hit.color === st.selectedBet;
+  const wrap = document.getElementById('casinoWrap'), banner = document.getElementById('outcomeBanner');
+  const fxq = document.getElementById('wfRoot').dataset.fxq;
+  wrap.classList.remove('shake-win', 'shake-green', 'shake-lose'); void wrap.offsetWidth;
+  if (won) {
+    const mult = st.selectedBet === 'green' ? 36 : 2;
+    const old = card.value; card.value *= mult; card.streak += 1;
+    if (fxq === 'high') wrap.classList.add(mult === 36 ? 'shake-green' : 'shake-win');
+    st.spinning = false; syncUI();
+    document.querySelector('#stakeCardSlot .wish-card-wrap')?.classList.add('win-pop');
+    const vb = document.getElementById('stakeValBig'); vb.classList.remove('flash'); void vb.offsetWidth; vb.classList.add('flash');
+    banner.className = 'outcome-banner win';
+    banner.innerHTML = `<b>✦ 押中翻倍！</b> 卡牌价值 <b>${old} → ${card.value} 星愿积分</b>（连胜 ×${card.streak}）。`;
+  } else {
+    if (fxq === 'high') wrap.classList.add('shake-lose');
+    document.querySelector('#stakeCardSlot .wish-card-wrap')?.classList.add('lose-shatter');
+    banner.className = 'outcome-banner lose';
+    banner.innerHTML = `<b>✕ 满盘皆输 · 卡牌已销毁</b><br>价值 <b>${card.value} 分</b> 的星愿卡已被暗夜吞噬。`;
+    setTimeout(() => { st.cards = st.cards.filter((x) => x.id !== card.id); st.stakedId = null; st.spinning = false; syncUI(); }, fxq === 'low' ? 280 : 950);
+  }
+}
+
+document.querySelectorAll('.bet-box').forEach((b) => b.addEventListener('click', () => {
+  if (st.spinning) return;
+  st.selectedBet = b.dataset.bet;
+  document.querySelectorAll('.bet-box').forEach((x) => x.classList.toggle('selected', x === b));
+  syncUI();
+}));
+document.getElementById('btnCashOut').addEventListener('click', () => {
+  const c = st.cards.find((x) => x.id === st.stakedId); if (!c || st.spinning) return;
+  st.pts += c.value; st.cards = st.cards.filter((x) => x.id !== c.id); st.stakedId = null;
+  document.getElementById('outcomeBanner').className = 'outcome-banner win';
+  document.getElementById('outcomeBanner').innerHTML = `<b>✦ 落袋为安！</b> 已兑换 <b>+${c.value} 星愿积分</b>。`;
+  syncUI();
+});
+document.getElementById('btnReturn').addEventListener('click', () => { if (!st.spinning) { st.stakedId = null; syncUI(); } });
+document.getElementById('btnForceWin').addEventListener('click', () => { st.force = 'win'; });
+document.getElementById('btnForceLose').addEventListener('click', () => { st.force = 'lose'; });
+const sz = document.getElementById('stakeZone');
+sz.addEventListener('dragover', (e) => { e.preventDefault(); sz.classList.add('drag-over'); });
+sz.addEventListener('dragleave', () => sz.classList.remove('drag-over'));
+sz.addEventListener('drop', (e) => { e.preventDefault(); sz.classList.remove('drag-over'); const id = e.dataTransfer.getData('text/plain'); if (st.cards.some((x) => x.id === id)) { st.stakedId = id; syncUI(); } });
+document.querySelectorAll('[data-fxq-set]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-fxq-set]').forEach((x) => x.classList.toggle('on', x === b));
+  document.getElementById('wfRoot').dataset.fxq = b.dataset.fxqSet;
+}));
+
+buildCasino();
+syncUI();
+</script>
+</body>
+</html>

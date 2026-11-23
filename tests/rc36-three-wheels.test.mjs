@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { z } from 'zod';
 import { createSchema } from '../src/runtime/schema.js';
 import { completeInitialState } from '../src/runtime/settlement.js';
-import { applyOperation, projection, abilityBonus, effectiveProwess, abilityLevel, settleEvents } from '../src/core/engine.js';
+import { applyOperation, projection, abilityBonus, effectiveProwess, settleEvents } from '../src/core/engine.js';
 import { WHEEL_COPY, fill } from '../src/core/wheel-ui-copy.js';
 import { playWheelQuote } from '../src/core/wheel.js';
 import { fresh, anchor, source } from './fixtures.mjs';
@@ -19,7 +19,7 @@ const settle = (s, type, extra = {}) => settleEvents(s, [], anchor(s.meta.revisi
 // ---------- 1. 文案逐字（铁律三：定稿一个字都不许改） ----------
 // rc.37：文案改为从 rc.37 方案 H 节的扁平点分键块抠取，这里同样按行解析后逐字比对。
 test('rc.37 文案：WHEEL_COPY 与方案 H 节代码块逐字一致', () => {
-  const plan = fs.readFileSync('AGY_PLAN_rc37_packs.md', 'utf8');
+  const plan = fs.readFileSync('tests/fixtures/agy_plan_rc37_packs.md', 'utf8');
   const at = plan.indexOf('## H 文案定稿');
   assert(at > 0, '方案里必须有 H 节');
   const block = plan.slice(at).match(/```text\r?\n([\s\S]*?)```/);
@@ -34,7 +34,40 @@ test('rc.37 文案：WHEEL_COPY 与方案 H 节代码块逐字一致', () => {
     for (const p of parts.slice(0, -1)) node = node[p] ||= {};
     node[parts.at(-1)] = kv[2];
   }
-  assert.deepEqual(WHEEL_COPY, tree, '文案必须与定稿完全一致');
+  // rc.38 起文案表新增了确认弹窗 / 五卡阵 / 背包使用通道等键，
+  // 这里改为"rc.37 定稿的每个叶子键都必须逐字保留"，新增键由 rc.38 文案测试单独钉死。
+  // rc.40：圣典卡包「最低红阶」改造（AGY_PLAN_rc39_ui §2.5）正式替换了这三条定稿文案，
+  // 旧值由 rc.39 方案覆盖，逐字比对本轮起跳过它们；新值钉在下面的 rc.40 用例里。
+  delete tree.packs?.high?.sub;
+  delete tree.packs?.high?.ruleText;
+  delete tree.overlay?.confirm?.packHighDetail;
+  // rc.42：异能不再升级，商城/「我的」页的等级与进阶文案正式退场，本轮起从逐字比对里摘掉。
+  delete tree.shop?.btnUpgrade;
+  delete tree.shop?.btnMaxLevel;
+  delete tree.shop?.upgradeOk;
+  delete tree.mine?.abilityLevelBadge;
+  delete tree.mine?.abilityMaxBadge;
+  delete tree.mine?.abilityFixedBadge;
+  delete tree.errors?.SHOP_MAX_LEVEL;
+  // rc.42：赌桌取消全部品阶限制（全卡可押翡翠、不设上限），规则说明与三条限制文案由 rc.42 方案正式替换/删除。
+  delete tree.packs?.low?.ruleText;
+  delete tree.overlay?.casino?.ruleText;
+  delete tree.overlay?.casino?.lowNoGreenHint;
+  delete tree.overlay?.casino?.lowCappedHint;
+  delete tree.overlay?.casino?.winCapped;
+  // rc.43：整理死键 —— 「前往星愿商城」旧按钮文案与低阶卡限制两条错误码已随功能退场删除。
+  delete tree.mine?.abilityGoShop;
+  delete tree.errors?.LOW_CARD_NO_GREEN;
+  delete tree.errors?.LOW_CARD_CAPPED;
+  const checkLeaves = (expected, actual, path = '') => {
+    for (const [k, v] of Object.entries(expected)) {
+      const here = path ? path + '.' + k : k;
+      assert.deepEqual(typeof v === 'object' && v !== null ? 'object' : 'leaf', typeof actual?.[k] === 'object' && actual?.[k] !== null ? 'object' : 'leaf', '结构不一致：' + here);
+      if (typeof v === 'object' && v !== null) checkLeaves(v, actual?.[k], here);
+      else assert.equal(actual?.[k], v, '文案被改动：' + here);
+    }
+  };
+  checkLeaves(tree, WHEEL_COPY);
   assert.equal(fill(COPY_PLAY_BADGE, { price: '¥500' }), '现金 ¥500');
 });
 const COPY_PLAY_BADGE = WHEEL_COPY.wheels.cards.play.badgeCash;
@@ -96,16 +129,16 @@ test('rc.36 赌场：胜负与单卡最高分由脚本累计', () => {
 test('rc.36 异能：甜嗓加好感、摄魂之瞳加堕落、催情香抬下限、铁腰抬战力', () => {
   let s = initial();
   s.user.abilities = [
-    { abilityId: 'ab_voice', level: 2, obtainedDate: s.world.date },
-    { abilityId: 'ab_gaze', level: 1, obtainedDate: s.world.date },
-    { abilityId: 'ab_scent', level: 3, obtainedDate: s.world.date },
-    { abilityId: 'ab_stamina', level: 2, obtainedDate: s.world.date },
+    { abilityId: 'ab_voice', obtainedDate: s.world.date },
+    { abilityId: 'ab_gaze', obtainedDate: s.world.date },
+    { abilityId: 'ab_scent', obtainedDate: s.world.date },
+    { abilityId: 'ab_stamina', obtainedDate: s.world.date },
   ];
   s = schemas.state.parse(s);
-  assert.equal(abilityLevel(s, 'ab_voice'), 2);
+  // rc.42：异能不再升级，效果恒定取中档（YG 拍板）。
   assert.equal(abilityBonus(s, 'ab_voice'), 2);
-  assert.equal(abilityBonus(s, 'ab_gaze'), 2);
-  assert.equal(abilityBonus(s, 'ab_scent'), 16);
+  assert.equal(abilityBonus(s, 'ab_gaze'), 3);
+  assert.equal(abilityBonus(s, 'ab_scent'), 12);
   assert.equal(abilityBonus(s, 'ab_stamina'), 12);
   assert.equal(effectiveProwess(s), Math.min(100, s.user.prowessScore + 12));
 
@@ -115,7 +148,7 @@ test('rc.36 异能：甜嗓加好感、摄魂之瞳加堕落、催情香抬下�
 
   const gazeOn = settle(s, 'CORRUPTION_CHANGE', { personRef: 'char_a', delta: 2 });
   const gazeOff = settle(initial(), 'CORRUPTION_CHANGE', { personRef: 'char_a', delta: 2 });
-  assert.equal(gazeOn.characters.char_a.corruption - gazeOff.characters.char_a.corruption, 2, '摄魂之瞳 Lv.1 应多 +2 堕落');
+  assert.equal(gazeOn.characters.char_a.corruption - gazeOff.characters.char_a.corruption, 3, '摄魂之瞳应恒定多 +3 堕落');
 });
 
 // ---------- 4. 修掉的旧 Bug ----------

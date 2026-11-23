@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>轮盘页定稿 · B 版（含 TOY·LINK 常驻控制卡）</title>
+<style>
+  :root{
+    --ui-page:linear-gradient(145deg,#edf2eb,#f6f4eb 62%,#e8eee9);
+    --ui-surface:#fffdf8;--ui-card:#fffefa;--ui-card2:#f4f7f1;--ui-soft:#eaf1e9;
+    --ui-screen:linear-gradient(180deg,#fcfdf8,#f1f6ef);
+    --ui-ink:#24372a;--ui-sub:#657769;--ui-line:#d9e3d8;--ui-accent:#557a64;--ui-accent-text:#fff;
+    --ui-strong:#395c44;--ui-frame:#2b4335;--ui-gold:#f5dda3;--ui-shadow:rgba(36,63,44,.12);
+    --ui-pool:radial-gradient(circle at 88% 0%,#bea27344,transparent 53%),linear-gradient(145deg,#244b38,#152d22);
+    --ui-pool-text:#ebf1e6;--ui-pool-muted:#cbdccb;
+    --ui-tag-bg:#e8f3e7;--ui-tag-text:#456e52;--ui-tag-border:#c8dbca;
+    --ui-amber-bg:#fdf3df;--ui-amber:#965a1e;
+    --ui-plum-bg:#f4eef8;--ui-plum:#734085;--ui-plum-border:#dcc7e3;
+  }
+  .theme-gold{
+    --ui-page:linear-gradient(145deg,#f8eee2,#fff8ed 65%,#eee1d1);
+    --ui-surface:#fff8ed;--ui-card:#fffbf4;--ui-card2:#f9eee0;--ui-soft:#f7e9d5;
+    --ui-screen:linear-gradient(180deg,#fff9ef,#f5ebdc);
+    --ui-ink:#4d3823;--ui-sub:#7e6a53;--ui-line:#e7d7c1;--ui-accent:#99703b;--ui-accent-text:#fff;
+    --ui-strong:#7e5423;--ui-frame:#74532c;--ui-gold:#ffe3a8;--ui-shadow:rgba(83,53,24,.14);
+    --ui-pool:radial-gradient(circle at 88% 0%,#f3d28c66,transparent 52%),linear-gradient(145deg,#6a4929,#342817);
+    --ui-pool-text:#fff1d8;--ui-pool-muted:#ead7b6;
+    --ui-tag-bg:#f7e5ce;--ui-tag-text:#8b5e2e;--ui-tag-border:#e5ceb0;
+    --ui-amber-bg:#fff4df;--ui-amber:#9c5718;
+    --ui-plum-bg:#f6edf8;--ui-plum:#7b3b8c;--ui-plum-border:#dfc5e6;
+  }
+  .theme-purple{
+    --ui-page:linear-gradient(145deg,#140e20,#261735 60%,#171120);
+    --ui-surface:#231c34;--ui-card:#30253f;--ui-card2:#382c4b;--ui-soft:#3c2e51;
+    --ui-screen:linear-gradient(165deg,#292039,#20172e);
+    --ui-ink:#f6efff;--ui-sub:#d3c3e8;--ui-line:#544464;--ui-accent:#be9cf6;--ui-accent-text:#21162f;
+    --ui-strong:#e2ceff;--ui-frame:#15101e;--ui-gold:#ffe5a7;--ui-shadow:rgba(8,5,15,.45);
+    --ui-pool:radial-gradient(circle at 90% 0%,#a868db65,transparent 52%),linear-gradient(145deg,#3b2359,#171127);
+    --ui-pool-text:#f3e6ff;--ui-pool-muted:#d5bee9;
+    --ui-tag-bg:#453558;--ui-tag-text:#ead5ff;--ui-tag-border:#74618e;
+    --ui-amber-bg:#473522;--ui-amber:#ffd596;
+    --ui-plum-bg:#412954;--ui-plum:#e4b8ff;--ui-plum-border:#6d488a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;padding:20px 14px 40px;font:14px/1.5 "Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;background:var(--ui-page);color:var(--ui-ink);display:flex;flex-direction:column;align-items:center;gap:12px}
+  button{font:inherit;cursor:pointer}
+  button:disabled{cursor:not-allowed;opacity:.55}
+
+  .preview-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border-radius:14px;background:var(--ui-card);border:1px solid var(--ui-line);box-shadow:0 6px 20px var(--ui-shadow);max-width:740px;width:100%}
+  .preview-bar strong{font-size:12.5px;margin-right:auto}
+  .pbtn{padding:4px 10px;border-radius:999px;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-ink);font-size:11px;font-weight:600}
+  .pbtn.on{background:var(--ui-accent);color:var(--ui-accent-text);border-color:var(--ui-accent)}
+  .psep{width:1px;height:16px;background:var(--ui-line);margin:0 2px}
+
+  .phone-shell{width:365px;max-width:100%;border-radius:36px;border:6px solid var(--ui-frame);background:var(--ui-surface);box-shadow:0 24px 64px var(--ui-shadow);overflow:hidden;display:flex;flex-direction:column;transition:width .22s ease,border-radius .22s ease;position:relative}
+  .phone-shell.is-wide{width:min(720px,100%);border-radius:16px;border-width:1px;border-color:var(--ui-line)}
+  .phone-hd{padding:16px 15px 10px;background:var(--ui-card);border-bottom:1px solid var(--ui-line);display:flex;align-items:center;justify-content:space-between}
+  .phone-hd b{font:700 18px/1.1 "Songti SC","SimSun",serif;letter-spacing:1px}
+  .phone-hd small{display:block;font-size:9px;color:var(--ui-sub);letter-spacing:.12em;margin-top:2px}
+  .hd-dots{display:flex;gap:6px}
+  .hd-dots span{width:28px;height:28px;border-radius:9px;background:var(--ui-soft);display:grid;place-items:center;font-size:14px;color:var(--ui-ink)}
+
+  .phone-screen{background:var(--ui-screen);padding:14px 14px 18px}
+  .phone-bottom{display:grid;grid-template-columns:repeat(5,1fr);padding:7px 4px;background:var(--ui-card);border-top:1px solid var(--ui-line);text-align:center;font-size:10px;color:var(--ui-sub)}
+  .phone-bottom .on{color:var(--ui-accent);font-weight:800}
+  .phone-bottom i{display:block;font-style:normal;font-size:15px;line-height:1.2}
+  .phone-shell.is-wide .phone-bottom{display:none}
+
+  /* ===== B 版定稿核心 ===== */
+  .wheel-banner-stats{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:13px 12px;margin-bottom:14px;border-radius:16px;background:var(--ui-pool);color:var(--ui-pool-text);border:1px solid var(--ui-line)}
+  .wb-cell{display:flex;align-items:baseline;justify-content:center;gap:5px;min-width:0}
+  .wb-ico{font-size:13px;color:var(--ui-gold);line-height:1}
+  .wb-num{font:700 20px/1 Georgia,serif;color:var(--ui-gold);font-variant-numeric:tabular-nums}
+  .wb-lbl{font-size:10.5px;color:var(--ui-pool-muted);white-space:nowrap}
+  .wb-div{width:1px;height:22px;background:rgba(255,255,255,.22)}
+
+  .sec-kicker{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--ui-sub)}
+  .sec-kicker small{font-weight:400;opacity:.8}
+
+  .wheel-hub-stack{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-bottom:16px}
+  .phone-shell.is-wide .wheel-hub-stack{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .wcard-b{position:relative;display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;padding:13px 14px 13px 17px;border-radius:15px;border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-ink);transition:border-color .16s}
+  .wcard-b::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3.5px;border-radius:3px;background:var(--bar,var(--ui-accent))}
+  .wcard-b.is-play{--bar:#d9b878}
+  .wcard-b.is-pack{--bar:#b482f0}
+  .wcard-b.is-casino{--bar:#d95d78}
+  .wcard-b:hover{border-color:var(--ui-accent)}
+  .wcard-b-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .wcard-b-top b{font-size:13.5px;line-height:1.2}
+  .wcard-b-badge{font-size:9.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--ui-tag-border);background:var(--ui-tag-bg);color:var(--ui-tag-text);font-weight:700;white-space:nowrap}
+  .wcard-b-meta{font-size:10.5px;color:var(--ui-sub);line-height:1.45}
+
+  .dock-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+  .phone-shell.is-wide .dock-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .dock-row{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border-radius:14px;border:1px solid var(--ui-line);background:var(--ui-card);color:var(--ui-ink);text-align:left;transition:border-color .16s,background .16s}
+  .dock-row:hover{border-color:var(--ui-accent);background:var(--ui-soft)}
+  .dock-icon{width:36px;height:36px;border-radius:11px;background:var(--ui-soft);display:grid;place-items:center;font-size:16px;flex-shrink:0}
+  .dock-copy{flex:1;min-width:0}
+  .dock-copy b{display:block;font-size:13px;line-height:1.25}
+  .dock-copy small{display:block;font-size:10px;color:var(--ui-sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dock-tail{display:flex;align-items:center;gap:5px;flex-shrink:0;font-size:11px;font-weight:700;color:var(--ui-strong)}
+  .dock-tail i{font-style:normal;font-size:15px;color:var(--ui-sub)}
+
+  /* ===== TOY·LINK 常驻独立控制卡（四态） ===== */
+  .toylink-card{position:relative;display:flex;align-items:center;gap:10px;padding:12px 12px 12px 15px;margin-top:10px;border-radius:14px;border:1px solid var(--ui-line);background:var(--ui-card);--tl-bar:var(--ui-line);transition:border-color .18s,opacity .18s}
+  .toylink-card::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:3.5px;border-radius:3px;background:var(--tl-bar)}
+  .toylink-ico{width:36px;height:36px;border-radius:11px;background:var(--ui-soft);display:grid;place-items:center;font-size:15px;flex-shrink:0}
+  .toylink-body{flex:1;min-width:0}
+  .toylink-body b{display:block;font-size:12.5px;line-height:1.25}
+  .toylink-body small{display:block;font-size:10px;color:var(--ui-sub);margin-top:2px;line-height:1.4}
+  .cj-act{font:inherit;font-size:11px;padding:6px 12px;border-radius:10px;border:1px solid var(--ui-line);background:var(--ui-soft);color:var(--ui-ink);white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px}
+  .cj-act.primary{background:var(--ui-accent);color:var(--ui-accent-text);border-color:transparent;font-weight:700}
+
+  .toylink-card[data-toylink-state="locked"]{border-style:dashed;opacity:.76;--tl-bar:#9aa3b5}
+  .toylink-card[data-toylink-state="locked"] .toylink-ico{filter:grayscale(.6)}
+
+  .toylink-card[data-toylink-state="missing-ext"]{--tl-bar:#d99b43;border-color:rgba(217,155,67,.5)}
+  .toylink-card[data-toylink-state="missing-ext"] .toylink-ico{background:var(--ui-amber-bg);color:var(--ui-amber)}
+
+  .toylink-card[data-toylink-state="ready"]{--tl-bar:var(--ui-accent);border-color:var(--ui-accent)}
+  .toylink-card[data-toylink-state="ready"] .toylink-ico{background:var(--ui-tag-bg);color:var(--ui-tag-text)}
+
+  .toylink-card[data-toylink-state="active"]{--tl-bar:#a978f2;border-color:#a978f2;box-shadow:inset 0 0 0 1px rgba(169,120,242,.25)}
+  .toylink-card[data-toylink-state="active"] .toylink-ico{background:var(--ui-plum-bg);color:var(--ui-plum)}
+  .toylink-live-btn{background:var(--ui-plum-bg);color:var(--ui-plum);border-color:var(--ui-plum-border);font-weight:700}
+  .tl-dot{width:7px;height:7px;border-radius:50%;background:#3fb97a;display:inline-block}
+
+  .demo-toast{position:absolute;left:14px;right:14px;bottom:68px;padding:9px 12px;border-radius:12px;background:var(--ui-surface);border:1px solid var(--ui-accent);color:var(--ui-ink);font-size:11.5px;font-weight:700;text-align:center;box-shadow:0 10px 26px var(--ui-shadow);opacity:0;pointer-events:none;transition:opacity .18s}
+  .demo-toast.on{opacity:1}
+
+  .design-note{max-width:740px;width:100%;padding:12px 15px;border-radius:14px;background:var(--ui-card);border:1px dashed var(--ui-line);font-size:12px;color:var(--ui-sub);line-height:1.7}
+  .design-note b{color:var(--ui-ink)}
+</style>
+</head>
+<body>
+  <div class="preview-bar">
+    <strong>B 版定稿 · 含 TOY·LINK 常驻卡</strong>
+    <button class="pbtn on" data-th="sage">鼠尾草绿</button>
+    <button class="pbtn" data-th="gold">香槟暖金</button>
+    <button class="pbtn" data-th="purple">深曜雾紫</button>
+    <span class="psep"></span>
+    <button class="pbtn on" data-w="phone">365px 手机</button>
+    <button class="pbtn" data-w="wide">宽屏停靠</button>
+    <span class="psep"></span>
+    <button class="pbtn on" data-tl="locked">未获得（默认）</button>
+    <button class="pbtn" data-tl="missing-ext">已获得·未装扩展</button>
+    <button class="pbtn" data-tl="ready">已获得·就绪</button>
+    <button class="pbtn" data-tl="active">运行中</button>
+  </div>
+
+  <div class="phone-shell" id="shell">
+    <header class="phone-hd">
+      <div><b>轮盘</b><small>YOUR STORY · YOUR FORTUNE</small></div>
+      <div class="hd-dots"><span>⚙</span><span>×</span></div>
+    </header>
+    <main class="phone-screen">
+      <!-- 1. 最上方平行显示 -->
+      <div class="wheel-banner-stats">
+        <div class="wb-cell"><span class="wb-ico">✦</span><b class="wb-num">1,280</b><small class="wb-lbl">星愿积分</small></div>
+        <span class="wb-div" aria-hidden="true"></span>
+        <div class="wb-cell"><span class="wb-ico">🃏</span><b class="wb-num">14</b><small class="wb-lbl">藏卡</small></div>
+      </div>
+
+      <!-- 2. 分组一：三个轮盘入口 -->
+      <div class="sec-kicker"><span>三重盘台</span><small>点击全屏启封</small></div>
+      <div class="wheel-hub-stack">
+        <button type="button" class="wcard-b is-play">
+          <span class="wcard-b-top"><b>✦ 命运轮盘</b><span class="wcard-b-badge">今日免费</span></span>
+          <span class="wcard-b-meta">现金 0/8 · 保底 红3/10 金11/30 虹24/60</span>
+        </button>
+        <button type="button" class="wcard-b is-pack">
+          <span class="wcard-b-top"><b>✧ 星愿卡包</b><span class="wcard-b-badge">圣典本周免费</span></span>
+          <span class="wcard-b-meta">星尘 1/3 包 · 圣典 0/2 包</span>
+        </button>
+        <button type="button" class="wcard-b is-casino">
+          <span class="wcard-b-top"><b>❖ 暗夜赌场</b><span class="wcard-b-badge">可押 11 张</span></span>
+          <span class="wcard-b-meta">战绩 7 胜 3 负 · 单卡最高 1600 分</span>
+        </button>
+      </div>
+
+      <!-- 3. 分组二：背包 → 卡册 → 商城 + TOY·LINK 常驻控制卡 -->
+      <div class="sec-kicker"><span>藏品与兑换</span><small>背包 · 卡册 · 商城</small></div>
+      <div class="dock-list">
+        <button type="button" class="dock-row">
+          <span class="dock-icon">🎒</span>
+          <span class="dock-copy"><b>背包</b><small>玩法券与超现实奇物</small></span>
+          <span class="dock-tail">5 件<i>›</i></span>
+        </button>
+        <button type="button" class="dock-row">
+          <span class="dock-icon">🃏</span>
+          <span class="dock-copy"><b>卡册</b><small>四档叠卡珍藏 · 图鉴 9/12</small></span>
+          <span class="dock-tail">14 张<i>›</i></span>
+        </button>
+        <button type="button" class="dock-row">
+          <span class="dock-icon">✦</span>
+          <span class="dock-copy"><b>商城</b><small>异能觉醒 · 奇物兑换</small></span>
+          <span class="dock-tail">兑换<i>›</i></span>
+        </button>
+      </div>
+
+      <!-- TOY·LINK 常驻独立卡（默认未获得·禁用态） -->
+      <div class="toylink-card" id="tlCard" data-toylink-card data-toylink-state="locked">
+        <span class="toylink-ico" id="tlIco" aria-hidden="true">🔒</span>
+        <div class="toylink-body">
+          <b>TOY·LINK 终端控制</b>
+          <small>实体设备联动遥控模块，可随时呼出终端面板</small>
+        </div>
+        <button type="button" class="cj-act" id="tlBtn" data-toylink disabled aria-disabled="true">未获得</button>
+      </div>
+    </main>
+    <div class="demo-toast" id="demoToast"></div>
+    <nav class="phone-bottom">
+      <span><i>⌂</i>此刻</span><span><i>♡</i>她们</span><span><i>▣</i>我的</span><span><i>◈</i>财富</span><span class="on"><i>✦</i>轮盘</span>
+    </nav>
+  </div>
+
+  <div class="design-note">
+    <b>TOY·LINK 常驻控制卡说明</b>：默认展示「未获得·禁用态」（虚线框、降饱和、按钮禁用，零碎提示文字）；点击上方状态按钮可一键预览 4 种状态。在「已获得·未装扩展」下点按钮会弹出降级提示，在「已获得·就绪」下点按钮会切换到「运行中」。
+  </div>
+
+<script>
+  const tlCard = document.getElementById('tlCard');
+  const tlIco = document.getElementById('tlIco');
+  const tlBtn = document.getElementById('tlBtn');
+  const demoToast = document.getElementById('demoToast');
+  let toastTimer = null;
+  function showToast(msg) {
+    demoToast.textContent = msg;
+    demoToast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => demoToast.classList.remove('on'), 2400);
+  }
+  function setToyLinkState(st) {
+    tlCard.dataset.toylinkState = st;
+    document.querySelectorAll('[data-tl]').forEach((x) => x.classList.toggle('on', x.dataset.tl === st));
+    tlIco.textContent = st === 'locked' ? '🔒' : '📡';
+    tlBtn.disabled = st === 'locked';
+    tlBtn.setAttribute('aria-disabled', st === 'locked' ? 'true' : 'false');
+    tlBtn.className = st === 'ready' ? 'cj-act primary' : st === 'active' ? 'cj-act toylink-live-btn' : 'cj-act';
+    if (st === 'locked') tlBtn.textContent = '未获得';
+    else if (st === 'missing-ext') tlBtn.textContent = '未连扩展';
+    else if (st === 'ready') tlBtn.textContent = '呼出终端';
+    else tlBtn.innerHTML = '<span class="tl-dot" aria-hidden="true"></span>运行中';
+  }
+  tlBtn.addEventListener('click', () => {
+    const st = tlCard.dataset.toylinkState;
+    if (st === 'missing-ext') showToast('未检测到 TOY·LINK 实体扩展，请确认扩展已启用。');
+    else if (st === 'ready') { setToyLinkState('active'); showToast('已呼出 TOY·LINK 实体控制终端。'); }
+    else if (st === 'active') showToast('TOY·LINK 终端运行中，已重新聚焦面板。');
+  });
+  document.querySelectorAll('[data-tl]').forEach((b) => b.addEventListener('click', () => setToyLinkState(b.dataset.tl)));
+  document.querySelectorAll('[data-th]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-th]').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    document.documentElement.classList.remove('theme-gold', 'theme-purple');
+    if (b.dataset.th === 'gold') document.documentElement.classList.add('theme-gold');
+    if (b.dataset.th === 'purple') document.documentElement.classList.add('theme-purple');
+  }));
+  document.querySelectorAll('[data-w]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-w]').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById('shell').classList.toggle('is-wide', b.dataset.w === 'wide');
+  }));
+</script>
+</body>
+</html>

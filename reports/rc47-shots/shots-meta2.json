@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "card-imprint": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-card-imprint.png",
+      "rect": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "iframe": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 365,
+        "h": 730
+      },
+      "inner": {
+        "x": 0,
+        "y": 0,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "innerW": 1638,
+      "innerH": 802,
+      "dpr": 1.5625
+    },
+    "card-imprint-gate": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-card-imprint-gate.png",
+      "rect": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "iframe": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 365,
+        "h": 730
+      },
+      "inner": {
+        "x": 0,
+        "y": 0,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "innerW": 1638,
+      "innerH": 802,
+      "dpr": 1.5625
+    },
+    "card-choker": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-card-choker.png",
+      "rect": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "iframe": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 365,
+        "h": 730
+      },
+      "inner": {
+        "x": 0,
+        "y": 0,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "innerW": 1638,
+      "innerH": 802,
+      "dpr": 1.5625
+    },
+    "card-choker-gate": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-card-choker-gate.png",
+      "rect": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "iframe": {
+        "x": 1183.6199951171875,
+        "y": 68,
+        "w": 365,
+        "h": 730
+      },
+      "inner": {
+        "x": 0,
+        "y": 0,
+        "w": 364.79998779296875,
+        "h": 730.239990234375
+      },
+      "innerW": 1638,
+      "innerH": 802,
+      "dpr": 1.5625
+    },
+    "proto-imprint": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-proto-imprint.png",
+      "rect": {
+        "x": 822.9000244140625,
+        "y": 171,
+        "w": 375,
+        "h": 812
+      },
+      "innerW": 2036,
+      "innerH": 1024,
+      "dpr": 1.25
+    },
+    "proto-choker": {
+      "full": "E:\\SHZDCHOSSS\\reports\\rc47-shots\\full2-proto-choker.png",
+      "rect": {
+        "x": 822.9000244140625,
+        "y": 171,
+        "w": 375,
+        "h": 812
+      },
+      "innerW": 2036,
+      "innerH": 1024,
+      "dpr": 1.25
+    }
+  },
+  "errors": []
+}

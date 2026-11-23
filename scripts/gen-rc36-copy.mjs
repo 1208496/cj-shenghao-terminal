@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
-const plan = await fs.readFile(path.join(root, 'AGY_PLAN_rc36_wheels.md'), 'utf8');
+const plan = await fs.readFile(path.join(root, 'E:/AGY_ARCHIVE/SHZD_PLANS/AGY_PLAN_rc36_wheels.md'), 'utf8');
 const marker = '## F 文案定稿';
 const at = plan.indexOf(marker);
 if (at < 0) throw new Error('POLICY_FINAL_SECTION_MISSING');

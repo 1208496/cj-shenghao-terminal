@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "03-choker-worn",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/03-choker-worn.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "CLICK_FAILED([data-open-workshop=\"choker\"]): F3"
+  },
+  "error": "CLICK_FAILED([data-open-workshop=\"choker\"]): F3",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-03-choker-worn-full.png"
+}

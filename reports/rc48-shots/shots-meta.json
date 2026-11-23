@@ -1,0 +1,268 @@
+{
+  "runAt": "2026-11-21T19:02:24.287Z",
+  "base": "http://127.0.0.1:8001/",
+  "avatar": "神豪终端7.png",
+  "chat": "__NOAPI_TEST_rc47_gate",
+  "spaceName": "EGO-SHOT-RC48",
+  "probe": {
+    "setViewportSize": false,
+    "frameLocator": false,
+    "emulateMedia": false,
+    "cdp": true,
+    "screenshot": true,
+    "cdpReady": true
+  },
+  "apiCalls": 0,
+  "summary": {
+    "total": 4,
+    "pass": 4,
+    "fail": 0
+  },
+  "shots": [
+    {
+      "shotId": "01-imprint-eligible",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots/01-imprint-eligible.png",
+      "verified": true,
+      "fallback": false,
+      "route": "A-cdp",
+      "viewport": {
+        "w": 1152,
+        "h": 768
+      },
+      "dpr": 1.2500000186264515,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 783,
+        "y": 34,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 979,
+        "y": 43,
+        "width": 365,
+        "height": 730
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 1516,
+        "clientHeight": 1516
+      },
+      "attempts": [
+        {
+          "route": "A-cdp",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": true,
+          "detail": "got=365 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": true,
+          "detail": "got=730 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=113222"
+        }
+      ]
+    },
+    {
+      "shotId": "02-imprint-blocked",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots/02-imprint-blocked.png",
+      "verified": true,
+      "fallback": false,
+      "route": "A-cdp",
+      "viewport": {
+        "w": 1152,
+        "h": 768
+      },
+      "dpr": 1.2500000186264515,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 783,
+        "y": 34,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 979,
+        "y": 43,
+        "width": 365,
+        "height": 730
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 1639,
+        "clientHeight": 1639
+      },
+      "attempts": [
+        {
+          "route": "A-cdp",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": true,
+          "detail": "got=365 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": true,
+          "detail": "got=730 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=344649"
+        }
+      ]
+    },
+    {
+      "shotId": "03-choker-worn",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots/03-choker-worn.png",
+      "verified": true,
+      "fallback": false,
+      "route": "A-cdp",
+      "viewport": {
+        "w": 1152,
+        "h": 768
+      },
+      "dpr": 1.2500000186264515,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 783,
+        "y": 34,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 979,
+        "y": 43,
+        "width": 365,
+        "height": 730
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 838,
+        "clientHeight": 838
+      },
+      "attempts": [
+        {
+          "route": "A-cdp",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": true,
+          "detail": "got=365 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": true,
+          "detail": "got=730 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=112310"
+        }
+      ]
+    },
+    {
+      "shotId": "04-choker-blocked",
+      "file": "E:/SHZDCHOSSS/reports/rc48-shots/04-choker-blocked.png",
+      "verified": true,
+      "fallback": false,
+      "route": "A-cdp",
+      "viewport": {
+        "w": 1152,
+        "h": 768
+      },
+      "dpr": 1.2500000186264515,
+      "hostTransform": {
+        "html": "matrix(1, 0, 0, 1, 0, 0)",
+        "body": "none",
+        "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "innerWidth": 365,
+      "rectCSS": {
+        "x": 783,
+        "y": 34,
+        "width": 364.79998779296875,
+        "height": 730.239990234375
+      },
+      "rectPx": {
+        "x": 979,
+        "y": 43,
+        "width": 365,
+        "height": 730
+      },
+      "scroll": {
+        "scrollTop": 0,
+        "scrollHeight": 961,
+        "clientHeight": 961
+      },
+      "attempts": [
+        {
+          "route": "A-cdp",
+          "ok": true,
+          "why": ""
+        }
+      ],
+      "checks": [
+        {
+          "name": "size-width",
+          "pass": true,
+          "detail": "got=365 expect=365±1"
+        },
+        {
+          "name": "size-height",
+          "pass": true,
+          "detail": "got=730 expect=730±1"
+        },
+        {
+          "name": "non-empty",
+          "pass": true,
+          "detail": "bytes=129127"
+        }
+      ]
+    }
+  ],
+  "violations": []
+}

@@ -1,0 +1,229 @@
+/* rc.40 统一星愿卡面样式（由 build.mjs 同步注入 phone.html 与 wheel.html） */
+.wc-card{
+  position:relative;
+  width:var(--wc-w,100%);
+  aspect-ratio:5/7;
+  display:block;
+  color:#f4ecdc;
+  contain:layout paint;
+  pointer-events:none;
+}
+.wc-card *{pointer-events:none}
+
+.wc-face{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:var(--wc-radius,12px);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:var(--wc-pad,7px);
+  border:1.5px solid var(--wc-border,#8e96a8);
+  background:var(--wc-bg);
+  box-shadow:0 12px 26px rgba(0,0,0,.48),0 0 18px var(--wc-glow,transparent),inset 0 1px 0 rgba(255,255,255,.22);
+}
+.wc-face::before{
+  content:"";
+  position:absolute;
+  inset:var(--wc-inset,4px);
+  border-radius:calc(var(--wc-radius,12px) - 4px);
+  border:1px solid var(--wc-inner,rgba(196,204,222,.32));
+  pointer-events:none;
+  z-index:1;
+}
+.wc-face::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  pointer-events:none;
+  z-index:3;
+  background:linear-gradient(125deg,transparent 38%,var(--wc-sheen,rgba(255,255,255,.2)) 50%,transparent 62%);
+  animation:wcCardSheen var(--wc-dur,4.4s) linear infinite;
+}
+@keyframes wcCardSheen{
+  0%{transform:translateX(-65%) rotate(12deg)}
+  100%{transform:translateX(65%) rotate(12deg)}
+}
+
+/* 四档金属材质 + 虹彩 conic 边（基准：rc39-proto-pack / rc39-proto-casino） */
+.wc-gray{
+  --wc-bg:radial-gradient(circle at 30% 20%,#454a57,#262932 58%,#16181f);
+  --wc-bg-flat:linear-gradient(160deg,#353a46,#1a1d25);
+  --wc-border:#8e96a8;
+  --wc-inner:rgba(196,204,222,.32);
+  --wc-glow:rgba(148,158,180,.2);
+  --wc-accent:#cfd6e6;
+  --wc-sheen:rgba(220,228,245,.15);
+  --wc-dur:5.8s;
+}
+.wc-red{
+  --wc-bg:radial-gradient(circle at 30% 18%,#8f2037,#4e1120 56%,#21080f);
+  --wc-bg-flat:linear-gradient(160deg,#701a2d,#280a12);
+  --wc-border:#e28a9a;
+  --wc-inner:rgba(255,196,206,.4);
+  --wc-glow:rgba(224,72,104,.38);
+  --wc-accent:#ffbac7;
+  --wc-sheen:rgba(255,212,220,.24);
+  --wc-dur:4.4s;
+}
+.wc-gold{
+  --wc-bg:radial-gradient(circle at 28% 18%,#c49334,#6f4d14 55%,#261806);
+  --wc-bg-flat:linear-gradient(160deg,#9c7224,#2e1e08);
+  --wc-border:#f8db8c;
+  --wc-inner:rgba(255,240,188,.5);
+  --wc-glow:rgba(246,204,104,.44);
+  --wc-accent:#ffe69b;
+  --wc-sheen:rgba(255,246,206,.32);
+  --wc-dur:3.5s;
+}
+.wc-rainbow,.wc-mystery{
+  --wc-bg:radial-gradient(circle at 22% 18%,rgba(164,118,255,.55),transparent 52%),radial-gradient(circle at 80% 78%,rgba(86,232,218,.48),transparent 55%),radial-gradient(circle at 50% 50%,#3d2058,#1b102c 62%,#0f091a);
+  --wc-bg-flat:linear-gradient(160deg,#3d2058,#150d24);
+  --wc-border:#d6b4ff;
+  --wc-inner:rgba(255,232,255,.56);
+  --wc-glow:rgba(196,136,255,.52);
+  --wc-accent:#aef6ff;
+  --wc-sheen:rgba(255,255,255,.36);
+  --wc-dur:2.8s;
+}
+.wc-rainbow .wc-face,.wc-mystery .wc-face{
+  border-color:transparent;
+  background-image:var(--wc-bg),conic-gradient(from 0deg,#ff80c8,#ffe082,#72f7e0,#9d8cff,#ff80c8);
+  background-origin:border-box;
+  background-clip:padding-box,border-box;
+}
+
+/* 内部排版 */
+.wc-top{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  font:700 var(--wc-fs-top,8.5px)/1 Georgia,"Songti SC",serif;
+  color:var(--wc-accent);
+  white-space:nowrap;
+}
+.wc-tier{flex-shrink:0}
+.wc-pool{
+  padding:1px 4px;
+  border-radius:999px;
+  border:1px solid var(--wc-inner);
+  font-size:calc(var(--wc-fs-top,8.5px) - 1px);
+  line-height:1.1;
+  background:rgba(0,0,0,.28);
+}
+.wc-serial{margin-left:auto;opacity:.85;font-size:calc(var(--wc-fs-top,8.5px) - .5px)}
+
+.wc-art{
+  position:relative;
+  z-index:2;
+  flex:1;
+  min-height:0;
+  display:grid;
+  place-items:center;
+  color:var(--wc-accent);
+}
+.wc-art .wish-glyph{
+  width:60%;
+  height:60%;
+  max-width:68px;
+  max-height:68px;
+  filter:drop-shadow(0 0 6px var(--wc-glow,transparent));
+}
+.wc-art .wish-glyph path{stroke-width:1.4}
+
+.wc-foot{
+  position:relative;
+  z-index:2;
+  text-align:center;
+  padding:var(--wc-foot-pad,4px 3px);
+  border-radius:6px;
+  background:rgba(0,0,0,.48);
+  border:1px solid var(--wc-inner);
+  min-width:0;
+}
+.wc-name{
+  font:700 var(--wc-fs-name,10px)/1.18 "Songti SC",Georgia,serif;
+  color:#fff6e8;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.wc-val{
+  font:800 var(--wc-fs-val,13px)/1.15 Georgia,serif;
+  color:var(--wc-accent);
+  margin-top:1px;
+}
+
+.wc-streak{
+  position:absolute;
+  left:6px;
+  top:22%;
+  z-index:4;
+  padding:1px 5px;
+  border-radius:999px;
+  font-size:8px;
+  font-weight:700;
+  background:rgba(24,14,10,.78);
+  border:1px solid rgba(255,196,120,.55);
+  color:#ffe3a8;
+}
+.wc-lock{
+  position:absolute;
+  right:6px;
+  top:22%;
+  z-index:4;
+  font-size:10px;
+  line-height:1;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.7));
+}
+.wc-crack{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:5;
+  opacity:0;
+}
+
+/* 尺寸密度档：只调变量，不复制 DOM */
+.wc-card[data-wc-size="lg"]{--wc-radius:13px;--wc-pad:8px;--wc-inset:4px;--wc-fs-top:9px;--wc-fs-name:10.5px;--wc-fs-val:14px;--wc-foot-pad:4px 4px}
+.wc-card[data-wc-size="md"]{--wc-radius:11px;--wc-pad:7px;--wc-inset:3.5px;--wc-fs-top:8px;--wc-fs-name:10px;--wc-fs-val:13px;--wc-foot-pad:3.5px 3px}
+.wc-card[data-wc-size="sm"]{--wc-radius:10px;--wc-pad:5px;--wc-inset:3px;--wc-fs-top:7.5px;--wc-fs-name:9px;--wc-fs-val:11.5px;--wc-foot-pad:3px 2px}
+.wc-card[data-wc-size="sm"] .wc-pool,.wc-card[data-wc-size="sm"] .wc-serial{display:none}
+.wc-card[data-wc-size="xs"]{--wc-radius:8px;--wc-pad:4px;--wc-inset:2.5px;--wc-fs-top:7px;--wc-fs-name:8.5px;--wc-fs-val:10.5px;--wc-foot-pad:2px 2px}
+.wc-card[data-wc-size="xs"] .wc-pool,.wc-card[data-wc-size="xs"] .wc-serial,.wc-card[data-wc-size="xs"] .wc-streak{display:none}
+.wc-card[data-wc-size="xs"] .wc-art .wish-glyph{width:54%;height:54%}
+
+/* ===== 卡面画质三档减法（挂载在 html[data-cfxq]） ===== */
+/* 均衡（默认 medium）：关常驻扫光、去外发光、去纹样 drop-shadow，保留 conic 边与金属径向渐变 */
+:root[data-cfxq="medium"] .wc-face::after{animation:none;opacity:0}
+:root[data-cfxq="medium"] .wc-face{box-shadow:0 8px 18px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.16)}
+:root[data-cfxq="medium"] .wc-art .wish-glyph{filter:none}
+:root[data-cfxq="medium"] .wc-art .wish-glyph path{stroke-width:1.25}
+/* 卡包翻面瞬间在 medium 仍允许播一次单次扫光 */
+:root[data-cfxq="medium"] .pk-slot.is-open .wc-face::after{opacity:1;animation:wcCardSheen 1.1s ease-out 1 forwards}
+
+/* 极简（low）：全关扫光、去 conic 边、去内描边、去阴影、背景降为双色线性渐变 */
+:root[data-cfxq="low"] .wc-face::after,
+:root[data-cfxq="low"] .wc-face::before{display:none;animation:none}
+:root[data-cfxq="low"] .wc-face{
+  background:var(--wc-bg-flat);
+  border-color:var(--wc-border);
+  box-shadow:none;
+}
+:root[data-cfxq="low"] .wc-rainbow .wc-face,
+:root[data-cfxq="low"] .wc-mystery .wc-face{
+  background-image:none;
+  background:var(--wc-bg-flat);
+  border-color:#d6b4ff;
+}
+:root[data-cfxq="low"] .wc-art .wish-glyph{filter:none}
+:root[data-cfxq="low"] .wc-art .wish-glyph path{stroke-width:1.1}
+
+@media(prefers-reduced-motion:reduce){
+  .wc-face::after{animation:none!important;opacity:0!important}
+}

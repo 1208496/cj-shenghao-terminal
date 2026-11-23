@@ -147,15 +147,15 @@ test('the phone renders three axes, click blocks, star switch, off-stage line an
   assert(flat(screens.detail(s.characters.char_a)).includes('对你的印象：觉得你比传闻里好相处'));
   ctx.privateSection=1;
   const flesh=screens.detail(s.characters.char_a),fleshText=flat(flesh);
-  assert(fleshText.includes('生理周期：安全期'));assert(fleshText.includes('处子状态：非处女'));assert(fleshText.includes('阴部户型与色泽：饱满馒头穴'));assert(fleshText.includes('敏感带详情：耳后敏感'));
+  assert(fleshText.includes('安全期'));assert(fleshText.includes('处子状态：🌺 非处女'));assert(fleshText.includes('阴部户型与色泽：饱满馒头穴'));assert(fleshText.includes('敏感带详情：耳后敏感'));
   ctx.privateSection=2;
   const outfitPanel=flat(screens.detail(s.characters.char_a));
-  assert(outfitPanel.includes('穿搭风格：极简通勤'));assert(outfitPanel.includes('上装：白色真丝衬衫'));assert(outfitPanel.includes('袜子／丝袜：薄款黑丝'));assert(outfitPanel.includes('鞋履：细高跟'));
+  assert(outfitPanel.includes('极简通勤'));assert(outfitPanel.includes('上装：白色真丝衬衫'));assert(outfitPanel.includes('袜子／丝袜：薄款黑丝'));assert(outfitPanel.includes('鞋履：细高跟'));
   ctx.privateSection=3;
   const expPanel=flat(screens.detail(s.characters.char_a));
   assert(expPanel.includes('性观念：外冷内热'));assert(expPanel.includes('与你亲密次数：2'));assert(expPanel.includes('最近一次性行为：2026-01-05 · 玄关'));
   assert(expPanel.includes('拥抱')&&expPanel.includes('留宿'));
-  assert(expPanel.includes('当前开放档位：L'));assert(expPanel.includes('手口侍奉：'));assert(expPanel.includes('多人同欢：'));
+  assert(expPanel.includes('软肋'));assert(expPanel.includes('手口侍奉：'));assert(expPanel.includes('多人同欢：'));
   ctx.privateSection=null;
   const detail=screens.detail(s.characters.char_a);
   assert(detail.includes('data-star="char_a"')&&detail.includes('☆ 特别关注'));

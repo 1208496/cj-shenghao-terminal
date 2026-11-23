@@ -1,4 +1,4 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy,seedOutfit,abilityBonus,effectiveProwess} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy,seedOutfit,abilityBonus,effectiveProwess,evolvePrivateState,ASSET_VALUATION_BOUNDS,sanitizeInventoryAndUnlocks,syncChokerAccessory,syncImprintText} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -63,7 +63,10 @@ export function settleNative(before,candidate,anchor,source,schemas){
     if(!proposed||prior.trackingState==='HIDDEN'){s.characters[cid]=clone(prior);continue;}
     if(typeof proposed!=='object'||Array.isArray(proposed)){s.characters[cid]=clone(prior);diagnostics.push({person:cid,field:'characters.'+cid,code:'INVALID_FIELD'});continue;}
     // starred is a player switch: the mobile UI owns it, the model never does.
-    for(const k of ['id','name','age','profileFixed','profileLocked','aliases','trackingState','starred','avatarRef','portraitRef','contactConfirmed','firstContactEvidence'])proposed[k]=clone(prior[k]??null);
+    // rc.55 / B-06：choker 与 imprints 是脚本独占字段（schema 里是 .nullable()），
+    // 模型发整对象 replace 时带上 choker:null 会把玩家已佩戴的项圈与已铭刻的印记抹掉。
+    // 路径守卫只拦 characters.<id>.choker 这种点路径，整对象提交绕得过，必须在这里兜。
+    for(const k of ['id','name','age','profileFixed','profileLocked','aliases','trackingState','starred','avatarRef','portraitRef','contactConfirmed','firstContactEvidence','choker','imprints'])proposed[k]=clone(prior[k]??null);
   proposed.lastSexSceneRevision=Number(prior.lastSexSceneRevision||0);
     // Initial acquaintances may have blanks. A normal story update fills only
     // missing basics; established author/player facts stay immutable.
@@ -99,7 +102,8 @@ export function settleNative(before,candidate,anchor,source,schemas){
     const matched=s.scene.temporaryActors.find(t=>t.name===c.name);
     if(matched)s.identityMap[matched.tempId]=cid;
   }
-  s.scene.presentCharacterIds=[...new Set(s.scene.presentCharacterIds)].filter(cid=>s.characters[cid]?.trackingState==='RECORDED');
+  // rc.41：同轮刚建档的第 2 人也要能留在名单里，姓名/别名/中文 ID 全部兜底解析后再过滤。
+  s.scene.presentCharacterIds=resolvePresentIds(s.scene.presentCharacterIds,before,s).filter(cid=>s.characters[cid]?.trackingState==='RECORDED');
   s.scene.temporaryActors=s.scene.temporaryActors.filter(t=>!s.hiddenTemporary[t.tempId]&&!s.identityMap[t.tempId]);
   s.scene.sceneRevision=before.scene.sceneRevision+1;s.scene.timeHint=s.world.date+' '+s.world.time;s.user.location=s.scene.location;
   s.pendingEvents=[];
@@ -107,21 +111,46 @@ export function settleNative(before,candidate,anchor,source,schemas){
   s=schemas.state.parse(result.state);
   // Deterministic back-fill: the model writes the story, the script keeps the
   // private records consistent even when the model forgets those field paths.
+  // rc.42：自定义资产若这一轮模型没补估值，脚本按类别中位价兜底（能算的不干等模型）。
+  fallbackPendingValuations(s,before);
   syncPrivateRecords(s,before,queue,body);
   applyCycles(s,before);
   // rc.34：日程被模型标为 COMPLETED 时，脚本自动核销对应背包票券；取消则退回背包。
   syncWheelInventory(s);
+  // rc.46：旧存档清洗 + 装置派生守护（模型换装/改肉体档案都不会把项圈与印记冲掉）。
+  sanitizeInventoryAndUnlocks(s);
+  syncDevices(s);
   s=schemas.state.parse(s);refreshContext(s);
   return {state:s,diagnostics};
 }
+// rc.46：项圈句与印记派生句每轮重算，保证「脚本只读字段」始终压过模型的手写。
+function syncDevices(s){
+  for(const c of Object.values(s.characters||{})){
+    if(!c)continue;
+    syncChokerAccessory(c);
+    syncImprintText(c);
+  }
+}
+// rc.42：自定义资产登记后，若这一轮模型没提交 ASSET_VALUATION，脚本按类别中位价兜底；
+// 只兜「上一轮就已经在等估值」的项，本轮刚登记的资产留给下一轮让模型补。
+function fallbackPendingValuations(s,before){
+  for(const a of Object.values(s.finance?.assets||{})){
+    if(!a||a.ownerId!=='USER'||a.status!=='OWNED'||a.valuationPending!==true)continue;
+    if(before?.finance?.assets?.[a.assetId]?.valuationPending!==true)continue;
+    const bound=ASSET_VALUATION_BOUNDS[a.kind]||ASSET_VALUATION_BOUNDS.OTHER;
+    a.bookValueCents=bound.fallback;a.valuationPending=false;
+  }
+}
 // 背包票券与日历的自动核销（铁律一：能由脚本算的绝不交给模型）。
-function syncWheelInventory(s){
-  if(!s.inventory)return;
+function syncWheelInventory(s){  if(!s.inventory)return;
   for(const a of Object.values(s.calendar?.appointments||{})){
     const itemId=a.sourceItemId;
     if(!itemId)continue;
     const item=s.inventory[itemId];
     if(!item)continue;
+    // rc.55 / B-03：只让「当前绑定的那一场日程」改变这张券。否则「取消 A → 把券重排到 B」
+    // 之后，A 那条 CANCELLED 记录会把仍在 B 上有效的券打回 READY，背包与日历就分叉了。
+    if(item.scheduledAppointmentId!==a.id)continue;
     if(a.status==='COMPLETED'&&item.status!=='USED'){item.status='USED';item.usedDate=s.world.date;item.scheduledAppointmentId=a.id;}
     else if(a.status==='CANCELLED'&&item.status==='SCHEDULED'){item.status='READY';item.scheduledAppointmentId=null;}
   }
@@ -180,7 +209,15 @@ function addTag(c,tag){
   if(!c.intimacy)return false;
   const value=String(tag??'').trim().slice(0,16);if(!value)return false;
   const list=c.intimacy.unlockedTags=c.intimacy.unlockedTags||[];
-  if(list.includes(value)||list.length>=24)return false;
+  if(list.includes(value))return false;
+  // rc.38 A-2：标签满 24 个后原先直接 return false，新玩法再也进不来，
+  // syncLimits 也就拿不到新标签。改成滑窗：淘汰最早的非里程碑标签后继续追加。
+  if(list.length>=24){
+    const keep=/初夜|破处/;
+    const idx=list.findIndex(t=>!keep.test(String(t)));
+    if(idx<0)return false;
+    list.splice(idx,1);
+  }
   list.push(value);return true;
 }
 // Behaviour tags may arrive as an array or a delimited string; 60+ scores and a
@@ -263,6 +300,11 @@ export function syncPrivateRecords(s,before,queue,body=''){
       else if(arousal>=40)c.physiology.vaginaState='芳心微乱，秘处温热湿润，内壁随呼吸轻度收缩';
       else c.physiology.vaginaState='';
     }
+    // rc.38 A-4：后庭状态 / 最近自慰 / 印象由脚本按确定性规则演进（文案为 agy 定稿，逐字照抄）。
+    {const cue=`${behavior.text} ${behavior.tags.join(' ')}`;
+     const priorAnus=String(prior.physiology?.anusState||'');
+     const wroteAnus=typeof c.physiology.anusState==='string'&&c.physiology.anusState.trim()&&c.physiology.anusState!==priorAnus;
+     evolvePrivateState(c,{prowess:effectiveProwess(s),date:s.world.date,analCue:/后庭|肛|菊/.test(cue),wroteAnus,sexNow});}
     syncOutfit(c,prior);
     syncLimits(c);
   }
@@ -316,11 +358,26 @@ function applyCycles(s,before){
   return s;
 }
 
+// rc.38 A-1：协议示例里曾出现 char_在场ID 这类中文占位，模型照抄后整条人物命令会被
+// Zod 校验静默丢弃。这里统一归一化成稳定 ASCII 键名：先按姓名复用已有角色，找不到
+// 再按 FNV-1a 生成 char_<8位十六进制>，命令路径一并改写，避免丢更新。
+const ASCII_ID=/^[a-zA-Z0-9_-]{1,100}$/;
+function fnv8Id(value){let h=0x811c9dc5;const s=String(value??'');for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=(h*0x01000193)>>>0;}return h.toString(16).padStart(8,'0');}
+function asciiIdFor(raw,value,before){
+  const candidate=String(raw??'').trim();
+  if(ASCII_ID.test(candidate))return candidate;
+  const hint=String(value?.name||'').trim();
+  if(hint)for(const c of Object.values(before?.characters||{}))if(c&&String(c.name||'')===hint&&ASCII_ID.test(String(c.id||'')))return c.id;
+  return 'char_'+fnv8Id(hint||candidate);
+}
 // A new person needs an id and a name. Missing or malformed body details are
 // dropped field by field so the record still enters and pendingBasicProfiles
 // can complete it later; only an unusable identity rejects the person.
 function newCharacter(cid,value,schemas){
-  const id=typeof value.id==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(value.id)?value.id:cid;
+  // rc.55 / B-04：落库用哪个键，人物 id 就必须是哪个键。原先优先接受对象自带的 value.id，
+  // 一旦它与路径键不同，人物会存在 characters[cid] 下却带着另一个 id；经济校验按 c.id 查人
+  // 立刻 UNKNOWN_PERSON，把整轮（含同轮有效的时间、经济、好感更新）一起回滚丢掉。
+  const id=ASCII_ID.test(String(cid??''))?String(cid):'char_'+fnv8Id(value?.name||cid);
   const base={id,age:25,beautyScore:null,affection:20,corruption:0,relationshipLabel:'熟人',occupation:''};
   const raw={...value,id,name:typeof value.name==='string'?value.name.trim().slice(0,50):''};
   let parsed=schemas.character.safeParse({...base,...raw});
@@ -335,13 +392,22 @@ function newCharacter(cid,value,schemas){
 // handler can reject them with a player-facing red toast.
 export function prepareModelCommand(command,before,schemas){
   const parts=commandPath(command).split('.');
+  // rc.41：先接住 presentCharacterIds，避免中文/姓名 ID 触发 z.array(id) 校验失败整组回滚。
+  if(parts[0]==='shenghao'&&parts[1]==='scene'&&parts[2]==='presentCharacterIds'){
+    const raw=command.args?.at(-1);
+    let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return false;}
+    command.type='set';
+    command.args=['shenghao.scene.presentCharacterIds',JSON.stringify(resolvePresentIds(value,before))];
+    return true;
+  }
   if(parts[0]!=='shenghao'||parts[1]!=='characters')return true;
   // Case 0: insert on /shenghao/characters with [path, key, value]
   if(parts.length===2&&command.type==='insert'&&command.args?.length>=3){
-    const cid=String(command.args[1]??'').trim().replace(/^['"`]|['"`]$/g,'');
+    const rawCid=String(command.args[1]??'').trim().replace(/^['"`]|['"`]$/g,'');
     const raw=command.args.at(-1);
     let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return false;}
-    if(!cid||!value||typeof value!=='object'||Array.isArray(value))return false;
+    if(!rawCid||!value||typeof value!=='object'||Array.isArray(value))return false;
+    const cid=asciiIdFor(rawCid,value,before);
     const merged=before?.characters?.[cid]
       ?acceptFields(value,before.characters[cid],schemas.character,'characters.'+cid,[])
       :newCharacter(cid,value,schemas);
@@ -351,9 +417,13 @@ export function prepareModelCommand(command,before,schemas){
     return true;
   }
   if(parts.length<3)return true;
-  const prior=before?.characters?.[parts[2]];
   const raw=command.args.at(-1);
   let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return false;}
+  if(!ASCII_ID.test(String(parts[2]??''))){
+    const resolved=asciiIdFor(parts[2],value,before);
+    if(resolved!==parts[2]){parts[2]=resolved;command.args[0]='shenghao.characters.'+parts.slice(2).join('.');}
+  }
+  const prior=before?.characters?.[parts[2]];
   // Case 1: brand-new character written at /shenghao/characters/<cid>.
   if(!prior){
     if(parts.length!==3||!value||typeof value!=='object'||Array.isArray(value))return false;
@@ -379,6 +449,29 @@ export function prepareModelCommand(command,before,schemas){
   else parsed=nested?.shape?.[parts[4]]?.safeParse(value);
   if(!parsed?.success){console.log('[神豪终端] 已保留人物字段原值',parts.slice(1).join('.'));return false;}
   command.args[command.args.length-1]=JSON.stringify(parsed.data);return true;
+}
+// rc.41：presentCharacterIds 里的姓名、中文 ID、带空格 ID 一律归一成合法 ASCII 键。
+// 以前这里不归一，一个坏元素就会让整组数组校验失败、被整组回滚成上一轮的名单，
+// 表现就是「两个人同时在场，只显示一个人」。
+function resolvePresentIds(value,before,merged){
+  const list=Array.isArray(value)?value:typeof value==='string'?[value]:[];
+  const pool={...(before?.characters||{}),...(merged?.characters||{})};
+  const byName=new Map();
+  for(const [cid,c] of Object.entries(pool)){
+    if(!c)continue;
+    if(c.name)byName.set(String(c.name).trim(),cid);
+    for(const alias of c.aliases||[])if(alias)byName.set(String(alias).trim(),cid);
+  }
+  const out=[];
+  for(const raw of list){
+    const tag=String(raw??'').trim().replace(/^['"`]|['"`]$/g,'');
+    if(!tag)continue;
+    if(pool[tag])out.push(tag);
+    else if(byName.has(tag))out.push(byName.get(tag));
+    else if(ASCII_ID.test(tag))out.push(tag);
+    else out.push(asciiIdFor(tag,null,{characters:pool}));
+  }
+  return [...new Set(out)];
 }
 function unwrapSchema(schema){return schema?._def?.innerType??schema;}
 
@@ -406,7 +499,8 @@ export function allowModelCommand(command,before,{trustedInitialization=false}={
   if(relative.startsWith('user.'))return /^user\.(?:location|city|currentClothes|currentPose|currentAction|heightCm|weightKg|shoeSizeEu)$/.test(relative);
   if(relative.startsWith('characters.')||relative==='characters'&&command.type==='insert') {
     const fields=relative.split('.');
-    if(fields.length>=3&&['profileFixed','profileLocked'].includes(fields[2]))return false;
+    // rc.46：choker / imprints 是脚本独占只读字段，模型改不动（派生句由脚本自动写）。
+    if(fields.length>=3&&['profileFixed','profileLocked','choker','imprints'].includes(fields[2]))return false;
     return true;
   }
   return false;

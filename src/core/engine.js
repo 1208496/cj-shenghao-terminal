@@ -2,10 +2,18 @@ import config from '../../project.json' with {type:'json'};
 import {WHEEL_POOL_BY_ID} from './wheel-pool.js';
 import {ABILITY_BY_ID,SURREAL_ITEM_BY_ID} from './casino-catalog.js';
 import {rollWheelPrize,playWheelQuote,POINTS_PER_SPIN} from './wheel.js';
-import {rollWishPack,rollCasino,casinoSeed,drawSeed,upgradeCost,wishWheelQuote,lowPackQuote,LOW_CARD_CASINO_CAP,PACK_SIZE} from './casino.js';
+import {rollWishPack,rollCasino,casinoSeed,drawSeed,wishWheelQuote,lowPackQuote,PACK_SIZE} from './casino.js';
+import {buildImprintText,chokerClause,LEGACY_REMOVED_PRICES,PLACEMENT_IDS,CHOKER_STYLE_BY_ID,PATTERN_BY_ID,COLOR_BY_ID,FONT_BY_ID,LAYOUT_BY_ID,SCALE_LABELS,checkDeviceThreshold} from './device-catalog.js';
 
 export const PROFILE_KEYS = ['identity','appearance','body','personality','habits','style','family','career','social'];
 export const PROFILE_LABELS = ['基础身份与学历籍贯','容貌气质与辨识细节','身材体态与私密特征','双面性格与行事做派','日常作息与生活喜好','穿搭审美与私下打扮','原生家庭与成长经历','事业现状与短期目标','情感经历与择偶偏好'];
+// rc.55 / B-08：商城历史只增不减，而 schema.js 的 shopHistory 上限是 200 条。
+// 一旦写满，第 201 次购买会让整轮 state.parse 报 too_big，该存档从此再也买不了任何东西
+// （历史不会自己变短，玩家没有自助恢复手段）。所以写入即截断，永远只留最近 200 条。
+// 这个数字必须与 schema.js 里 .max(200) 保持一致。
+export const SHOP_HISTORY_MAX = 200;
+// rc.55 / B-12：香水的单件加成。启用与撤销重算必须共用同一个数，避免两处口径漂移。
+export const PERFUME_AROUSAL_STEP = 25;
 export const clone = value => JSON.parse(JSON.stringify(value));
 export class RuleError extends Error { constructor(code,field) { super(code); this.name = 'RuleError'; if(field)this.field=field; } }
 export function requireRule(ok, code) { if (!ok) throw new RuleError(code); }
@@ -36,10 +44,48 @@ export function beautyTier(score){integer(score,1,100);return score<20?{label:'�
 // body has actually been experienced, never on looks alone.
 export function prowessTier(score){integer(score,1,100);
   return score<25?{label:'力不从心，难以为继',modifier:-1}:score<50?{label:'表现平平，尚待磨练',modifier:0}:score<75?{label:'精力充沛，颇具章法',modifier:1}:score<90?{label:'器大活好，蚀骨销魂',modifier:2}:{label:'极乐神躯，人间打桩机',modifier:3};}
-// rc.36：四个数值型异能由脚本接管（铁律一）。等级 1/2/3 对应三档数值，未持有为 0。
-const ABILITY_SCALAR={ab_voice:[1,2,3],ab_gaze:[2,3,5],ab_scent:[8,12,16],ab_stamina:[8,12,16]};
-export function abilityLevel(s,abilityId){const hit=(s?.user?.abilities||[]).find(a=>a.abilityId===abilityId);return hit?(Number(hit.level)||1):0;}
-export function abilityBonus(s,abilityId){const tiers=ABILITY_SCALAR[abilityId];if(!tiers)return 0;const lv=abilityLevel(s,abilityId);return lv?tiers[Math.min(lv,3)-1]:0;}
+// rc.42：异能不再升级 —— 只有「持有 / 未持有」两态，效果恒定（YG 拍板取中档数值）。
+const ABILITY_SCALAR={ab_voice:2,ab_gaze:3,ab_scent:12,ab_stamina:12};
+export function hasAbility(s,abilityId){return (s?.user?.abilities||[]).some(a=>a.abilityId===abilityId);}
+export function abilityBonus(s,abilityId){return hasAbility(s,abilityId)?(ABILITY_SCALAR[abilityId]||0):0;}
+// rc.42：玩家手动补录的自定义资产，估值由模型按行情给，脚本按类别硬钳位（单位：分）。
+// 下限/上限/兜底都写死在这里，模型报「9亿」也只会落在上限上。
+export const ASSET_VALUATION_BOUNDS={
+  HOUSE:{min:50000000,max:1000000000000,fallback:450000000},
+  CAR:{min:10000000,max:1000000000000,fallback:120000000},
+  BUSINESS:{min:30000000,max:1000000000000,fallback:300000000},
+  YACHT_JET:{min:200000000,max:1000000000000,fallback:1200000000},
+  LUXURY:{min:1000000,max:1000000000000,fallback:15000000},
+  COLLECTIBLE:{min:1000000,max:1000000000000,fallback:25000000},
+  OTHER:{min:100000,max:1000000000000,fallback:3000000},
+};
+// rc.44（YG 拍板方案二）：手动补录只选档次、不填金额，估值由类别 × 档次查表即时定值。
+// 上限统一放到 ¥100 亿只作为钳位天花板，正常玩家不会碰到（YG：钻漏洞不管，角色卡游戏自食其果）。
+export const CUSTOM_ASSET_TIERS=['ENTRY','MID','HIGH','TOP'];
+export const ASSET_TIER_LABELS={ENTRY:'轻奢入门',MID:'中端品质',HIGH:'高端臻品',TOP:'顶奢旗舰'};
+export const ASSET_TIER_TABLE={
+  HOUSE:{ENTRY:120000000,MID:450000000,HIGH:1200000000,TOP:2800000000},
+  CAR:{ENTRY:30000000,MID:120000000,HIGH:380000000,TOP:1000000000},
+  BUSINESS:{ENTRY:80000000,MID:300000000,HIGH:800000000,TOP:1800000000},
+  YACHT_JET:{ENTRY:400000000,MID:1200000000,HIGH:2600000000,TOP:4800000000},
+  LUXURY:{ENTRY:3000000,MID:15000000,HIGH:60000000,TOP:220000000},
+  COLLECTIBLE:{ENTRY:5000000,MID:25000000,HIGH:120000000,TOP:400000000},
+  OTHER:{ENTRY:500000,MID:3000000,HIGH:18000000,TOP:80000000},
+};
+// 手动补录专用：具体随身物（表/包/珠宝）优先于泛载具词，避免「劳力士游艇名仕腕表」被抬进游艇档。
+export function resolveCustomAssetKind(name,description=''){
+  const pick=(text)=>{
+    const t=String(text||'');
+    if(/房|宅|别墅|平层|公寓|庄园|云玺湾|听涛山庄|PROPERTY/.test(t))return 'HOUSE';
+    if(/车|跑车|座驾|轿车|SUV|MPV|法拉利|保时捷|迈巴赫|劳斯莱斯|奔驰|宝马|VEHICLE|AUTO/.test(t))return 'CAR';
+    if(/商铺|店铺|公司|股权|产业|企业|会所|酒庄|工厂|工作室|集团|院线|SHOP|COMPANY|EQUITY|STORE/.test(t))return 'BUSINESS';
+    if(/表|腕表|珠宝|钻|翡翠|包|高定|首饰|百达翡丽|理查德|爱马仕|WATCH|JEWELRY|BAG/.test(t))return 'LUXURY';
+    if(/画|古董|藏品|艺术|瓷器|字画|雕塑|名酒|拍品|乐器|吉他|提琴|ART|ANTIQUE|PAINTING|COLLECTION/.test(t))return 'COLLECTIBLE';
+    if(/游艇|专机|飞机|直升机|湾流|YACHT|JET|BOAT|PLANE/.test(t))return 'YACHT_JET';
+    return '';
+  };
+  return pick(name)||pick(description)||'OTHER';
+}
 export function effectiveProwess(s){return Math.min(100,(Number(s?.user?.prowessScore)||70)+abilityBonus(s,'ab_stamina'));}
 export function sourceId(value){let h=14695981039346656037n;for(const c of value){h^=BigInt(c.codePointAt(0));h=BigInt.asUintN(64,h*1099511628211n);}return 'fact_'+h.toString(16);}
 export function id(value) { requireRule(typeof value === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(value) && !['__proto__','prototype','constructor'].includes(value), 'INVALID_ID'); return value; }
@@ -597,6 +643,52 @@ export function userProfileTags(s) {
   return tags.slice(0, 6);
 }
 
+// rc.38 A-4 / A-5：10 个私密栏位里原先没有写入通路的字段，由脚本按确定性规则兜底。
+// 每条都是 agy 定稿、逐字照抄（来源 .work/agy-copy-rc38-private.md），DSH 不自行撰写卡内文案。
+export const PRIVATE_COPY = {
+  virgin: {
+    virginTrue: '💮 处女',
+    virginFalse: '🌺 非处女',
+    virginUnknown: '❔ 尚未确认',
+    virginUnknownNote: '未深入接触，尚不知晓'
+  },
+  impression: {
+    aff90: '整颗心都系在你身上，把你的喜怒与偏爱看得比什么都重，不管在外面是什么身份，回到你面前只想做被你一人独占的女人。',
+    aff75: '对你早已越过普通朋友的界限，既信赖你的手腕与胸襟，也贪恋你给的独一份温柔，只等一个水到渠成的契机彻底交付自己。',
+    aff50_pure: '心里认定你是难得懂她、护她的知己，相处时总会不自觉在意你的目光，只是面对过于亲昵的试探还会本能地害羞矜持。',
+    aff50_corr40: '既倾心于你的气场与偏爱，又已在贴身温存中食髓知味，表面还留着几分体面拉扯，私下里却对你的靠近半推半就。',
+    aff20_pure: '觉得你是个谈吐不俗、出手阔绰的体面人，愿意与你保持礼貌融洽的往来，但心底仍留着清醒的社交分寸与观察余地。',
+    aff20_corr40: '感情上还未彻底交心，身体与眼界却先一步被你的强势手笔与感官刺激撬开缝隙，在自尊拉扯与隐秘渴望间暗自动摇。',
+    affLow_corrLow: '对你仅停留在萍水相逢的陌生或公事公办阶段，言谈举止带着客套的防备边界，不会轻易接纳越界的示好与馈赠。',
+    corr80: '理智与世俗矜持已在你面前彻底瓦解，深深沉溺于你赐予的顶层奢靡与掌控欢愉，只要你开口便甘愿卸下一切防线任凭予取予求。',
+    corr50_affLow: '清楚彼此之间掺杂着筹码与欲望的成年人默契，贪恋你带来的资源排面与私密欢愉，虽未交出真心却很顺从地配合你的节奏。',
+    default: '对你的财力与行事做派颇有印象，态度随和得体，正从一次次实际交集中默默评估你究竟是怎样的人。',
+  },
+  experience: {
+    cool_virgin: '将精神契合与边界感看得极重，常年把精力倾注在专业领域。过往不乏条件优越的追求者，但她厌恶轻浮试探与算计得失的世俗相亲，宁可保持独身清净，也从不肯在毫无灵魂共鸣的人面前褪下贴身衣物。',
+    cool_exp: '早年曾与一位看似温文尔雅的同行谈过一段克制的恋情，亲密次数屈指可数且过程乏味仓促；后来发现对方私下拿她的资源做利益交换，便果断斩断关系。那段经历让她对男人的口头承诺越发冷淡，却也埋下了渴望被真正强者彻底折服的隐秘空缺。',
+    proud_virgin: '眼高于顶，从小见惯了名利场上的虚情假意与利益联姻。身边围绕的男人不是气场压不住她，就是目的性太强让她倒胃口；她把身体的掌控权视作最后的骄傲筹码，绝不肯随随便便便宜了入不了眼的庸才。',
+    proud_exp: '刚入行时曾与一位风头正盛的圈内前辈有过半年露水情缘，对方在商场上精明强势，私下却只顾自己尽兴、从不在意她的感受。散场后她对平庸的男欢女爱彻底失去耐心，唯有在实力与魄力上全方位碾压她的男人才能再度撬动她的欲望。',
+    sunny_virgin: '平时和谁都能爽快称兄道弟，实则对男女之事有着近乎执拗的直球底线。这些年忙着在汗水与生计里打拼，遇到过几个表白的对象都只当朋友处成了哥们，既没遇到真正让她脸红心跳的人，也不屑于拿身体去换捷径。',
+    sunny_exp: '前两年曾和一起打拼的搭档顺理成章走在一起，最初也有过年轻气盛的热烈温存，但随着现实压力加剧，对方在关键时刻选择了退缩逃避。她干脆利落地挥手分手，从不拿旧事卖惨，只是偶尔在夜深人静时会怀念毫无保留拥抱的温度。',
+    warm_virgin: '骨子里慢热传统，总觉得亲密交付应当建立在细水长流的笃定托付之上。习惯了先照顾身边人的情绪，面对过往几次不够坚定的示好总是礼貌退让半步，至今仍妥帖保存着未经人事的温润羞涩。',
+    warm_exp: '曾全心全意陪伴过一任初恋男友走过低谷，在出租屋里交付了生涩的第一次；后来却发现自己只是对方空窗期的温顺替身。她默默收拾行李离开，此后面对男人的甜言蜜语总会本能退缩，唯有实打实的偏爱与护短才能让她重新敞开心扉。',
+    pure_virgin: '常年往返于校园、图书馆与宿舍之间，家教严苛加上性格腼腆内敛，连被异性牵手或直视过久都会耳根发烫。对男女亲密之事仅停留在书本与室友夜谈的懵懂想象中，身体与心防都还是一张未经涂抹的白纸。',
+    pure_exp: '大一刚入学时曾被一位花言巧语的学长哄骗交往，在半推半就的慌乱中交付了初夜，过程生涩疼痛且很快遭遇对方劈腿冷暴力。那次挫折让她一度把心门锁死、对异性靠近充满戒备，却也因此对成熟可靠的温柔引导毫无抵抗力。',
+  },
+  anusState: {
+    anusStateAfterHigh: '刚经历强悍深入的拓荒，原本紧缩的后庭内壁仍带着被彻底撑开后的温热酥麻与微肿感，深处褶皱随着呼吸微微抽动，残存着食髓知味的酸胀余韵。',
+    anusStateAfterNormal: '初次受纳异物侵入后仍有些微紧绷与滚烫感，细腻褶皱在缓缓闭合间带着生涩的微颤，需要温和安抚才能逐渐平复。',
+  },
+  lastMasturbation: {
+    cool: '{date} 夜 · 反锁的书房落地窗前，她独自靠在真皮椅背上解开衬衫领口，脑海里浮现白日与你交锋时的眼神与气息，指尖隔着真丝底裤克制而急促地摩挲慰藉，在极力压抑的轻喘中泄去一身紧绷。',
+    proud: '{date} 夜 · 刚散场的私密衣帽间全身镜前，她借着微醺酒意褪下半边礼服肩带，看着镜中自己泛红的眼尾，指尖顺着小腹滑入蕾丝边缘，在想象被你强势按住占有的羞耻快感中咬唇攀上战栗。',
+    sunny: '{date} 夜 · 运动沐浴后的卧室大床上，她擦着湿发翻来覆去睡不着，满脑子都是你靠近时的滚烫温度，索性拉过薄被蒙住发烫的脸颊，顺着本能抚过敏感紧绷的身躯，在急促呼吸中释放燥热。',
+    warm: '{date} 夜 · 暖黄台灯下的卧室床畔，她抱着沾有淡淡气息的软枕蜷缩在被窝里，回味着你温柔护短的言语与掌心温度，指尖羞怯地探入真丝睡裙下轻轻揉弄，在细碎绵长的鼻音里化作一滩春水。',
+    pure: '{date} 夜 · 拉严床帘的安静寝室里，她红着耳根死死咬住被角不敢发出一点声响，脑海里全是你的身影，生涩发颤的指尖第一次顺着滚烫小腹向下试探，在陌生而羞耻的电流席卷下湿透了纯棉底裤。',
+  }
+};
+
 export function seedAnatomy(c) {
   if (!c || typeof c !== 'object') return c;
   c.physiology = c.physiology && typeof c.physiology === 'object' ? c.physiology : {};
@@ -874,7 +966,34 @@ export function seedAnatomy(c) {
     };
     c.limits.worry = pick2(worryByArch[arch] || worryByArch.warm, 37);
   }
+  // rc.38 A-4：这三个字段原先没有任何写入通路，永远显示「尚未记录」，改由脚本播种。
+  if (!c.intimacy.experience) c.intimacy.experience = PRIVATE_COPY.experience[arch + (isVirgin ? '_virgin' : '_exp')] || PRIVATE_COPY.experience.warm_exp;
+  if (!c.intimacy.partnersCount) c.intimacy.partnersCount = isVirgin ? 0 : 1;
+  if (!c.impression) c.impression = impressionFor(c);
   seedOutfit(c);
+  return c;
+}
+// rc.38 A-4：印象按好感×堕落确定性推导，随数值变化自动刷新，零 token。
+ export function impressionFor(c){
+  const aff=Number(c?.affection)||0,cor=Number(c?.corruption)||0,C=PRIVATE_COPY.impression;
+  if(cor>=80)return C.corr80;
+  if(aff>=90)return C.aff90;
+  if(aff>=75)return C.aff75;
+  if(aff>=50)return cor>=40?C.aff50_corr40:C.aff50_pure;
+  if(aff>=20)return cor>=40?C.aff20_corr40:C.aff20_pure;
+  if(cor>=50)return C.corr50_affLow;
+  if(cor<20)return C.affLow_corrLow;
+  return C.default;
+}
+// rc.38 A-4：后庭状态 / 最近自慰 / 印象三件由脚本按确定性规则演进；模型本轮亲手写过的值优先保留。
+export function evolvePrivateState(c,{prowess=70,date='',analCue=false,wroteAnus=false,sexNow=false}={}){
+  if(!c||!c.physiology||!c.intimacy)return c;
+  if(analCue&&!wroteAnus)c.physiology.anusState=prowess>=75?PRIVATE_COPY.anusState.anusStateAfterHigh:PRIVATE_COPY.anusState.anusStateAfterNormal;
+  if(!sexNow&&Number(c.arousal)>=65&&(Number(c.affection)>=50||Number(c.corruption)>=50)&&!String(c.intimacy.lastMasturbation||'').trim()){
+    const tpl=PRIVATE_COPY.lastMasturbation[archetypeOf(c)]||PRIVATE_COPY.lastMasturbation.warm;
+    c.intimacy.lastMasturbation=tpl.split('{date}').join(String(date||''));
+  }
+  c.impression=impressionFor(c);
   return c;
 }
 export function basicProfile(c) {
@@ -922,7 +1041,7 @@ function privateDefaults(){return {
   intimacy:{attitude:'',abilityComment:'',partnersCount:0,sexPartnerCount:0,firstTime:'',experience:'',fetishes:'',unlockedTags:[],withUserCount:0,lastIntimate:'',lastMasturbation:''},
   limits:{scaleLevel:0,weakness:'',worry:'',exposure:0,foreplay:0,intercourse:0,cosplay:0,creampie:0,anal:0,publicPlay:0,multi:0}};}
 function character(c) {
-  const name = text(c.name,50), age = integer(c.age,1,120);
+  const name = text(c.name,50), age = integer(c.age,18,80);
   const priv=privateDefaults();
   // rc.32：开局投喂的女体档案先落位，seedAnatomy 只补空字段，不再覆盖已给的值。
   const seedPhysio=c.physiology||{};
@@ -948,7 +1067,7 @@ function character(c) {
 }
 export function validateDraft(d) {
   requireRule(d && typeof d === 'object', 'INVALID_DRAFT');
-  const user = {id:'USER', name:text(d.name,50),age:integer(d.age,1,120),beautyScore:integer(d.beautyScore,1,100),gender:text(d.gender ?? '',40,true),
+  const user = {id:'USER', name:text(d.name,50),age:integer(d.age,18,80),beautyScore:integer(d.beautyScore,1,100),gender:text(d.gender ?? '',40,true),
     appearance:text(d.appearance ?? '',500,true),body:text(d.body ?? '',500,true),occupation:text(d.occupation ?? '',100,true),background:text(d.background ?? '',1200,true),
     city:'云澜市',location:text(d.currentLocation,150),
     workLifeDescription:text(d.workLifeDescription ?? '',600,true),cashCents:integer(d.initialCashCents),initialCashCents:d.initialCashCents,
@@ -977,7 +1096,7 @@ export function validateDraft(d) {
   const assets = d.initialAssets.map(a => ({assetId:id(a.assetId),kind:assetKind(a.kind,a.name),name:text(a.name,120),ownerId:'USER',
     bookValueCents:integer(a.bookValueCents),basisCents:null,status:'OWNED',acquisitionEventId:'INITIAL',acquisitionIsInitial:true,
     description:assetDescription(a,assetKind(a.kind,a.name),a.bookValueCents),locationNote:text(a.locationNote ?? '',300,true),ownershipNote:text(a.ownershipNote ?? '本人全额所有，无债务',300)}));
-  const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,1,120),
+  const contacts = d.contacts.map(c => ({...c,...basicProfile(c),id:id(c.id),name:text(c.name,50),age:integer(c.age,18,80),
     beautyScore:c.beautyScore===undefined?undefined:integer(c.beautyScore,1,100),affection:integer(c.affection,0,100),corruption:integer(c.corruption ?? 0,0,100),occupation:text(c.occupation ?? '',100,true),relationshipLabel:text(c.relationshipLabel || '熟人',12),
     recentGoal:text(c.recentGoal ?? '',200,true),longTermDream:text(c.longTermDream ?? '',200,true),hiddenScar:text(c.hiddenScar ?? '',300,true),
     notes:text(c.notes ?? '',1200,true),briefDescription:text(c.briefDescription ?? '',400,true),
@@ -993,7 +1112,7 @@ export function initialize(draft, completedProfiles, initKey, branchKey) {
   for (const c of contacts) {const basics=basicProfile({...c,...completedProfiles[c.id]});chars[c.id] = character({...c,...basics,beautyScore:c.beautyScore??completedProfiles[c.id]?.beautyScore??null,profileFixed:null});}
   const state = {schemaVersion:3,meta:{initialized:true,initKey:id(initKey),branchKey:text(branchKey,300),revision:0,sourceAnchor:null},user,
     scene:{sceneId:'initial',location:user.location,timeHint:'故事开始',presentCharacterIds:contacts.filter(c=>c.present).map(c=>c.id),temporaryActors:[],sceneRevision:0},
-    characters:chars,identityMap:{},hiddenTemporary:{},finance:{ledger:{},assets:Object.fromEntries(assets.map(a=>[a.assetId,a]))},
+    characters:chars,identityMap:{},hiddenTemporary:{},finance:{ledger:{},assets:Object.fromEntries(assets.map(a=>[a.assetId,a])),retiredBasisCents:0,customAssetDate:null,customAssetCount:0},
     rewardEvents:{},withdrawals:{},recoveries:{},operationHistory:{},notifications:{},facts:{}};
   assertState(state); return state;
 }
@@ -1041,7 +1160,9 @@ export function recoveryDue(s,cid){return Object.values(s.recoveries).filter(r=>
 // still held or gifted to women. Spending cash on a property or gifting it must
 // not wash the player's net worth back down to the 10x trainee multiplier.
 export function tierBasis(s){
-  let v=s.user.cashCents;
+  // rc.42：被删除或被押输的后购资产已不在 assets 里，其成本累计进 retiredBasisCents；
+  // 否则「删资产 → 身家回落 → 提现倍率倒挂回升」会变成一条刷倍率路径。
+  let v=add(s.user.cashCents,s.finance?.retiredBasisCents||0);
   for(const a of Object.values(s.finance?.assets||{}))if(!a.acquisitionIsInitial&&(a.ownerId==='USER'||a.status==='TRANSFERRED'))v=add(v,a.basisCents??a.bookValueCents??0);
   return v;
 }
@@ -1052,8 +1173,79 @@ export function totals(s) {
   for (const e of Object.values(s.finance.ledger)) {if(e.direction==='IN') income=add(income,e.amountCents);else if(e.direction==='OUT')expense=add(expense,e.amountCents);}
   return {cash:s.user.cashCents,assets,total:add(s.user.cashCents,assets),income,expense};
 }
+// ── rc.46：三装置的派生同步与旧存档清洗 ─────────────────────────
+// 项圈：把【誓约项圈】段从配饰里剥离后按佩戴态重写首段，模型换装也不会丢。
+export function syncChokerAccessory(c){
+  if(!c)return;
+  c.outfit=c.outfit||{};
+  const rest=String(c.outfit.accessories||'').replace(/【誓约项圈】[^；;]*(?:[；;]\s*)?/g,'').replace(/^[；;\s]+/,'').trim();
+  if(c.choker?.worn){
+    const clause=chokerClause(c.choker);
+    c.outfit.accessories=(rest?`${clause}；${rest}`:clause).slice(0,150);
+  } else c.outfit.accessories=rest.slice(0,150);
+}
+// 印记：多枚制派生句（按部位顺序拼接、150 字上限内截断）
+export function syncImprintText(c){
+  if(!c||!c.imprints)return;
+  c.physiology=c.physiology||{};
+  c.physiology.tattooScar=buildImprintText(c.imprints).slice(0,150);
+}
+// 旧存档清洗：删三件空壳奇物（按原价幂等退星愿积分）、持久装置迁成解锁位、脏佩戴态收敛。
+export function sanitizeInventoryAndUnlocks(s){
+  const out={changed:false,refundedPoints:0,removedIds:[]};
+  try{
+    if(!s||typeof s!=='object')return out;
+    s.wheel=s.wheel||{};s.inventory=s.inventory||{};s.facts=s.facts||{};s.characters=s.characters||{};
+    for(const [itemId,item] of Object.entries(s.inventory)){
+      if(!item||item.category!=='SURREAL_ITEM')continue;
+      const refId=String(item.refId||'');
+      if(refId==='it_toylink'){s.wheel.toyLinkUnlocked=true;delete s.inventory[itemId];out.changed=true;out.removedIds.push(itemId);continue;}
+      if(refId==='it_choker'){s.wheel.chokerUnlocked=true;delete s.inventory[itemId];out.changed=true;out.removedIds.push(itemId);continue;}
+      if(refId==='it_imprint'){s.wheel.imprintUnlocked=true;delete s.inventory[itemId];out.changed=true;out.removedIds.push(itemId);continue;}
+      const price=LEGACY_REMOVED_PRICES[refId];
+      if(!price)continue;
+      const factKey='legacy_refund:'+itemId;
+      if(!Object.hasOwn(s.facts,factKey)){
+        s.wheel.starPoints=(Number(s.wheel.starPoints)||0)+price;
+        s.facts[factKey]={type:'LEGACY_ITEM_REFUND',refId,refundedPoints:price,itemId};
+        out.refundedPoints+=price;
+      }
+      delete s.inventory[itemId];out.changed=true;out.removedIds.push(itemId);
+    }
+    for(const c of Object.values(s.characters)){
+      if(c?.choker?.worn&&s.wheel.chokerUnlocked!==true){
+        c.choker=null;syncChokerAccessory(c);
+        const factKey='legacy_choker_reconciled:'+c.id;
+        if(!Object.hasOwn(s.facts,factKey))s.facts[factKey]={type:'LEGACY_RECONCILE',refId:'it_choker',personRef:c.id};
+        out.changed=true;
+      }
+    }
+  }catch{/* 容错底线：清洗绝不阻断旧存档加载 */}
+  return out;
+}
+// 装置状态守卫：非法枚举 / 上限 / 空壳印记。脏佩戴态就地收敛，不阻断加载。
+export function assertDeviceState(s){
+  for(const c of Object.values(s.characters||{})){
+    if(c?.choker?.worn&&s.wheel?.chokerUnlocked!==true){c.choker=null;syncChokerAccessory(c);}
+    if(c?.choker?.worn)requireRule(Boolean(CHOKER_STYLE_BY_ID[c.choker.styleId]),'CHOKER_INVALID');
+    const items=c?.imprints?.items||{};
+    const keys=Object.keys(items);
+    requireRule(keys.length<=PLACEMENT_IDS.length,'IMPRINT_LIMIT_REACHED');
+    for(const [key,item] of Object.entries(items)){
+      requireRule(PLACEMENT_IDS.includes(key),'IMPRINT_DUPLICATE_PLACEMENT');
+      requireRule(item?.placement===key,'IMPRINT_DUPLICATE_PLACEMENT');
+      requireRule(!(item.patternEnabled===false&&item.textEnabled===false),'IMPRINT_INVALID');
+      requireRule(!(item.textEnabled!==false&&!String(item.text||'').trim()),'IMPRINT_INVALID');
+      requireRule(Boolean(PATTERN_BY_ID[item.patternId]),'IMPRINT_INVALID');
+      requireRule(Boolean(COLOR_BY_ID[item.patternColor]&&COLOR_BY_ID[item.textColor]),'IMPRINT_INVALID');
+      requireRule(Boolean(FONT_BY_ID[item.font])&&Boolean(LAYOUT_BY_ID[item.textLayout]),'IMPRINT_INVALID');
+    }
+  }
+  return true;
+}
 export function assertState(s) {
   assertEconomy(s);
+  assertDeviceState(s);
   for(const c of Object.values(s.characters)){if(c.profileFixed)profile(c.profileFixed);basicProfile(c);}
   return true;
 }
@@ -1197,6 +1389,40 @@ function applyEvent(s,e,eventKey,anchor) {
       addLedger(s,eventKey,{...e,kind:'ASSET_TRANSFER',direction:'NONE',amountCents:0,itemName:a.name,allocations:[{personRef:e.personRef,amountCents:basis}]},anchor);
       credit(s,e.personRef,basis,eventKey,anchor,'SPEND_CREDIT',{relatedLedgerId:eventKey,relatedAssetId:a.assetId,originalCents:basis});return;
     }
+    case 'ASSET_GRANT': {
+      // rc.41：零现金资产入账——他人正式过户/赠予、抵偿、NO.53 终极愿望兑现。
+      // 红线：绝不扣 user.cashCents；basisCents 固定 0、acquisitionIsInitial 固定 true，
+      // 所以既不会抬高神豪计级身家，也不会在转赠时凭空刷出十倍奖池。
+      requireRule(e.completed===true,'NOT_COMPLETED');
+      const a=e.asset&&typeof e.asset==='object'?e.asset:null;requireRule(a,'ASSET_REQUIRED');
+      const name=text(a.name,120);requireRule(name,'INVALID_TEXT');
+      const kind=assetKind(a.kind,name),assetId=id(a.assetId||('asset_'+fnv(name+':'+e.factId)));
+      requireRule(!s.finance.assets[assetId],'DUPLICATE_ASSET');
+      const bookValueCents=integer(a.bookValueCents??0,0);
+      requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');
+      s.finance.assets[assetId]={assetId,kind,name,ownerId:'USER',bookValueCents,basisCents:0,status:'OWNED',
+        acquisitionEventId:e.factId,acquisitionIsInitial:true,
+        description:assetDescription({...a,bookValueCents},kind,bookValueCents),
+        locationNote:text(a.locationNote??'',300,true),
+        ownershipNote:text(a.ownershipNote||'非现金过户·本人全额所有',120,true)};
+      addLedger(s,eventKey,{...e,kind:'ASSET_GRANT',direction:'NONE',amountCents:0,payer:'EXTERNAL',itemName:name,memo:'资产登记 · '+name,assetId},anchor);
+      return;
+    }
+    case 'ASSET_VALUATION': {
+      // rc.42：玩家手动补录的资产由模型补类别与估值；脚本按类别硬钳位，只对 valuationPending 生效一次。
+      const a=s.finance.assets[id(e.assetId)];
+      requireRule(a&&a.isCustom===true&&a.valuationPending===true,'ASSET_VALUATION_NOT_PENDING');
+      if(e.factId)requireRule(markFact(s,e,anchor),'DUPLICATE_FACT');
+      const kind=assetKind(e.kind,a.name);
+      const bound=ASSET_VALUATION_BOUNDS[kind]||ASSET_VALUATION_BOUNDS.OTHER;
+      const raw=(()=>{try{return cents(e.bookValueYuan);}catch{return bound.fallback;}})();
+      const val=Math.min(bound.max,Math.max(bound.min,raw));
+      a.kind=kind;a.bookValueCents=val;a.valuationPending=false;
+      if(/待估值/.test(String(a.ownershipNote||'')))a.ownershipNote=String(a.ownershipNote).replace(/待估值/,'已估值');
+      a.description=assetDescription({...a,bookValueCents:val},kind,val)||a.description;
+      addLedger(s,eventKey,{...e,kind:'ASSET_VALUATION',direction:'NONE',amountCents:0,payer:'EXTERNAL',itemName:a.name,memo:'资产补估值 · '+a.name,assetId:a.assetId},anchor);
+      return;
+    }
     case 'TRANSACTION_REFUND': {
       integer(e.amountCents,1);requireRule(e.completed===true,'NOT_COMPLETED');
       const original=Object.values(s.finance.ledger).find(l=>l.eventId===e.refundOf&&l.direction==='OUT');requireRule(original,'REFUND_SOURCE_MISSING');
@@ -1299,7 +1525,14 @@ export function applyEnvelope(state,envelope,anchor,sourceText) {
   const result=processEvents(state,envelope.events,anchor,sourceText,false);assertState(result.state);return result.state;
 }
 // Native proposals are one batch. A rejected event rolls back only its own writes.
-export function settleEvents(state,events,anchor,sourceText,affectionEvents=[]){return processEvents(state,events,anchor,sourceText,true,affectionEvents);}
+export function settleEvents(state,events,anchor,sourceText,affectionEvents=[]){
+  const out=processEvents(state,events,anchor,sourceText,true,affectionEvents);
+  // rc.43：正文已生成 —— 所有「待撤的使用」就此落定，撤销窗口与待写索引一起关闭。
+  const st=out.state;
+  for(const i of Object.values(st.inventory||{}))if(i.pendingUndo===true){i.pendingUndo=false;i.undoSnapshot=null;}
+  if(st.wheel?.pendingAbilityUses&&Object.keys(st.wheel.pendingAbilityUses).length)st.wheel.pendingAbilityUses={};
+  return out;
+}
 function processEvents(state,events,anchor,sourceText,partial,affectionEvents=[]){
   requireRule(Array.isArray(events)&&events.length<=40,'INVALID_ENVELOPE');
   requireRule(anchor?.branchKey===state.meta.branchKey&&typeof anchor.fingerprint==='string','STALE_SOURCE');
@@ -1315,7 +1548,7 @@ function processEvents(state,events,anchor,sourceText,partial,affectionEvents=[]
     // Normalize first: rc.25 folds model shortcuts (ASSET / PURCHASE / asset sale
     // without a held asset) into legal events before the whitelist looks at them.
     const e=normalizeEvent(partial?{...raw,ordinal:i}:raw,anchor,s,sourceText);
-    if(partial)requireRule(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND','BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE','AFFECTION_CHANGE','CORRUPTION_CHANGE'].includes(e.type),'UNKNOWN_EVENT');
+    if(partial)requireRule(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND','ASSET_GRANT','ASSET_VALUATION','BEHAVIOR','SIGNIFICANT_BEHAVIOR_SCORE','AFFECTION_CHANGE','CORRUPTION_CHANGE'].includes(e.type),'UNKNOWN_EVENT');
     const ordinal=integer(e.ordinal,0,100);requireRule(!ordinals.has(ordinal),'DUPLICATE_ORDINAL');ordinals.add(ordinal);
     if((e.type==='AFFECTION_CHANGE'||e.type==='CORRUPTION_CHANGE')&&Object.values(s.facts).some(f=>f.type===e.type&&f.personRef===e.personRef&&key(f.sourceAnchor)===key(anchor)))continue;
     if(e.type==='SIGNIFICANT_BEHAVIOR_SCORE'){
@@ -1323,7 +1556,7 @@ function processEvents(state,events,anchor,sourceText,partial,affectionEvents=[]
       scored.add(e.personRef);scoreCount++;
       if(Object.values(s.facts).some(f=>f.type===e.type&&f.personRef===e.personRef&&key(f.sourceAnchor)===key(anchor)))continue;
     }
-    if(['CASH_TRANSACTION','TRANSACTION_REFUND','ASSET_TRANSFER'].includes(e.type)){
+    if(['CASH_TRANSACTION','TRANSACTION_REFUND','ASSET_TRANSFER','ASSET_GRANT'].includes(e.type)){
       const evidence=text(e.evidence,360,false,'evidence');requireRule(hasEvidence(sourceText,evidence),'EVIDENCE_NOT_IN_SOURCE');
     }
     const eventKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,ordinal,e.type,e.personRef || '');
@@ -1376,6 +1609,26 @@ export function normalizeEvent(value,anchor,state,sourceText=''){
     if(!e.itemName)e.itemName=e.asset.name;
     if(!e.memo)e.memo=`购入${e.asset.name}`;
   }
+  // rc.43：实测模型会把「无偿过户/赠予」写成 amountYuan 0 的 CASH_TRANSACTION 并内嵌 asset。
+  // 没有现金流水的「获得实物」一律改判成 ASSET_GRANT —— 否则资产永远进不了账本（铁律一：能算的交给脚本）。
+  if(e.type==='CASH_TRANSACTION'&&e.asset&&typeof e.asset==='object'){
+    let amt=null;
+    if(e.amountCents!==undefined)amt=Number(e.amountCents);
+    else if(e.amountYuan!==undefined){try{amt=cents(e.amountYuan);}catch{amt=0;}}
+    if(amt===null||amt===0)e.type='ASSET_GRANT';
+  }
+  // rc.41：模型常把非现金获得的实物写成 ASSET_REGISTER / FREE_ASSET，统一折成 ASSET_GRANT。
+  if(['ASSET_REGISTER','FREE_ASSET','ASSET_RECEIVE'].includes(e.type))e.type='ASSET_GRANT';
+  if(e.type==='ASSET_GRANT'){
+    if(!e.asset||typeof e.asset!=='object')e.asset={};
+    const a=e.asset;
+    e.completed=e.completed??true;
+    if(!a.name&&(e.name||e.itemName))a.name=e.name||e.itemName;
+    if(a.kind===undefined&&e.kind!==undefined)a.kind=e.kind;
+    if(a.bookValueYuan===undefined&&e.bookValueYuan!==undefined)a.bookValueYuan=e.bookValueYuan;
+    if(a.bookValueCents===undefined&&e.bookValueCents!==undefined)a.bookValueCents=e.bookValueCents;
+    if(!e.evidence&&typeof e.sourceEvidence==='string')e.evidence=e.sourceEvidence;
+  }
   // rc.25 Bug #2：转手卖掉一件从未建档的东西（如当场卖画获利）不可能是
   // ASSET_SALE——它没有已持有资产可核销。直接改判其他收入，钱才不会丢。
   if(e.type==='CASH_TRANSACTION'&&e.kind==='ASSET_SALE'){
@@ -1384,7 +1637,7 @@ export function normalizeEvent(value,anchor,state,sourceText=''){
   }
   // rc.25 Bug #1 续：模型的 evidence 常被概括改写，逐字校验会整单丢弃。只跳过
   // 单测哨兵词与未付款否定句，其余用本轮正文首句有效叙事兜底，保证零漏单。
-  if(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND'].includes(e.type)&&typeof sourceText==='string'&&sourceText.trim()){
+  if(['CASH_TRANSACTION','ASSET_TRANSFER','TRANSACTION_REFUND','ASSET_GRANT'].includes(e.type)&&typeof sourceText==='string'&&sourceText.trim()){
     const ev=typeof e.evidence==='string'?e.evidence.trim():'';
     const rescue=typeof e.evidence==='string'||e.evidence===undefined;
     const isTestSentinel=/^(没有发生|正文没有这句话)$/.test(ev);
@@ -1397,7 +1650,7 @@ export function normalizeEvent(value,anchor,state,sourceText=''){
   }
   const amount=(obj,field='amount')=>{if(obj[field+'Yuan']!==undefined){const n=cents(obj[field+'Yuan']);requireRule(obj[field+'Cents']===undefined||obj[field+'Cents']===n,'AMBIGUOUS_MONEY');obj[field+'Cents']=n;}};
   amount(e);for(const a of e.allocations||[])amount(a);for(const a of e.refundAllocations||[])amount(a);if(e.asset)amount(e.asset,'bookValue');
-  e.sourceKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,e.type,e.personRef||'',e.evidence,e.amountCents??e.delta??e.assetId??'');
+  e.sourceKey=key(anchor.branchKey,anchor.messageId,anchor.swipeId,anchor.fingerprint,e.type,e.personRef||'',e.evidence,e.amountCents??e.delta??e.assetId??e.asset?.assetId??e.asset?.name??'');
   e.factId=e.factId||sourceId(e.sourceKey);return e;
 }
 export function hasEvidence(source,evidence) {
@@ -1484,16 +1737,20 @@ export function applyOperation(state,op,anchor) {
     }
     w.totalCardsDrawn=(w.totalCardsDrawn||0)+PACK_SIZE;
     if(poolTier==='low'){
-      if(q.mode==='free')w.lowPackTodayFreeUsed=true;
+      // rc.55 / B-05：免费包也把付费计数写回本周期的真实值。原先只写 freeUsed 与日期，
+      // 旧的 lowPackTodayPaid 被留着；因为日期已更新成今天，下一次报价就会把昨天的
+      // 付费次数当成今天的，直接报 LOW_PACK_DAILY_LIMIT。
+      if(q.mode==='free'){w.lowPackTodayFreeUsed=true;w.lowPackTodayPaid=0;}
       else w.lowPackTodayPaid=q.paidToday+1;
       w.lowPackTodayDate=s.world.date;
       w.lowPackPityRed=pack.nextPity.lowRed;
     }else{
       w.wishWeekKey=q.weekKey;
-      if(q.mode==='free')w.wishWeekFreeUsed=true;
+      // 同上：新周领免费包时把上周的付费次数归零，否则首笔付费就按第二档报价。
+      if(q.mode==='free'){w.wishWeekFreeUsed=true;w.wishWeekPaidSpins=0;}
       else w.wishWeekPaidSpins=q.weekPaid+1;
       w.wishTodayDate=s.world.date;w.wishTodaySpins=q.todaySpins+1;
-      w.cardPityRed=pack.nextPity.red;w.cardPityGold=pack.nextPity.gold;
+      w.cardPityGold=pack.nextPity.gold;
     }
     const anchorCard=drawn[drawn.length-1];
     result={poolTier,mode:q.mode,costCents:q.mode==='cash'?q.costCents:0,cards:drawn,
@@ -1504,31 +1761,126 @@ export function applyOperation(state,op,anchor) {
     requireRule(item&&item.category==='WISH_CARD','UNKNOWN_ITEM');
     item.locked=op.locked!==false;
     result={cardId:op.cardId,locked:item.locked};
-  } else if(op.type==='PLAYER_CASINO_BET') {
-    const w=s.wheel||(s.wheel={});
+  } else if(op.type==='PLAYER_INVENTORY_DELETE') {
+    const item=s.inventory?.[op.itemId];
+    requireRule(item&&(item.category==='WHEEL_PRIZE'||item.category==='SURREAL_ITEM'),'UNKNOWN_ITEM');
+    // rc.41：TOY·LINK 是永久解锁凭据，删了背包会出现「解锁着但没东西」的割裂状态。
+    requireRule(item.refId!=='it_toylink','ITEM_NOT_READY');
+    if(item.category==='WHEEL_PRIZE'&&item.status==='SCHEDULED'&&item.scheduledAppointmentId){
+      const appt=s.calendar?.appointments?.[item.scheduledAppointmentId];
+      if(appt&&appt.status==='PLANNED'){appt.status='CANCELLED';appt.sourceItemId=null;}
+    }
+    delete s.inventory[op.itemId];
+    result={itemId:op.itemId,category:item.category,refId:item.refId,status:item.status};
+  } else if(op.type==='PLAYER_CARD_DELETE') {
     const item=s.inventory?.[op.cardId];
     requireRule(item&&item.category==='WISH_CARD','UNKNOWN_ITEM');
     requireRule(!item.locked,'CARD_LOCKED');
+    delete s.inventory[op.cardId];
+    result={cardId:op.cardId,cardCode:item.cardCode||'',points:Number(item.currentPoints)||0};
+  } else if(op.type==='PLAYER_ASSET_REGISTER') {
+    // rc.42：玩家手动补录名下资产 —— 只收名称与描述，不给估值入口；估值等下一轮模型补，脚本按类别钳位。
+    const name=text(op.name,80);requireRule(name,'INVALID_TEXT');
+    const description=text(op.description,160);requireRule(description,'INVALID_TEXT');
+    requireRule(!/(?:价值|估值|市价|售价|折合|约合|价格)\s*[¥￥]?\s*\d+|\d+(?:\.\d+)?\s*(?:万元|亿元|万块|亿块|RMB|美元|美金|英镑|欧元)/i.test(name+' '+description),'ASSET_DESC_NO_PRICE');
+    // rc.44：档次（默认中端），估值由 类别 × 档次 查表即时定值。
+    const tier=CUSTOM_ASSET_TIERS.includes(op.tier)?op.tier:'MID';
+    const today=s.world.date;
+    // rc.43：日限用单调递增计数，删资产/押输都不会把次数洗回去（否则可无限补录）。
+    const usedToday=s.finance.customAssetDate===today?integer(s.finance.customAssetCount||0):0;
+    requireRule(usedToday<2,'CUSTOM_ASSET_DAILY_LIMIT');
+    const assetId='asset_'+fnv(name+':'+today+':'+usedToday);
+    requireRule(!s.finance.assets[assetId],'DUPLICATE_ASSET');
+    s.finance.customAssetDate=today;s.finance.customAssetCount=usedToday+1;
+    const kind=resolveCustomAssetKind(name,description);
+    const value=ASSET_TIER_TABLE[kind][tier];
+    s.finance.assets[assetId]={assetId,kind,name,ownerId:'USER',bookValueCents:value,basisCents:0,status:'OWNED',
+      acquisitionEventId:'manual_'+assetId,acquisitionIsInitial:true,
+      description,locationNote:'',ownershipNote:'玩家补录 · '+ASSET_TIER_LABELS[tier],
+      valuationPending:false,valuationTier:tier,isCustom:true,registeredDate:today};
+    addLedger(s,op.operationId,{factId:op.operationId,kind:'ASSET_GRANT',direction:'NONE',amountCents:0,payer:'EXTERNAL',itemName:name,memo:'资产补录 · '+name,assetId},anchor);
+    result={assetId,name,kind,tier,bookValueCents:value};
+  } else if(op.type==='PLAYER_ASSET_DELETE') {
+    // rc.42：真删不留尸；后购资产的成本转进 retiredBasisCents，删掉也洗不回高提现倍率。
+    const a=s.finance.assets[id(op.assetId)];
+    requireRule(a&&a.ownerId==='USER'&&a.status==='OWNED','ASSET_NOT_OWNED');
+    const basis=a.acquisitionIsInitial?0:integer(a.basisCents??a.bookValueCents??0);
+    if(basis>0)s.finance.retiredBasisCents=add(integer(s.finance.retiredBasisCents||0),basis);
+    delete s.finance.assets[a.assetId];
+    addLedger(s,op.operationId,{factId:op.operationId,kind:'ASSET_DELETE',direction:'NONE',amountCents:0,payer:'USER',itemName:a.name,memo:'删除资产 · '+a.name,assetId:null},anchor);
+    result={assetId:a.assetId,name:a.name,retiredBasisCents:s.finance.retiredBasisCents};
+  } else if(op.type==='PLAYER_CASINO_BET') {
+    const w=s.wheel||(s.wheel={});
+    const stakeKind=op.stakeKind||'card';
+    requireRule(['card','cash','asset'].includes(stakeKind),'INVALID_DRAFT');
     requireRule(['red','black','green'].includes(op.betColor),'INVALID_DRAFT');
-    // rc.37：低阶星尘卡禁押翡翠格，且单卡赢分硬封顶 240，怎么赌都不会价值过高。
-    const low=item.poolTier==='low';
-    if(low){
-      requireRule(op.betColor!=='green','LOW_CARD_NO_GREEN');
-      requireRule((Number(item.currentPoints)||0)<LOW_CARD_CASINO_CAP,'LOW_CARD_CAPPED');
-    }
-    const seed=casinoSeed({branchKey:s.meta.branchKey,date:s.world.date,round:w.casinoRound||0,cardId:op.cardId,betColor:op.betColor});
-    const r=rollCasino({seed,cardPoints:item.currentPoints||0,betColor:op.betColor});
-    if(r.win){
-      item.currentPoints=low?Math.min(LOW_CARD_CASINO_CAP,r.nextPoints):r.nextPoints;
-      item.winStreak=(item.winStreak||0)+1;
-      w.casinoTotalWins=(w.casinoTotalWins||0)+1;
-      w.casinoBestWinPoints=Math.max(w.casinoBestWinPoints||0,item.currentPoints);
+    const betName={red:'绯红框',black:'黑曜框',green:'翡翠框'}[op.betColor];
+    // rc.42（YG 拍板）：星愿卡、现金、名下资产皆可上桌，取消一切品阶限制与封顶 —— 赌就该赌得爽。
+    let stakeValue=0,stakeKey='';
+    if(stakeKind==='card'){
+      const item=s.inventory?.[op.cardId];
+      requireRule(item&&item.category==='WISH_CARD','UNKNOWN_ITEM');
+      requireRule(!item.locked,'CARD_LOCKED');
+      stakeValue=Number(item.currentPoints)||0;stakeKey=op.cardId;
+    } else if(stakeKind==='cash'){
+      stakeValue=integer(op.stakeCents,100000);
+      requireRule(stakeValue%100===0,'INVALID_INTEGER');
+      requireRule(stakeValue<=s.user.cashCents,'INSUFFICIENT_CASH');
     } else {
-      delete s.inventory[op.cardId];
-      w.casinoTotalLosses=(w.casinoTotalLosses||0)+1;
+      const asset=s.finance.assets[id(op.assetId)];
+      requireRule(asset&&asset.ownerId==='USER'&&asset.status==='OWNED','ASSET_NOT_OWNED');
+      requireRule(asset.valuationPending!==true,'ASSET_VALUATION_PENDING');
+      // rc.43（YG 拍板）：手动补录的自定义资产不可上桌 —— 否则白嫖登记 + 高估值可凭空印现金。
+      requireRule(asset.isCustom!==true,'CUSTOM_ASSET_NO_CASINO');
+      stakeValue=integer(asset.bookValueCents,100000);stakeKey=asset.assetId;
+    }
+    const seed=casinoSeed({branchKey:s.meta.branchKey,date:s.world.date,round:w.casinoRound||0,stakeKind,stakeKey,cardId:op.cardId,betColor:op.betColor});
+    const r=rollCasino({seed,stakeValue,betColor:op.betColor});
+    const base={hitIndex:r.hitIndex,landedColor:r.landedColor,win:r.win,mult:r.mult,stakeKind,stakeValue};
+    if(stakeKind==='card'){
+      const item=s.inventory[op.cardId];
+      if(r.win){
+        item.currentPoints=r.nextPoints;
+        item.winStreak=(item.winStreak||0)+1;
+        w.casinoTotalWins=(w.casinoTotalWins||0)+1;
+        w.casinoBestWinPoints=Math.max(w.casinoBestWinPoints||0,item.currentPoints);
+      } else {
+        delete s.inventory[op.cardId];
+        w.casinoTotalLosses=(w.casinoTotalLosses||0)+1;
+      }
+      result={...base,points:r.win?item.currentPoints:0,cardId:op.cardId};
+    } else if(stakeKind==='cash'){
+      // 开盘即实扣；赢则按含本金赔率返还，两次流水都进同一本账，现金守恒交给 assertEconomy。
+      s.user.cashCents=add(s.user.cashCents,-stakeValue);
+      addLedger(s,op.operationId+':bet',{factId:op.operationId+':bet',kind:'CASINO_BET',direction:'OUT',amountCents:stakeValue,payer:'USER',memo:'暗夜赌场 · 现金押注（'+betName+'）'},anchor);
+      const payout=r.win?multiply(stakeValue,r.mult):0;
+      if(r.win){
+        s.user.cashCents=add(s.user.cashCents,payout);
+        addLedger(s,op.operationId+':win',{factId:op.operationId+':win',kind:'CASINO_WIN',direction:'IN',amountCents:payout,payer:'CASINO',memo:'暗夜赌场 · 现金中奖（'+betName+' ×'+r.mult+'）'},anchor);
+        w.casinoTotalWins=(w.casinoTotalWins||0)+1;
+      } else {
+        w.casinoTotalLosses=(w.casinoTotalLosses||0)+1;
+      }
+      result={...base,stakeCents:stakeValue,payoutCents:payout,profitCents:payout-stakeValue};
+    } else {
+      const asset=s.finance.assets[op.assetId];
+      const profit=r.win?multiply(stakeValue,r.mult-1):0;
+      if(r.win){
+        // 原资产完好保留，只把净盈利折成现金发下去（把估值直接 ×36 会当场出戏）。
+        s.user.cashCents=add(s.user.cashCents,profit);
+        addLedger(s,op.operationId+':win',{factId:op.operationId+':win',kind:'CASINO_ASSET_WIN',direction:'IN',amountCents:profit,payer:'CASINO',itemName:asset.name,memo:'暗夜赌场 · 资产押中（'+betName+' ×'+r.mult+'）',assetId:asset.assetId},anchor);
+        w.casinoTotalWins=(w.casinoTotalWins||0)+1;
+      } else {
+        // 押输直接删键不留尸；后购资产的成本转进 retiredBasisCents，删掉也洗不回高提现倍率。
+        const basis=asset.acquisitionIsInitial?0:integer(asset.basisCents??asset.bookValueCents??0);
+        if(basis>0)s.finance.retiredBasisCents=add(integer(s.finance.retiredBasisCents||0),basis);
+        addLedger(s,op.operationId+':loss',{factId:op.operationId+':loss',kind:'CASINO_ASSET_LOSS',direction:'NONE',amountCents:0,payer:'USER',itemName:asset.name,memo:'暗夜赌场 · 押输删除资产「'+asset.name+'」（原估值 '+formatYuanReadable(stakeValue)+'）',assetId:null},anchor);
+        delete s.finance.assets[asset.assetId];
+        w.casinoTotalLosses=(w.casinoTotalLosses||0)+1;
+      }
+      result={...base,assetId:asset.assetId,assetName:asset.name,valueCents:stakeValue,profitCents:profit};
     }
     w.casinoRound=(w.casinoRound||0)+1;
-    result={hitIndex:r.hitIndex,landedColor:r.landedColor,win:r.win,mult:r.mult,points:r.win?item.currentPoints:0,cardId:op.cardId,capped:low&&r.win&&item.currentPoints===LOW_CARD_CASINO_CAP};
   } else if(op.type==='PLAYER_CARD_REDEEM') {
     const w=s.wheel||(s.wheel={});
     const item=s.inventory?.[op.cardId];
@@ -1539,20 +1891,33 @@ export function applyOperation(state,op,anchor) {
     delete s.inventory[op.cardId];
     result={cardId:op.cardId,points:pts};
   } else if(op.type==='PLAYER_USE_WHEEL_PRIZE') {
-    // rc.37 使用通道：玩法券排进日历，剧情赴约后由 syncWheelInventory 自动核销。
+    // rc.37 排进日历；rc.38 想法 18：op.immediate=true 表示"立即使用"，
+    // 当场核销成 USED，并记下 usedRevision 供 projection 在下一轮置顶提醒模型描写。
     const item=s.inventory?.[op.itemId];
     requireRule(item&&item.category==='WHEEL_PRIZE','UNKNOWN_ITEM');
     requireRule(item.status==='READY','ITEM_NOT_READY');
-    requireRule(/^\d{4}-\d{2}-\d{2}$/.test(String(op.date||'')),'INVALID_DRAFT');
-    requireRule(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(op.time||'')),'INVALID_DRAFT');
     const participants=(Array.isArray(op.participants)?op.participants:[]).slice(0,5).map(x=>id(x));
     for(const p of participants)requireRule(s.characters[p],'UNKNOWN_PERSON');
     const prize=WHEEL_POOL_BY_ID[item.refId];
-    const apptId='appt_'+op.operationId;
-    s.calendar=s.calendar||{appointments:{}};s.calendar.appointments=s.calendar.appointments||{};
-    s.calendar.appointments[apptId]={id:apptId,title:String(prize?.name||op.title||'云澜奇遇').slice(0,80),date:op.date,time:op.time,location:String(op.location||s.scene.location).slice(0,150),participants,status:'PLANNED',notes:String(op.notes||prize?.hint||'').slice(0,1500),sourceItemId:item.itemId,prizeId:item.refId};
-    item.status='SCHEDULED';item.scheduledAppointmentId=apptId;item.targetCharacterIds=participants;
-    result={itemId:item.itemId,appointmentId:apptId,title:prize?.name||'',date:op.date,time:op.time};
+    if(op.immediate===true){
+      item.status='USED';item.usedDate=s.world.date;item.targetCharacterIds=participants;
+      // rc.43：revision 在函数末尾才自增，这里写 +1 才对得上新版本；pendingUndo 打开撤销窗口。
+      item.usedRevision=s.meta.revision+1;
+      item.usedFloorId=s.meta.sourceAnchor?.messageId??null;
+      item.usedSwipeId=s.meta.sourceAnchor?.swipeId??null;
+      item.pendingUndo=true;item.undoSnapshot=null;
+      // rc.46：把实际塞进输入框的引导词快照下来，撤销时按原文精确剔除，不再靠名字猜。
+      item.usedDraftText=typeof op.usedDraftText==='string'?op.usedDraftText.slice(0,2000):null;
+      result={itemId:item.itemId,prizeId:item.refId,title:prize?.name||'',immediate:true,participants};
+    } else {
+      requireRule(/^\d{4}-\d{2}-\d{2}$/.test(String(op.date||'')),'INVALID_DRAFT');
+      requireRule(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(op.time||'')),'INVALID_DRAFT');
+      const apptId='appt_'+op.operationId;
+      s.calendar=s.calendar||{appointments:{}};s.calendar.appointments=s.calendar.appointments||{};
+      s.calendar.appointments[apptId]={id:apptId,title:String(prize?.name||op.title||'云澜奇遇').slice(0,80),date:op.date,time:op.time,location:String(op.location||s.scene.location).slice(0,150),participants,status:'PLANNED',notes:String(op.notes||prize?.hint||'').slice(0,1500),sourceItemId:item.itemId,prizeId:item.refId};
+      item.status='SCHEDULED';item.scheduledAppointmentId=apptId;item.targetCharacterIds=participants;
+      result={itemId:item.itemId,appointmentId:apptId,title:prize?.name||'',date:op.date,time:op.time,immediate:false};
+    }
   } else if(op.type==='PLAYER_USE_SURREAL_ITEM') {
     // rc.37 使用通道：脚本能算的两件当场生效，其余奇物只做叙事核销。
     const w=s.wheel||(s.wheel={});
@@ -1562,26 +1927,178 @@ export function applyOperation(state,op,anchor) {
     const def=SURREAL_ITEM_BY_ID[item.refId];
     requireRule(def,'UNKNOWN_ITEM');
     requireRule(def.consumable===true,'ITEM_NOT_READY');
-    const targets=[];let effectSummary='narrative';
+    const targets=[];let effectSummary='narrative';let mirrorAdded=false;let priorArousal=null;
     if(item.refId==='it_mirror'){
       requireRule(typeof op.targetCharacterId==='string'&&op.targetCharacterId,'UNKNOWN_PERSON');
       const targetId=id(op.targetCharacterId);
       const c=s.characters[targetId];
       requireRule(c&&tracked(c),'UNKNOWN_PERSON');
       if(!Array.isArray(w.unlockedSecretPages))w.unlockedSecretPages=[];
-      if(!w.unlockedSecretPages.includes(targetId))w.unlockedSecretPages.push(targetId);
+      mirrorAdded=!w.unlockedSecretPages.includes(targetId);
+      if(mirrorAdded)w.unlockedSecretPages.push(targetId);
       targets.push(targetId);effectSummary='mirror';
     } else if(item.refId==='it_perfume'){
+      priorArousal={};
       for(const pid of s.scene.presentCharacterIds||[]){
         const c=s.characters[pid];
-        if(c&&tracked(c)){c.arousal=Math.min(100,(Number(c.arousal)||0)+25);targets.push(pid);}
+        if(c&&tracked(c)){priorArousal[pid]=Number(c.arousal)||0;c.arousal=Math.min(100,(Number(c.arousal)||0)+PERFUME_AROUSAL_STEP);targets.push(pid);}
       }
       requireRule(targets.length,'NO_PRESENT_CHARACTER');
       effectSummary='perfume';
     }
     item.status='USED';item.usedDate=s.world.date;
+    // rc.43：记下待撤锚点与脚本副作用快照 —— 正文生成前可以原样撤回。
+    item.usedRevision=s.meta.revision+1;
+    item.usedFloorId=s.meta.sourceAnchor?.messageId??null;
+    item.usedSwipeId=s.meta.sourceAnchor?.swipeId??null;
+    item.pendingUndo=true;
+    item.usedDraftText=typeof op.usedDraftText==='string'?op.usedDraftText.slice(0,2000):null;
+    item.undoSnapshot=effectSummary==='mirror'
+      ?{mirrorAdded,mirrorTarget:targets[0]||null}
+      :effectSummary==='perfume'?{priorArousal}:null;
     if(targets.length)item.targetCharacterIds=targets.slice(0,5);
     result={itemId:item.itemId,refId:item.refId,effectSummary,targets};
+  } else if(op.type==='PLAYER_UNDO_ITEM_USE') {
+    // rc.43：正文还没生成前的「撤销使用」—— 道具状态与脚本副作用一并还原。
+    const w=s.wheel||(s.wheel={});
+    const item=s.inventory?.[op.itemId];
+    requireRule(item,'UNKNOWN_ITEM');
+    requireRule(item.pendingUndo===true,'UNDO_NOT_ALLOWED');
+    if(item.category==='WHEEL_PRIZE'){
+      requireRule(item.status==='USED','UNDO_NOT_ALLOWED');
+      item.status='READY';item.scheduledAppointmentId=null;
+    } else {
+      const snap=item.undoSnapshot||{};
+      if(snap.mirrorAdded===true&&Array.isArray(w.unlockedSecretPages)&&snap.mirrorTarget){
+        w.unlockedSecretPages=w.unlockedSecretPages.filter(x=>x!==snap.mirrorTarget);
+      }
+      // rc.55 / B-12：香水是多件可叠的，每件只记了「自己启用前的绝对值」。直接按快照覆盖
+      // 会有两个问题：撤较早那件会连仍在生效的后一件一起抹掉，全部撤完还会留下残值。
+      // 改成按启用顺序重算整条链：从被撤这件的前值起步，逐件 +25 并重新记下各自的基线。
+      if (item.refId === 'it_perfume') {
+        const chain = Object.values(s.inventory || {})
+          .filter((x) => x && x.pendingUndo === true && x.refId === 'it_perfume')
+          .sort((a, b) => (a.usedRevision || 0) - (b.usedRevision || 0));
+        const people = new Set();
+        for (const x of chain) for (const pid of Object.keys(x.undoSnapshot?.priorArousal || {})) people.add(pid);
+        for (const pid of people) {
+          const c = s.characters[pid];
+          if (!c) continue;
+          let arousal = null, touched = false;
+          const after = [];
+          for (const x of chain) {
+            const snapshot = x.undoSnapshot?.priorArousal;
+            if (!snapshot || !(pid in snapshot)) continue;
+            const prior = Math.max(0, Math.min(100, integer(Number(snapshot[pid]) || 0)));
+            if (x.itemId === item.itemId) { arousal = prior; touched = true; continue; }
+            if (arousal === null) continue;
+            after.push({ node: x, base: arousal });
+            arousal = Math.min(100, arousal + PERFUME_AROUSAL_STEP);
+          }
+          if (!touched || arousal === null) continue;
+          for (const { node, base } of after) node.undoSnapshot.priorArousal[pid] = base;
+          c.arousal = arousal;
+        }
+      }
+      item.status='READY';
+    }
+    item.usedDate=null;item.usedRevision=null;item.usedFloorId=null;item.usedSwipeId=null;
+    item.pendingUndo=false;item.undoSnapshot=null;item.targetCharacterIds=[];item.usedDraftText=null;
+    result={itemId:item.itemId,category:item.category,refId:item.refId};
+  } else if(op.type==='PLAYER_USE_ABILITY') {
+    // rc.43：异能发动只记待撤锚点，不消耗持有状态。
+    const w=s.wheel||(s.wheel={});
+    requireRule((s.user.abilities||[]).some(a=>a.abilityId===op.abilityId),'ABILITY_NOT_OWNED');
+    const def=ABILITY_BY_ID[op.abilityId];requireRule(def,'UNKNOWN_ITEM');
+    w.pendingAbilityUses={...(w.pendingAbilityUses||{}),[op.abilityId]:{
+      abilityId:op.abilityId,
+      usedRevision:s.meta.revision+1,
+      usedFloorId:s.meta.sourceAnchor?.messageId??null,
+      usedSwipeId:s.meta.sourceAnchor?.swipeId??null,
+      targetCharacterId:op.targetCharacterId?String(op.targetCharacterId):null,
+      usedDraftText:typeof op.usedDraftText==='string'?op.usedDraftText.slice(0,2000):null
+    }};
+    result={abilityId:def.abilityId,name:def.name,tag:def.tag,effect:def.effect};
+  } else if(op.type==='PLAYER_UNDO_ABILITY_USE') {
+    const w=s.wheel||(s.wheel={});
+    const pending={...(w.pendingAbilityUses||{})};
+    requireRule(pending[op.abilityId],'UNDO_NOT_ALLOWED');
+    delete pending[op.abilityId];w.pendingAbilityUses=pending;
+    result={abilityId:op.abilityId};
+  } else if(op.type==='PLAYER_CHOKER_SET') {
+    // rc.46：佩戴 / 换款 / 摘下誓约项圈。佩戴后脚本自动把项圈句同步进 outfit.accessories。
+    const w=s.wheel||(s.wheel={});
+    const c=s.characters[String(op.personRef||'')];
+    requireRule(c&&c.trackingState==='RECORDED','NO_RECORDED_WOMAN');
+    const action=String(op.action||'wear');
+    if(action==='remove'){
+      requireRule(c.choker?.worn===true,'CHOKER_INVALID');
+      c.choker=null;syncChokerAccessory(c);
+      result={personRef:c.id,action:'remove',name:c.name};
+    } else {
+      requireRule(w.chokerUnlocked===true,'CHOKER_LOCKED');
+      requireRule(checkDeviceThreshold(c).eligible,'DEVICE_THRESHOLD_NOT_MET');
+      const styleId=String(op.styleId||'obsidian_velvet');
+      requireRule(Boolean(CHOKER_STYLE_BY_ID[styleId]),'CHOKER_INVALID');
+      const inscription=String(op.inscription||'').trim().slice(0,24);
+      c.choker={worn:true,styleId,inscription,wornDate:s.world.date};
+      syncChokerAccessory(c);
+      result={personRef:c.id,action:'wear',name:c.name,styleId,inscription};
+    }
+  } else if(op.type==='PLAYER_IMPRINT_SET') {
+    // rc.46：按部位一对一的多枚制印记。save 覆盖同部位，remove_one 只抹一处，remove_all 全抹并还原原疤痕。
+    const c=s.characters[String(op.personRef||'')];
+    requireRule(c&&c.trackingState==='RECORDED','IMPRINT_NO_TARGET');
+    const action=String(op.action||'save');
+    if(action==='remove_all'){
+      const total=Object.keys(c.imprints?.items||{}).length;
+      requireRule(total>0,'IMPRINT_INVALID');
+      const prior=c.imprints?.priorScar||'';
+      c.physiology=c.physiology||{};c.physiology.tattooScar=prior.slice(0,150);
+      c.imprints=null;
+      result={personRef:c.id,action:'remove_all',name:c.name,removed:total};
+    } else if(action==='remove_one'){
+      const placement=String(op.placement||'');
+      requireRule(PLACEMENT_IDS.includes(placement),'IMPRINT_INVALID');
+      requireRule(Boolean(c.imprints?.items?.[placement]),'IMPRINT_INVALID');
+      delete c.imprints.items[placement];
+      const remain=Object.keys(c.imprints.items).length;
+      if(remain>0)syncImprintText(c);
+      else{const prior=c.imprints.priorScar||'';c.imprints=null;c.physiology=c.physiology||{};c.physiology.tattooScar=prior.slice(0,150);}
+      result={personRef:c.id,action:'remove_one',name:c.name,placement,remain};
+    } else {
+      const placement=String(op.placement||'');
+      requireRule(PLACEMENT_IDS.includes(placement),'IMPRINT_INVALID');
+      const w=s.wheel||(s.wheel={});
+      requireRule(w.imprintUnlocked===true,'IMPRINT_LOCKED');
+      requireRule(checkDeviceThreshold(c).eligible,'DEVICE_THRESHOLD_NOT_MET');
+      const patternEnabled=op.patternEnabled!==false;
+      const textEnabled=op.textEnabled!==false;
+      const patternId=String(op.patternId||'succubus_heart');
+      const patternColor=String(op.patternColor||'crimson');
+      const textColor=String(op.textColor||'gold');
+      const font=String(op.font||'script');
+      const textLayout=String(op.textLayout||'arc_wrap');
+      const patternScale=String(op.patternScale||'md');
+      const textScale=String(op.textScale||'md');
+      const textAngle=Math.max(-30,Math.min(30,Math.round(Number(op.textAngle)||0)));
+      const markText=String(op.text||'').trim().slice(0,24);
+      requireRule(Boolean(PATTERN_BY_ID[patternId]),'IMPRINT_INVALID');
+      requireRule(Boolean(COLOR_BY_ID[patternColor]&&COLOR_BY_ID[textColor]),'IMPRINT_INVALID');
+      requireRule(Boolean(FONT_BY_ID[font])&&Boolean(LAYOUT_BY_ID[textLayout]),'IMPRINT_INVALID');
+      requireRule(Boolean(SCALE_LABELS[patternScale]&&SCALE_LABELS[textScale]),'IMPRINT_INVALID');
+      requireRule(!(patternEnabled===false&&textEnabled===false),'IMPRINT_INVALID');
+      requireRule(!(textEnabled&&!markText),'IMPRINT_INVALID');
+      const items=Object.assign({},c.imprints?.items||{});
+      const isUpdate=Boolean(items[placement]);
+      requireRule(isUpdate||Object.keys(items).length<PLACEMENT_IDS.length,'IMPRINT_LIMIT_REACHED');
+      c.physiology=c.physiology||{};
+      const priorScar=c.imprints?.priorScar??String(c.physiology.tattooScar||'').trim().slice(0,150);
+      items[placement]={placement,patternEnabled,patternId,patternScale,patternColor,textEnabled,text:markText,textLayout,textScale,textAngle,font,textColor,updatedDate:s.world.date};
+      c.imprints={priorScar,items};
+      syncImprintText(c);
+      result={personRef:c.id,action:'save',name:c.name,placement,isUpdate,total:Object.keys(items).length};
+    }
   } else if(op.type==='PLAYER_SHOP_BUY') {
     const w=s.wheel||(s.wheel={});
     const want=String(op.catalogId||'');
@@ -1591,34 +2108,40 @@ export function applyOperation(state,op,anchor) {
     const owned=s.user.abilities||(s.user.abilities=[]);
     if(ability){
       const have=owned.find(a=>a.abilityId===ability.abilityId);
-      if(have){
-        requireRule(ability.upgradable&&have.level<3,'SHOP_MAX_LEVEL');
-        const cost=upgradeCost(ability,have.level);
-        requireRule((w.starPoints||0)>=cost,'INSUFFICIENT_POINTS');
-        w.starPoints-=cost;
-        have.level+=1;
-        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:ability.abilityId,costPoints:cost,date:s.world.date}]);
-        result={abilityId:ability.abilityId,level:have.level,costPoints:cost};
-      }else{
-        const cost=ability.price;
-        requireRule((w.starPoints||0)>=cost,'INSUFFICIENT_POINTS');
-        w.starPoints-=cost;
-        owned.push({abilityId:ability.abilityId,level:1,obtainedDate:s.world.date});
-        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:ability.abilityId,costPoints:cost,date:s.world.date}]);
-        result={abilityId:ability.abilityId,level:1,costPoints:cost};
-      }
+      // rc.42：异能不再升级；重复购买直接拒绝。
+      requireRule(!have,'SHOP_ALREADY_OWNED');
+      const cost=ability.price;
+      requireRule((w.starPoints||0)>=cost,'INSUFFICIENT_POINTS');
+      w.starPoints-=cost;
+      owned.push({abilityId:ability.abilityId,obtainedDate:s.world.date});
+      w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:ability.abilityId,costPoints:cost,date:s.world.date}]).slice(-SHOP_HISTORY_MAX);
+      result={abilityId:ability.abilityId,costPoints:cost};
     }else{
       const cost=surreal.price;
       requireRule((w.starPoints||0)>=cost,'INSUFFICIENT_POINTS');
+      // rc.46：持久装置只点亮权限真值位，不再往背包塞道具（背包从此只管玩法券与消耗奇物）。
       if(surreal.itemId==='it_toylink'){
         requireRule(!w.toyLinkUnlocked,'SHOP_ALREADY_OWNED');
-        w.toyLinkUnlocked=true;
+        w.starPoints-=cost;w.toyLinkUnlocked=true;
+        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:surreal.itemId,costPoints:cost,date:s.world.date}]).slice(-SHOP_HISTORY_MAX);
+        result={itemId:surreal.itemId,costPoints:cost,unlockedToyLink:true};
+      } else if(surreal.itemId==='it_choker'){
+        requireRule(!w.chokerUnlocked,'SHOP_ALREADY_OWNED');
+        w.starPoints-=cost;w.chokerUnlocked=true;
+        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:surreal.itemId,costPoints:cost,date:s.world.date}]).slice(-SHOP_HISTORY_MAX);
+        result={itemId:surreal.itemId,costPoints:cost,unlockedChoker:true};
+      } else if(surreal.itemId==='it_imprint'){
+        requireRule(!w.imprintUnlocked,'SHOP_ALREADY_OWNED');
+        w.starPoints-=cost;w.imprintUnlocked=true;
+        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:surreal.itemId,costPoints:cost,date:s.world.date}]).slice(-SHOP_HISTORY_MAX);
+        result={itemId:surreal.itemId,costPoints:cost,unlockedImprint:true};
+      } else {
+        w.starPoints-=cost;
+        const itemId='item_'+op.operationId;
+        s.inventory=Object.assign({},s.inventory,{[itemId]:{itemId,source:'SHOP',category:'SURREAL_ITEM',refId:surreal.itemId,rarity:surreal.rarity,obtainedDate:s.world.date,status:'READY',currentPoints:null,winStreak:0,scheduledAppointmentId:null,targetCharacterIds:[],assetId:null,usedDate:null}});
+        w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:surreal.itemId,costPoints:cost,date:s.world.date}]).slice(-SHOP_HISTORY_MAX);
+        result={itemId:surreal.itemId,costPoints:cost,unlockedToyLink:!!w.toyLinkUnlocked};
       }
-      w.starPoints-=cost;
-      const itemId='item_'+op.operationId;
-      s.inventory=Object.assign({},s.inventory,{[itemId]:{itemId,source:'SHOP',category:'SURREAL_ITEM',refId:surreal.itemId,rarity:surreal.rarity,obtainedDate:s.world.date,status:'READY',currentPoints:null,winStreak:0,scheduledAppointmentId:null,targetCharacterIds:[],assetId:null,usedDate:null}});
-      w.shopHistory=(w.shopHistory||[]).concat([{purchaseId:op.operationId,catalogId:surreal.itemId,costPoints:cost,date:s.world.date}]);
-      result={itemId:surreal.itemId,costPoints:cost,unlockedToyLink:!!w.toyLinkUnlocked};
     }
   } else if(op.type==='PLAYER_HIDE_TEMP') {
     id(op.tempId);const temp=s.scene.temporaryActors.find(t=>t.tempId===op.tempId);requireRule(temp,'UNKNOWN_PERSON');s.hiddenTemporary[op.tempId]=clone(temp);s.scene.temporaryActors=s.scene.temporaryActors.filter(t=>t.tempId!==op.tempId);
@@ -1665,6 +2188,18 @@ export function parseEnvelope(source) {
 }
 export function narrative(source) {return source.replace(/<SH_EVENTS>[\s\S]*?<\/SH_EVENTS>/g,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function projection(s) {
+  // rc.38 B.6：情欲值 × 私密空间双联开关。世界书 private-life 条目已改条件激活，
+  // 只有 _context 里出现 INTIMATE_SCENE_ACTIVE 令牌时才会把床戏白描挂进常驻提示词。
+  const PRIVATE_LOC=/(公寓|平层|别墅|庄园|套房|汤屋|温泉|酒店|主卧|卧室|游艇舱|包厢|府邸|私宅)/;
+  const presentChars=(s.scene.presentCharacterIds||[]).map(pid=>s.characters[pid]).filter(c=>c&&tracked(c));
+  const maxArousal=presentChars.reduce((m,c)=>Math.max(m,Number(c.arousal)||0),0);
+  const privateHere=PRIVATE_LOC.test(String(s.scene.location||''));
+  const intimateActive=maxArousal>=25||(privateHere&&presentChars.some(c=>(Number(c.affection)||0)>=40||(Number(c.corruption)||0)>=40));
+  const LIGHT_PHYSIO=new Set(['cycle','pregnancy','virgin','bodyScent','chestDetail','traits']);
+  const physioFor=c=>{const p=clone(c.physiology);if(intimateActive)return p;const out={};for(const k of Object.keys(p))if(LIGHT_PHYSIO.has(k))out[k]=p[k];return out;};
+  // rc.41：多人同场且不在亲密戏时，档案类长文（九大档案、私密细节、底线）一律不重复挂载，
+  // 给模型留出输出余量，避免尾部 <UpdateVariable> 被 max_tokens 截断。
+  const crowdScene=presentChars.length>=2&&!intimateActive;
   const ledgerByFact=new Map(Object.values(s.finance.ledger).map(l=>[l.eventId,l]));
   const pendingBasicProfiles=Object.values(s.characters).filter(c=>tracked(c)).map(c=>{
     const missing=['beautyScore','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu'].filter(k=>c[k]==null||c[k]===''||Array.isArray(c[k])&&!c[k].length);
@@ -1678,20 +2213,39 @@ export function projection(s) {
   const view=c=>{
     const base={id:c.id,name:c.name,aliases:c.aliases,trackingState:c.trackingState};
     if(!tracked(c))return base;
-    if(s.scene.presentCharacterIds.includes(c.id))return {...base,age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,corruption:c.corruption??0,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,addressing:c.addressing,impression:c.impression,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,currentThought:c.currentThought,arousal:c.arousal,recentGoal:c.recentGoal??'',longTermDream:c.longTermDream??'',hiddenScar:c.hiddenScar??'',...(c.physiology?{physiology:clone(c.physiology)}:{}),...(c.outfit?{outfit:clone(c.outfit)}:{}),...(c.intimacy?{intimacy:clone(c.intimacy)}:{}),...(c.limits?{limits:clone(c.limits)}:{}),...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})};
+    if(s.scene.presentCharacterIds.includes(c.id))return {...base,age:c.age,beautyScore:c.beautyScore,occupation:c.occupation,...basicProfile(c),affection:c.affection,corruption:c.corruption??0,relationshipLabel:c.relationshipLabel,relationshipNotes:c.relationshipNotes,knownFacts:c.knownFacts,addressing:c.addressing,impression:c.impression,currentClothes:c.currentClothes,currentPose:c.currentPose,currentAction:c.currentAction,currentExpression:c.currentExpression,currentMood:c.currentMood,currentCondition:c.currentCondition,currentItems:c.currentItems,currentThought:c.currentThought,arousal:c.arousal,recentGoal:c.recentGoal??'',longTermDream:c.longTermDream??'',hiddenScar:c.hiddenScar??'',...(c.physiology?{physiology:physioFor(c)}:{}),...(c.outfit?{outfit:clone(c.outfit)}:{}),...(crowdScene?{}:c.intimacy?{intimacy:clone(c.intimacy)}:{}),...(crowdScene?{}:c.limits?{limits:clone(c.limits)}:{}),...(c.profileFixed&&!c.profileLocked?{profileFixed:c.profileFixed}:{})};
     return c.starred?{...base,relationshipLabel:c.relationshipLabel,affection:c.affection,corruption:c.corruption??0,recentGoal:c.recentGoal??'',hiddenScar:c.hiddenScar??'',starred:true,offscreen:c.offscreen}:base;
   };
   const characters=Object.fromEntries(Object.values(s.characters).map(c=>[c.id,view(c)]));
   // Top-level to-do list so the model cannot miss off-stage starred women.
   const starredOffscreenIds=Object.values(s.characters).filter(c=>tracked(c)&&c.starred&&!s.scene.presentCharacterIds.includes(c.id)).map(c=>c.id);
   // rc.34 / rc.35：主角异能、超现实奇物、今日日程、背包待用券（为空一律省略，零冗余 token）
-  const userAbilities=(s.user.abilities||[]).map(a=>{const d=ABILITY_BY_ID[a.abilityId];return d?{id:d.abilityId,name:d.name,tag:d.tag,level:a.level,effect:d.effect}:null;}).filter(Boolean);
+  const userAbilities=(s.user.abilities||[]).map(a=>{const d=ABILITY_BY_ID[a.abilityId];return d?{id:d.abilityId,name:d.name,tag:d.tag,effect:d.effect}:null;}).filter(Boolean);
+  // rc.43：本轮已发动、还没被正文消费的异能 —— 同样进顶层索引，正文生成后自动清空。
+  const pendingAbilityUses=Object.values(s.wheel?.pendingAbilityUses||{}).map(p=>{const d=ABILITY_BY_ID[p.abilityId];return d?{id:d.abilityId,name:d.name,tag:d.tag,effect:d.effect,...(p.targetCharacterId&&s.characters[p.targetCharacterId]?.name?{targetNames:[s.characters[p.targetCharacterId].name]}:{})}:null;}).filter(Boolean);
   const bagSurrealItems=Object.values(s.inventory||{}).filter(i=>i.category==='SURREAL_ITEM'&&i.status!=='USED').map(i=>{const d=SURREAL_ITEM_BY_ID[i.refId];return d?{itemId:i.itemId,name:d.name,tag:d.tag,effect:d.effect}:null;}).filter(Boolean);
   const todaySchedules=Object.values(s.calendar?.appointments||{}).filter(a=>a.date===s.world.date&&a.status==='PLANNED').map(a=>{const p=a.prizeId?WHEEL_POOL_BY_ID[a.prizeId]:null;return {id:a.id,time:a.time,title:a.title,location:a.location,participants:a.participants,notes:a.notes,...(p?{prizeNo:p.no,prizeSummary:p.summary,promptHint:p.hint}:{})};});
   const bagReadyItems=Object.values(s.inventory||{}).filter(i=>i.status==='READY'&&i.category==='WHEEL_PRIZE').slice(0,12).map(i=>{const p=WHEEL_POOL_BY_ID[i.refId];return {itemId:i.itemId,...(p?{no:p.no,name:p.name}:{}),rarity:i.rarity};});
-  return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,user:{...s.user,cashYuan:formatYuanReadable(s.user.cashCents),wealthTier:wealthTier(tierBasis(s)),pendingProfileFields:['heightCm','weightKg','shoeSizeEu'].filter(k=>s.user[k]==null)},scene:s.scene,characters,pendingBasicProfiles,
+  // rc.38 B.7（E-1 激进方案）：高好感 / 高堕落的离场熟人每天最多递一条主动消息，
+  // 由脚本按日期确定性挑选，去不去回不回仍归玩家；多女互知与争宠规则写在世界书 relationships-network。
+  const incomingPing=(()=>{
+    const todayIds=new Set(Object.values(s.calendar?.appointments||{}).filter(a=>a.date===s.world.date&&a.status==='PLANNED').flatMap(a=>a.participants||[]));
+    const pool=Object.values(s.characters).filter(c=>tracked(c)&&!s.scene.presentCharacterIds.includes(c.id)&&!todayIds.has(c.id)&&((Number(c.affection)||0)>=65||(Number(c.corruption)||0)>=60));
+    if(!pool.length)return null;
+    const seed=fnv(`${s.world.date}|${s.scene.sceneId||''}|${s.meta.branchKey||''}`);
+    const who=pool[(Number.parseInt(seed.slice(0,8),16)||0)%pool.length];
+    const aff=Number(who.affection)||0,cor=Number(who.corruption)||0;
+    const type=cor>=70?'NIGHT_CRAVING':aff>=75?'AFFECTION_PING':'GOAL_HELP';
+    const hint=type==='NIGHT_CRAVING'?'深夜发来一张刚换好的私密穿搭照片，话里带着钩子，问你要不要过来'
+      :type==='AFFECTION_PING'?'发来今天的一件小事，话尾试探你今晚有没有空'
+      :'说手上的事卡住了，想听你的意见，问你最近能不能见一面';
+    return {characterId:who.id,name:who.name,type,hint};
+  })();  const mustDepictUsedItems=Object.values(s.inventory||{}).filter(i=>i.pendingUndo===true).slice(0,6).map(i=>{const def=i.category==='SURREAL_ITEM'?SURREAL_ITEM_BY_ID[i.refId]:WHEEL_POOL_BY_ID[i.refId];const names=(i.targetCharacterIds||[]).map(pid=>s.characters[pid]?.name).filter(Boolean);return {category:i.category==='SURREAL_ITEM'?'奇物':'玩法券',name:def?.name||i.refId,effectOrHint:def?.effect||def?.hint||def?.summary||'',...(names.length?{targetNames:names}:{})};});
+  return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,user:{...s.user,cashYuan:formatYuanReadable(s.user.cashCents),wealthTier:wealthTier(tierBasis(s)),pendingProfileFields:['heightCm','weightKg','shoeSizeEu'].filter(k=>s.user[k]==null)},scene:{...s.scene,...(intimateActive?{intimateStage:'INTIMATE_SCENE_ACTIVE'}:{})},characters,pendingBasicProfiles,
+    ...(mustDepictUsedItems.length?{mustDepictUsedItems}:{}),...(pendingAbilityUses.length?{pendingAbilityUses}:{}),
+    ...(incomingPing?{incomingPing}:{}),
     ...(userAbilities.length?{userAbilities}:{}),...(bagSurrealItems.length?{bagSurrealItems}:{}),
     ...(todaySchedules.length?{todaySchedules}:{}),...(bagReadyItems.length?{bagReadyItems}:{}),
-    assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind,description:a.description,locationNote:a.locationNote,ownershipNote:a.ownershipNote,bookValueCents:a.bookValueCents,bookValueYuan:formatYuanReadable(a.bookValueCents)})),
+    assets:Object.values(s.finance.assets).filter(a=>a.ownerId==='USER'&&a.status==='OWNED').map(a=>({assetId:a.assetId,name:a.name,kind:a.kind,description:a.description,locationNote:a.locationNote,ownershipNote:a.ownershipNote,bookValueCents:a.bookValueCents,bookValueYuan:formatYuanReadable(a.bookValueCents),...(a.valuationPending?{valuationPending:true}:{})})),
     recentFacts:Object.entries(s.facts).slice(-60).map(([factId,f])=>{const l=ledgerByFact.get(factId);return {factId,type:f.type,...(l?{kind:l.kind,itemName:l.itemName,amountCents:l.amountCents,amountYuan:formatYuanReadable(l.amountCents),assetId:l.assetId,refundOf:l.refundOf}:{})};}),rule:'只提出新事实，不直接写现金、奖池或提现。付款前先核对user.cashYuan可用现金；已列factId不得再次入账；退款的refundOf按交易名称、金额与资产匹配原付款factId，不猜ID。'};
 }

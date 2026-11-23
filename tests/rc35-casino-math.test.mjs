@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { fnv1a64, rollWheelPrize, playWheelQuote, isoWeekKey, WHEEL_POOL, WHEEL_POOL_BY_RARITY, PITY, PLAY_DAILY_CASH_LIMIT } from '../src/core/wheel.js';
 import {
   rollWishPack, lowPackQuote, LOW_CARD_POINTS, rollCasino, casinoSeed, drawSeed, CASINO_SLOTS, CASINO_COLOR_OF_SLOT,
-  CARD_POINTS, CARD_WEIGHT, CARD_ANCHOR_WEIGHT, LOW_CARD_WEIGHT, upgradeCost, abilityById, itemById, ABILITIES, SURREAL_ITEMS,
+  CARD_POINTS, CARD_WEIGHT, CARD_ANCHOR_WEIGHT, LOW_CARD_WEIGHT, abilityById, itemById, ABILITIES, SURREAL_ITEMS,
   wishWheelQuote, WISH_CASH_MIN_CENTS, WISH_UNLOCK_BASIS_CENTS,
 } from '../src/core/casino.js';
 
@@ -87,8 +87,9 @@ test('rc.37 星愿卡包：一包 3 张、权重各表 1000、压轴位保底提
   assert.equal(pack.cards.length, 3, '一包固定 3 张');
   for (const c of pack.cards) assert(pack.cards.length && c.cardCode.startsWith(c.rarity + '_'));
 
-  const forcedRed = rollWishPack({ seed: 's', poolTier: 'high', pityRed: 3 });
-  assert.notEqual(forcedRed.cards[2].rarity, 'gray', '第 4 包压轴位必出红+');
+  for (let i = 0; i < 40; i++) {
+    for (const c of rollWishPack({ seed: 'h' + i, poolTier: 'high' }).cards) assert.notEqual(c.rarity, 'gray', 'rc.40：圣典卡包最低红阶，不再出灰卡');
+  }
   const forcedGold = rollWishPack({ seed: 's', poolTier: 'high', pityGold: 9 });
   assert(['gold', 'rainbow'].includes(forcedGold.cards[2].rarity), '第 10 包压轴位必出金+');
   const lowForced = rollWishPack({ seed: 's', poolTier: 'low', pityRed: 4 });
@@ -143,16 +144,15 @@ test('rc.35 赌场：换押注颜色会得到不同落点（防删楼改押稳�
   assert(new Set([red.hitIndex, green.hitIndex, black.hitIndex]).size > 1);
 });
 
-test('rc.35 商城：14 异能 / 16 奇物，升级价与直兑价符合方案', () => {
+test('rc.35 商城：14 异能 / 14 奇物（rc.53b 补回印记条目），直兑价符合方案', () => {
   assert.equal(ABILITIES.length, 14);
-  assert.equal(SURREAL_ITEMS.length, 16);
+  assert.equal(SURREAL_ITEMS.length, 14);
   const micro = abilityById('ab_micro');
   assert.equal(micro.price, 350);
-  assert.equal(upgradeCost(micro, 1), 280); // 350*0.8
-  assert.equal(upgradeCost(micro, 2), 490); // 350*1.4
   assert.equal(itemById('it_toylink').price, 3600);
   assert.equal(abilityById('ab_stop').price, 4500);
-  assert.equal(ABILITIES.filter((a) => a.upgradable).length, 9);
+  // rc.42：异能不再升级 —— 14 条全部只有「持有 / 未持有」，目录里已无 upgradable 字段。
+  assert.equal(ABILITIES.filter((a) => 'upgradable' in a).length, 0);
 });
 
 test('rc.34/35：抽卡与轮盘种子互不相同', () => {

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>星愿卡包升级版原型 · 哥特星盘祭坛</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0811;color:#f3ead8;font-family:"Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;user-select:none}
+button{font:inherit;cursor:pointer}
+
+.wf-root{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+.wf-backdrop{position:absolute;inset:0;background:radial-gradient(760px 620px at 50% 45%,rgba(130,86,210,.22),rgba(7,5,12,.97) 70%)}
+
+.wf-bar{position:relative;z-index:20;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;margin-bottom:10px;padding:7px 12px;border-radius:999px;background:rgba(18,14,24,.92);border:1px solid rgba(217,184,120,.4);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.wf-bar b{font:700 13px/1 "Songti SC",Georgia,serif;letter-spacing:.18em;color:#fff0c4;margin-right:4px}
+.pill{padding:5px 11px;border-radius:999px;border:1px solid rgba(217,184,120,.35);background:rgba(255,255,255,.05);color:#cfc4ae;font-size:11px;font-weight:700}
+.pill.on{background:linear-gradient(180deg,#f6e3b0,#c89a44);color:#241707;border-color:#fff0c4}
+.binder-pill{padding:4px 11px;border-radius:999px;background:rgba(246,215,134,.14);border:1px solid rgba(246,215,134,.45);color:#ffe8a8;font:700 11.5px Georgia,serif;transition:transform .2s}
+.binder-pill.bounce{animation:miniBounce .38s cubic-bezier(.22,1.4,.36,1)}
+@keyframes miniBounce{0%{transform:scale(1)}35%{transform:scale(1.22)}70%{transform:scale(.94)}100%{transform:scale(1)}}
+
+/* 祭坛舞台 */
+.altar{position:relative;z-index:10;width:min(94vw,660px);height:min(74dvh,500px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.altar-ring{position:absolute;inset:0;margin:auto;width:min(76vmin,460px);height:min(76vmin,460px);pointer-events:none;opacity:.55;transition:opacity .25s}
+.altar-ring svg{width:100%;height:100%;animation:altarSpin 80s linear infinite}
+.altar.is-orbiting .altar-ring svg{animation-duration:2.6s}
+@keyframes altarSpin{to{transform:rotate(360deg)}}
+.fx-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:15}
+
+.stage-head{position:relative;z-index:5;text-align:center}
+.stage-head h2{font:700 16px "Songti SC",Georgia,serif;letter-spacing:.26em;color:#fff0c4}
+.stage-head small{display:block;font-size:11px;color:#b8ae9c;margin-top:3px}
+
+/* 2:3 塔罗星愿卡（与赌场同款高级材质） */
+.wc-card{position:relative;width:106px;aspect-ratio:2/3;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:7px;border:1.5px solid var(--wc-border);background:var(--wc-bg);box-shadow:0 14px 32px rgba(0,0,0,.55),0 0 22px var(--wc-glow),inset 0 1px 0 rgba(255,255,255,.22)}
+.wc-card::before{content:"";position:absolute;inset:4px;border-radius:8px;border:1px solid var(--wc-inner);pointer-events:none}
+.wc-card::after{content:"";position:absolute;inset:-40%;pointer-events:none;background:linear-gradient(125deg,transparent 38%,var(--wc-sheen) 50%,transparent 62%);animation:cardSheen var(--wc-dur,4.4s) linear infinite}
+@keyframes cardSheen{0%{transform:translateX(-65%) rotate(12deg)}100%{transform:translateX(65%) rotate(12deg)}}
+.wc-gray{--wc-bg:radial-gradient(circle at 30% 20%,#454a57,#262932 58%,#16181f);--wc-border:#8e96a8;--wc-inner:rgba(196,204,222,.32);--wc-glow:rgba(148,158,180,.2);--wc-accent:#b8c0d4;--wc-sheen:rgba(220,228,245,.15);--wc-dur:5.8s}
+.wc-red{--wc-bg:radial-gradient(circle at 30% 18%,#8f2037,#4e1120 56%,#21080f);--wc-border:#e28a9a;--wc-inner:rgba(255,196,206,.4);--wc-glow:rgba(224,72,104,.38);--wc-accent:#ffbac7;--wc-sheen:rgba(255,212,220,.24);--wc-dur:4.4s}
+.wc-gold{--wc-bg:radial-gradient(circle at 28% 18%,#c49334,#6f4d14 55%,#261806);--wc-border:#f8db8c;--wc-inner:rgba(255,240,188,.5);--wc-glow:rgba(246,204,104,.46);--wc-accent:#ffe69b;--wc-sheen:rgba(255,246,206,.32);--wc-dur:3.5s}
+.wc-rainbow,.wc-mystery{--wc-bg:radial-gradient(circle at 22% 18%,rgba(164,118,255,.55),transparent 52%),radial-gradient(circle at 80% 78%,rgba(86,232,218,.48),transparent 55%),radial-gradient(circle at 50% 50%,#3d2058,#1b102c 62%,#0f091a);--wc-border:#f2d8ff;--wc-inner:rgba(255,232,255,.56);--wc-glow:rgba(196,136,255,.56);--wc-accent:#aef6ff;--wc-sheen:rgba(255,255,255,.36);--wc-dur:2.8s}
+.wc-rainbow,.wc-mystery{border-color:transparent;background-image:var(--wc-bg),conic-gradient(from 0deg,#ff80c8,#ffe082,#72f7e0,#9d8cff,#ff80c8);background-origin:border-box;background-clip:padding-box,border-box}
+.wc-top{display:flex;justify-content:space-between;font:700 8px/1 Georgia,serif;color:var(--wc-accent);position:relative;z-index:2}
+.wc-art{flex:1;display:grid;place-items:center;position:relative;z-index:2;color:var(--wc-accent)}
+.wc-art svg{width:62%;height:62%}
+.wc-foot{position:relative;z-index:2;text-align:center;padding:4px 3px;border-radius:6px;background:rgba(0,0,0,.48);border:1px solid var(--wc-inner)}
+.wc-name{font:700 9.5px/1.15 "Songti SC",serif;color:#fff6e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-val{font:800 13.5px/1.15 Georgia,serif;color:var(--wc-accent)}
+
+/* Phase 1: 五卡弧形悬浮阵 */
+.pk-arc{position:relative;z-index:6;display:flex;align-items:center;justify-content:center;gap:10px;height:210px}
+.pk-slot-idle{transform-origin:center 150%;transform:translateY(var(--fy)) rotate(var(--rot));animation:pkFloat 3.2s ease-in-out infinite alternate;animation-delay:calc(var(--i) * -0.5s);transition:opacity .25s,transform .4s}
+.pk-slot-idle.dimmed{opacity:.36;filter:grayscale(.45)}
+@keyframes pkFloat{0%{margin-top:-7px}100%{margin-top:8px}}
+.pk-arc.is-orbiting .pk-slot-idle{opacity:1;filter:none;animation:pkOrbit 1.35s cubic-bezier(.32,.04,.18,1) forwards}
+@keyframes pkOrbit{0%{transform:translateY(0) rotate(var(--rot)) scale(1)}45%{transform:translateY(-14px) rotate(calc(360deg + var(--rot))) scale(.9)}85%{transform:rotate(720deg) scale(.6)}100%{transform:scale(.12);opacity:0}}
+
+/* Phase 3: 烫金卡包 */
+.pk-pack{position:relative;z-index:6;width:196px;height:278px;border-radius:16px;cursor:grab;touch-action:none;background:linear-gradient(155deg,#2a192e,#4a1f36 52%,#160e1c);border:1.5px solid rgba(246,215,134,.72);box-shadow:0 22px 54px rgba(0,0,0,.7),0 0 32px rgba(217,184,120,.25);overflow:hidden}
+.pk-pack.is-low{background:linear-gradient(155deg,#202534,#343c52 52%,#12141c)}
+.pk-foil{position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.08) 0 2px,transparent 2px 9px),radial-gradient(120% 80% at 24% 12%,rgba(246,215,134,.24),transparent 62%)}
+.pk-flap{position:absolute;left:0;right:0;top:0;height:36%;transform-origin:top center;transform:translateX(calc(var(--pk,0) * 45%)) rotate(calc(var(--pk,0) * -28deg));background:linear-gradient(180deg,rgba(246,227,176,.38),transparent);border-bottom:1px dashed rgba(246,227,176,.65)}
+.pk-seal{position:absolute;left:50%;top:18%;transform:translate(-50%,-50%) rotate(-5deg);padding:6px 12px;border-radius:8px;background:rgba(16,12,22,.88);border:1px solid rgba(246,227,176,.68);color:#fff0c4;font:700 10px Georgia,serif;letter-spacing:.12em;white-space:nowrap}
+.pk-emblem{position:absolute;inset:0;display:grid;place-items:center;color:rgba(246,215,134,.5)}
+.pk-emblem svg{width:88px;height:88px}
+.pk-hint{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:11px;color:#d9ceb6}
+.pk-pack.is-burst{animation:pkBurst .48s ease-out forwards}
+@keyframes pkBurst{to{transform:scale(1.12);opacity:0}}
+
+/* Phase 4: 三张 3D 翻面 + 扇形收束 */
+.pk-fan{position:relative;z-index:6;display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:12px 6px;perspective:1000px}
+.pk-flip{position:relative;width:min(27vw,126px);aspect-ratio:2/3;border:0;background:transparent;padding:0;transform:rotate(calc((var(--i) - 1) * 7deg)) translateY(calc(abs(var(--i) - 1) * 4px));transition:transform .42s cubic-bezier(.22,1.15,.36,1)}
+.pk-fan.is-settled .pk-flip{transform:rotate(calc((var(--i) - 1) * 9deg)) translateY(calc((var(--i) - 1) * (var(--i) - 1) * 7px - 8px))}
+.pk-flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.22,1.1,.36,1)}
+.pk-flip.is-open .pk-flip-inner{transform:rotateY(180deg)}
+.pk-back,.pk-front{position:absolute;inset:0;backface-visibility:hidden;border-radius:12px}
+.pk-back{display:grid;place-items:center;border:1.5px solid rgba(217,184,120,.58);background:radial-gradient(circle at 50% 50%,rgba(246,215,134,.18),transparent 62%),linear-gradient(160deg,#1d1626,#0e0a14);box-shadow:0 14px 30px rgba(0,0,0,.55)}
+.pk-back svg{width:76%;height:76%}
+.pk-front{transform:rotateY(180deg)}
+.pk-front .wc-card{width:100%;height:100%}
+
+.actions{position:relative;z-index:10;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.cta{padding:10px 24px;border-radius:999px;border:1px solid rgba(246,215,134,.55);background:rgba(255,255,255,.07);color:#fff0c4;font-size:12.5px;font-weight:700;letter-spacing:.08em}
+.cta.primary{background:linear-gradient(180deg,#f6e3b0,#c89a44);color:#241707;border-color:#fff0c4;box-shadow:0 0 24px rgba(246,215,134,.35)}
+
+.altar.shake-gold{animation:shG .38s ease-out}.altar.shake-rainbow{animation:shR .5s ease-out}
+@keyframes shG{0%,100%{transform:none}25%{transform:translate(-5px,3px)}55%{transform:translate(5px,-3px)}}
+@keyframes shR{0%,100%{transform:none}20%{transform:translate(-7px,4px) scale(1.015)}50%{transform:translate(7px,-4px) scale(1.01)}}
+
+/* 三档画质降级 */
+.wf-root[data-fxq="medium"] .wc-card::after{animation:none;opacity:0}
+.wf-root[data-fxq="medium"] .wc-card{box-shadow:0 10px 22px rgba(0,0,0,.5)}
+.wf-root[data-fxq="medium"] .altar-ring svg{animation:none}
+.wf-root[data-fxq="low"] .wc-card::after,
+.wf-root[data-fxq="low"] .altar-ring{opacity:0;animation:none}
+.wf-root[data-fxq="low"] .pk-slot-idle{animation:none}
+.wf-root[data-fxq="low"] .wc-card{box-shadow:none}
+</style>
+</head>
+<body>
+<div class="wf-root" id="wfRoot" data-fxq="high">
+  <div class="wf-backdrop"></div>
+
+  <div class="wf-bar">
+    <b>星愿卡包 · 升级版</b>
+    <button class="pill on" data-pool="high">圣典卡包（最低红阶）</button>
+    <button class="pill" data-pool="low">星尘卡包（灰/红）</button>
+    <button class="pill on" data-fxq-set="high">璀璨</button>
+    <button class="pill" data-fxq-set="medium">均衡</button>
+    <button class="pill" data-fxq-set="low">极速</button>
+    <span class="binder-pill" id="binderBadge">🃏 卡册 · <b id="binderCount">14</b></span>
+  </div>
+
+  <div class="altar" id="altar">
+    <div class="altar-ring" aria-hidden="true">
+      <svg viewBox="0 0 400 400" fill="none" stroke="rgba(217,184,120,.38)">
+        <circle cx="200" cy="200" r="186" stroke-width="1.2" stroke-dasharray="4 6"/>
+        <circle cx="200" cy="200" r="154" stroke-width=".9"/>
+        <polygon points="200,22 238,162 378,200 238,238 200,378 162,238 22,200 162,162" stroke-width=".8" opacity=".55"/>
+      </svg>
+    </div>
+    <canvas class="fx-canvas" id="fxCanvas" width="660" height="500"></canvas>
+    <div class="stage-head">
+      <h2 id="stageTitle">圣典卡包 · 五曜星阵待命</h2>
+      <small id="stageSub">每包 3 张 · 保底红阶，产出红（60分）/ 金（200分）/ 虹（800分）高阶卡</small>
+    </div>
+    <div id="stageBody"></div>
+    <div class="actions" id="stageActs"></div>
+  </div>
+</div>
+
+<script>
+const ART = {
+  gray: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="22" stroke-dasharray="3 3" opacity=".55"/><polygon points="32,10 42,32 32,54 22,32" fill="rgba(255,255,255,.06)"/><circle cx="32" cy="32" r="5"/></svg>',
+  red: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="23" opacity=".5"/><path d="M32 10 C42 20 46 30 32 52 C18 30 22 20 32 10 Z" fill="rgba(255,160,180,.14)"/><circle cx="32" cy="30" r="3.5" fill="currentColor"/></svg>',
+  gold: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="24" stroke-dasharray="2 3" opacity=".65"/><polygon points="32,7 37,25 55,32 37,39 32,57 27,39 9,32 27,25" fill="rgba(255,230,150,.18)"/><circle cx="32" cy="32" r="4" fill="currentColor"/></svg>',
+  rainbow: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="25" opacity=".7"/><polygon points="32,5 38,24 58,32 38,40 32,59 26,40 6,32 26,24" fill="rgba(255,255,255,.16)"/><circle cx="32" cy="32" r="4" fill="#fff"/></svg>',
+  mystery: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="32" cy="32" r="24" stroke-dasharray="3 3"/><polygon points="32,8 50,32 32,56 14,32" fill="rgba(220,180,255,.18)"/><circle cx="32" cy="32" r="5" fill="#fff"/></svg>'
+};
+const BACK_SVG = '<svg viewBox="0 0 80 120" fill="none" stroke="#d9b878" stroke-width="1.2"><rect x="6" y="6" width="68" height="108" rx="6" opacity=".6"/><circle cx="40" cy="60" r="24" stroke-dasharray="2 2" opacity=".75"/><polygon points="40,22 46,52 68,60 46,68 40,98 34,68 12,60 34,52" fill="rgba(217,184,120,.16)"/><circle cx="40" cy="60" r="3.5" fill="#ffe8a8"/></svg>';
+const FIVE = [
+  { rarity:'gray', tier:'灰阶·I', name:'银霜星屑', val:'10 分' },
+  { rarity:'red', tier:'红阶·II', name:'绯红夜宴', val:'60 分' },
+  { rarity:'mystery', tier:'星愿秘印', name:'星愿秘印', val:'???' },
+  { rarity:'gold', tier:'金阶·III', name:'鎏金圣杯', val:'200 分' },
+  { rarity:'rainbow', tier:'虹阶·IV', name:'虹光星冕', val:'800 分' }
+];
+
+let pool = 'high', binderCount = 14, cards = [], revealed = [], skipFn = null;
+const fxq = () => document.getElementById('wfRoot').dataset.fxq;
+
+function burst(rarity, inward = false) {
+  if (fxq() === 'low') return;
+  const cvs = document.getElementById('fxCanvas'), ctx = cvs.getContext('2d');
+  const cols = { gray:['#cfd5e3'], red:['#ff8fa8','#ffd1d8'], gold:['#ffe69b','#f6d786','#fff'], rainbow:['#ff80c8','#ffe082','#72f7e0','#b69bff'] }[rarity] || ['#ffe69b'];
+  const n = fxq() === 'high' ? (rarity === 'rainbow' ? 38 : 26) : 12;
+  const pts = Array.from({ length: n }, (_, i) => {
+    const a = (Math.PI * 2 * i) / n + (i % 3) * .12, spd = 2.4 + (i % 5) * 1.1;
+    return inward
+      ? { x: 330 + Math.cos(a) * 210, y: 250 + Math.sin(a) * 160, vx: -Math.cos(a) * 3.8, vy: -Math.sin(a) * 2.9, r: 2 + (i % 3), c: cols[i % cols.length] }
+      : { x: 330, y: 250, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, r: 2 + (i % 3), c: cols[i % cols.length] };
+  });
+  const t0 = performance.now(), dur = inward ? 900 : 1200;
+  function tick(now) {
+    const p = (now - t0) / dur;
+    ctx.clearRect(0, 0, 660, 500);
+    if (p >= 1) return;
+    ctx.globalAlpha = 1 - p;
+    for (const pt of pts) {
+      pt.x += pt.vx; pt.y += pt.vy; if (!inward) { pt.vx *= .97; pt.vy *= .97; }
+      ctx.fillStyle = pt.c; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, Math.PI * 2); ctx.fill();
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function cardView(c) {
+  return `<div class="wc-card wc-${c.rarity}"><div class="wc-top"><span>${c.tier}</span><span>✦</span></div><div class="wc-art">${ART[c.rarity]}</div><div class="wc-foot"><div class="wc-name">${c.name}</div><div class="wc-val">${c.val}</div></div></div>`;
+}
+
+function renderIdle() {
+  document.getElementById('altar').classList.remove('is-orbiting');
+  document.getElementById('stageTitle').textContent = pool === 'high' ? '圣典卡包 · 五曜星阵待命' : '星尘卡包 · 五曜星阵待命';
+  document.getElementById('stageSub').textContent = pool === 'high'
+    ? '每包 3 张 · 保底红阶，产出红（60分）/ 金（200分）/ 虹（800分）高阶卡'
+    : '每包 3 张 · 产出灰（10分）/ 红（30分）星愿卡';
+  document.getElementById('stageBody').innerHTML = `<div class="pk-arc" id="pkArc">${FIVE.map((c, i) => {
+    const dim = (pool === 'low' && (c.rarity === 'gold' || c.rarity === 'rainbow')) || (pool === 'high' && c.rarity === 'gray');
+    const off = i - 2;
+    return `<div class="pk-slot-idle ${dim ? 'dimmed' : ''}" style="--i:${i};--fy:${Math.abs(off) * 9}px;--rot:${off * 7}deg">${cardView(c)}</div>`;
+  }).join('')}</div>`;
+  document.getElementById('stageActs').innerHTML = `<button class="cta primary" id="btnDraw">启封卡包</button>`;
+  document.getElementById('btnDraw').addEventListener('click', startDraw);
+}
+
+function startDraw() {
+  cards = pool === 'high'
+    ? [{ rarity:'red', tier:'红阶·II', name:'绯红夜宴', val:'60 分' }, { rarity:'gold', tier:'金阶·III', name:'鎏金圣杯', val:'200 分' }, { rarity:'rainbow', tier:'虹阶·IV', name:'虹光星冕', val:'800 分' }]
+    : [{ rarity:'gray', tier:'灰阶·I', name:'银霜星屑', val:'10 分' }, { rarity:'gray', tier:'灰阶·I', name:'暮色筹码', val:'10 分' }, { rarity:'red', tier:'红阶·II', name:'猩红玫瑰印', val:'30 分' }];
+  revealed = [false, false, false];
+  if (fxq() === 'low') { renderSealed(); return; }
+  document.getElementById('altar').classList.add('is-orbiting');
+  document.getElementById('pkArc')?.classList.add('is-orbiting');
+  burst(pool === 'high' ? 'gold' : 'red', true);
+  document.getElementById('stageActs').innerHTML = `<button class="cta" id="btnSkip">跳过动画</button>`;
+  const ms = fxq() === 'high' ? 1350 : 950;
+  const timer = setTimeout(() => { skipFn = null; renderSealed(); }, ms);
+  skipFn = () => { clearTimeout(timer); skipFn = null; renderSealed(); };
+  document.getElementById('btnSkip').addEventListener('click', () => skipFn?.());
+}
+
+function renderSealed() {
+  document.getElementById('altar').classList.remove('is-orbiting');
+  document.getElementById('stageTitle').textContent = pool === 'high' ? '圣典卡包 · 启封台' : '星尘卡包 · 启封台';
+  document.getElementById('stageSub').textContent = '向右滑动撕开封口，或点击下方一键撕开';
+  document.getElementById('stageBody').innerHTML = `<div class="pk-pack ${pool === 'low' ? 'is-low' : ''}" id="pkPack" style="--pk:0">
+    <div class="pk-foil"></div><div class="pk-flap"></div>
+    <div class="pk-seal">${pool === 'high' ? 'SANCTUM PACK · 3 CARDS' : 'STARDUST PACK · 3 CARDS'}</div>
+    <div class="pk-emblem">${ART[pool === 'high' ? 'gold' : 'gray']}</div>
+    <div class="pk-hint">向右滑撕开封口</div>
+  </div>`;
+  document.getElementById('stageActs').innerHTML = `<button class="cta primary" id="btnTear">一键撕开</button>`;
+  const pk = document.getElementById('pkPack');
+  let sx = 0, drag = false;
+  pk.addEventListener('pointerdown', (e) => { sx = e.clientX; drag = true; pk.setPointerCapture(e.pointerId); });
+  pk.addEventListener('pointermove', (e) => { if (!drag) return; const p = Math.min(1, Math.max(0, (e.clientX - sx) / 140)); pk.style.setProperty('--pk', p); if (p >= .85) { drag = false; tearPack(); } });
+  pk.addEventListener('pointerup', () => { drag = false; });
+  document.getElementById('btnTear').addEventListener('click', tearPack);
+}
+
+function tearPack() {
+  const pk = document.getElementById('pkPack');
+  if (pk) { pk.style.setProperty('--pk', 1); pk.classList.add('is-burst'); }
+  burst(cards[2].rarity, false);
+  setTimeout(renderFan, fxq() === 'low' ? 60 : 460);
+}
+
+function renderFan() {
+  document.getElementById('stageTitle').textContent = '揭晓命定之签';
+  document.getElementById('stageSub').textContent = '点击单张翻面，或一键全部翻开';
+  document.getElementById('stageBody').innerHTML = `<div class="pk-fan" id="pkFan">${cards.map((c, i) => `
+    <button type="button" class="pk-flip" data-flip="${i}" style="--i:${i}">
+      <span class="pk-flip-inner"><span class="pk-back">${BACK_SVG}</span><span class="pk-front">${cardView(c)}</span></span>
+    </button>`).join('')}</div>`;
+  document.getElementById('stageActs').innerHTML = `<button class="cta" id="btnAll">全部翻开</button><button class="cta primary" id="btnCollect">全部收入卡册</button><button class="cta" id="btnAgain">再开一包</button>`;
+  document.querySelectorAll('[data-flip]').forEach((b) => b.addEventListener('click', () => openCard(Number(b.dataset.flip))));
+  document.getElementById('btnAll').addEventListener('click', () => cards.forEach((_, i) => setTimeout(() => openCard(i), fxq() === 'low' ? 0 : i * 180)));
+  document.getElementById('btnCollect').addEventListener('click', collectCards);
+  document.getElementById('btnAgain').addEventListener('click', () => { renderIdle(); startDraw(); });
+}
+
+function openCard(i) {
+  if (revealed[i]) return;
+  revealed[i] = true;
+  document.querySelector(`[data-flip="${i}"]`)?.classList.add('is-open');
+  const r = cards[i].rarity;
+  burst(r, false);
+  if (fxq() === 'high' && (r === 'gold' || r === 'rainbow')) {
+    const a = document.getElementById('altar');
+    a.classList.remove('shake-gold', 'shake-rainbow'); void a.offsetWidth; a.classList.add('shake-' + r);
+  }
+  if (revealed.every(Boolean)) {
+    setTimeout(() => {
+      document.getElementById('pkFan')?.classList.add('is-settled');
+      document.getElementById('stageSub').textContent = '3 张星愿卡已全部揭晓，点击下方收入卡册';
+    }, 260);
+  }
+}
+
+function collectCards() {
+  const badge = document.getElementById('binderBadge');
+  const target = badge.getBoundingClientRect();
+  const flips = [...document.querySelectorAll('.pk-flip')];
+  if (fxq() === 'low' || !flips.length) {
+    binderCount += 3; document.getElementById('binderCount').textContent = binderCount; renderIdle(); return;
+  }
+  const dur = fxq() === 'high' ? 380 : 250;
+  flips.forEach((el, idx) => {
+    const r = el.getBoundingClientRect();
+    const dx = target.left + target.width / 2 - (r.left + r.width / 2);
+    const dy = target.top + target.height / 2 - (r.top + r.height / 2);
+    el.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx}px,${dy}px) scale(.16) rotate(${(idx - 1) * 18}deg)`, opacity: 0 }
+    ], { duration: dur, delay: idx * 45, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' });
+  });
+  setTimeout(() => {
+    binderCount += 3;
+    document.getElementById('binderCount').textContent = binderCount;
+    badge.classList.remove('bounce'); void badge.offsetWidth; badge.classList.add('bounce');
+    renderIdle();
+  }, dur + 140);
+}
+
+document.querySelectorAll('[data-pool]').forEach((b) => b.addEventListener('click', () => {
+  pool = b.dataset.pool;
+  document.querySelectorAll('[data-pool]').forEach((x) => x.classList.toggle('on', x === b));
+  renderIdle();
+}));
+document.querySelectorAll('[data-fxq-set]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-fxq-set]').forEach((x) => x.classList.toggle('on', x === b));
+  document.getElementById('wfRoot').dataset.fxq = b.dataset.fxqSet;
+}));
+
+renderIdle();
+</script>
+</body>
+</html>

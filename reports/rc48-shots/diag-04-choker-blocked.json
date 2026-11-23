@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "04-choker-blocked",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/04-choker-blocked.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "CLICK_FAILED([data-open-workshop=\"choker\"]): F3"
+  },
+  "error": "CLICK_FAILED([data-open-workshop=\"choker\"]): F3",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-04-choker-blocked-full.png"
+}

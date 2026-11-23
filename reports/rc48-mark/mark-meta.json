@@ -1,0 +1,29 @@
+{
+  "k": 1.25,
+  "shots": [
+    {
+      "id": "imprint-a",
+      "full": "E:\\SHZDCHOSSS\\reports\\rc48-mark\\imprint-a-full.png",
+      "k": 1.25,
+      "marked": true
+    },
+    {
+      "id": "imprint-b",
+      "full": "E:\\SHZDCHOSSS\\reports\\rc48-mark\\imprint-b-full.png",
+      "k": 1.25,
+      "marked": true
+    },
+    {
+      "id": "choker-a",
+      "full": "E:\\SHZDCHOSSS\\reports\\rc48-mark\\choker-a-full.png",
+      "k": 1.25,
+      "marked": true
+    },
+    {
+      "id": "choker-b",
+      "full": "E:\\SHZDCHOSSS\\reports\\rc48-mark\\choker-b-full.png",
+      "k": 1.25,
+      "marked": true
+    }
+  ]
+}

@@ -9,3 +9,12 @@ evidence/local/
 src/ui/phone.html
 .secrets/
 .agy/
+
+# 2026-11-23：内部方案文档与原型、整卡 PNG、checkpoint 产物不入库（体积大、可重建）
+RC*总方案/
+RC*截图方案/
+dist/**/*.png
+dist/*-checkpoint/
+# 备份与项目内 skill 副本不入库
+.backups/
+.agents/

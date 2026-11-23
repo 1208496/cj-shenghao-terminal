@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>神豪终端 · TOY·LINK 遥控终端</title>
+<style>/* rc.52：TOY·LINK 独立宽屏样式。逐字照抄 4N 原型 `RC52总方案/03_原型/toy-wide-proto.html` 的 <style> 整块，
+ * 一字未改（含 .proto-* 演示件规则；模板里没有对应元素，属无副作用死规则）。
+ * 由 scripts/extract-rc52-toywide.mjs 生成。 */
+:root {
+  --cj-font-scale: 1;
+  --tl-backdrop: rgba(6, 3, 10, .82);
+  --tl-bg: #120d15;
+  --tl-bg-2: #18111e;
+  --tl-card: #1e1624;
+  --tl-card-hi: #261c2e;
+  --tl-well: #150f19;
+  --tl-ink: #f6ebf0;
+  --tl-sub: #b7a2b0;
+  --tl-muted: #85707f;
+  --tl-line: rgba(232, 184, 204, .16);
+  --tl-line-hi: rgba(240, 126, 162, .46);
+  --tl-pri: #b47aff;
+  --tl-pri-deep: #7b3fa0;
+  --tl-pri-soft: rgba(180, 122, 255, .15);
+  --tl-pri-bd: rgba(180, 122, 255, .44);
+  --tl-rose: #ff7ac3;
+  --tl-rose-deep: #e25582;
+  --tl-rose-soft: rgba(226, 85, 130, .16);
+  --tl-rose-bd: rgba(240, 118, 158, .48);
+  --tl-danger: #ff4d79;
+  --tl-danger-deep: #ff2e5f;
+  --tl-danger-bg: rgba(218, 54, 88, .16);
+  --tl-danger-bd: rgba(255, 77, 121, .46);
+  --tl-amber: #f5b962;
+  --tl-amber-soft: rgba(245, 185, 98, .14);
+  --tl-amber-bd: rgba(245, 185, 98, .42);
+  --tl-ok: #6fd6a8;
+  --tl-ok-bg: rgba(76, 186, 136, .14);
+  --tl-ok-bd: rgba(111, 214, 168, .38);
+  --tl-track: #352746;
+  --tl-track-2: #2b203a;
+  --tl-base-t1: #7d3864;
+  --tl-base-t2: #5a3b85;
+  --tl-base-t3: #7a283f;
+  --tl-overload-glow: rgba(255, 46, 95, .48);
+  --tl-shadow: rgba(4, 2, 8, .74);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font: calc(13px * var(--cj-font-scale, 1))/1.45 "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--tl-ink);
+  background: radial-gradient(960px 540px at 50% 0%, rgba(168, 72, 188, .18), transparent 65%), #09060d;
+  overflow: hidden;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .46; }
+button:focus-visible { outline: 2px solid var(--tl-rose); outline-offset: 2px; }
+
+/* ===== 仅原型演示条（不进卡） ===== */
+.proto-bar {
+  position: fixed; top: 8px; right: 14px; z-index: 95;
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 8px; border-radius: 999px;
+  background: rgba(20, 13, 27, .92); border: 1px solid var(--tl-line-hi);
+  font-size: 11px; color: var(--tl-sub);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .5);
+}
+.proto-bar span { padding: 0 4px; color: var(--tl-amber); font-weight: 700; }
+.proto-btn {
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: var(--tl-sub);
+  border-radius: 999px; padding: 2px 9px; font-size: 10.5px; font-weight: 700;
+}
+.proto-btn.on { background: var(--tl-pri-soft); color: #ebd4ff; border-color: var(--tl-pri-bd); }
+
+/* ===== 全屏弹层 ===== */
+.tl-overlay {
+  position: fixed; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px;
+  background: radial-gradient(760px 420px at 50% 0%, rgba(180, 122, 255, .14), transparent 68%), var(--tl-backdrop);
+  animation: tlFadeIn .20s cubic-bezier(.22, 1, .36, 1) both;
+}
+.tl-overlay[hidden] { display: none; }
+.tl-overlay.is-closing { opacity: 0; transition: opacity .18s ease; }
+.tl-overlay.is-closing .tl-shell { transform: translateY(8px) scale(.985); transition: transform .18s ease; }
+@keyframes tlFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tlShellIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.tl-shell {
+  position: relative;
+  width: min(1240px, 100%);
+  height: 100%;
+  max-height: 760px;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(520px 260px at 16% 0%, rgba(226, 85, 130, .12), transparent 70%),
+    radial-gradient(480px 280px at 86% 100%, rgba(180, 122, 255, .10), transparent 70%),
+    linear-gradient(180deg, #16101c 0%, #120d15 55%, #150e1a 100%);
+  border: 1px solid rgba(232, 168, 206, .28);
+  box-shadow: 0 28px 72px var(--tl-shadow), inset 0 1px 0 rgba(255, 228, 240, .14);
+  display: flex;
+  flex-direction: column;
+  animation: tlShellIn .22s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+/* ===== 顶栏 ===== */
+.tl-header {
+  flex-shrink: 0;
+  min-height: 54px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(180deg, #201629 0%, #17101f 100%);
+  border-bottom: 1px solid var(--tl-line);
+}
+.tl-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.tl-brand-mark {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, #35183e 0%, #24122a 100%);
+  border: 1px solid var(--tl-pri-bd);
+  display: grid; place-items: center;
+  box-shadow: inset 0 1px 0 rgba(255, 224, 246, .2);
+}
+.tl-brand-text { display: flex; flex-direction: column; gap: 1px; }
+.tl-title {
+  margin: 0;
+  font: 800 calc(15.5px * var(--cj-font-scale, 1))/1.2 "Noto Sans CJK SC", "PingFang SC", system-ui, sans-serif;
+  letter-spacing: .08em;
+  color: #fff2f8;
+}
+.tl-sub { font-size: 10.5px; color: var(--tl-sub); letter-spacing: .04em; }
+
+.tl-header-target { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tl-target-lbl { font-size: 11px; font-weight: 700; color: var(--tl-sub); flex-shrink: 0; }
+.tl-target-strip {
+  display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; max-width: 100%; scrollbar-width: none;
+}
+.tl-target-strip::-webkit-scrollbar { display: none; }
+.tl-char-chip {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  min-height: 32px; padding: 3px 10px 3px 4px; border-radius: 999px;
+  border: 1px solid var(--tl-line); background: var(--tl-card); color: var(--tl-ink);
+  font-size: 11.5px; font-weight: 700;
+  transition: border-color .16s, background .16s, transform .14s;
+}
+.tl-char-chip:hover { border-color: var(--tl-line-hi); }
+.tl-char-chip:active { transform: scale(.97); }
+.tl-char-chip .tl-av {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--tl-card-hi); color: #e9c8ff;
+  display: grid; place-items: center; font-size: 10.5px; font-weight: 800;
+  border: 1px solid rgba(212, 174, 245, .28);
+}
+.tl-char-chip .tl-chip-st {
+  font-size: 9.5px; padding: 1px 6px; border-radius: 999px;
+  background: rgba(255, 255, 255, .06); color: var(--tl-sub); font-weight: 700;
+}
+.tl-char-chip .tl-chip-st.is-worn { background: var(--tl-pri-soft); color: #dfc0ff; }
+.tl-char-chip .tl-chip-st.is-live { background: var(--tl-rose-soft); color: #ffb4d8; }
+.tl-char-chip.is-blocked { border-style: dashed; border-color: rgba(245, 185, 98, .36); color: var(--tl-sub); }
+.tl-char-chip.on {
+  background: linear-gradient(120deg, #7d369c, #cf4683);
+  color: #fff; border-color: rgba(255, 198, 224, .62);
+  box-shadow: 0 5px 14px rgba(176, 46, 118, .36);
+}
+.tl-char-chip.on .tl-av { background: rgba(255, 255, 255, .22); color: #fff; border-color: rgba(255, 255, 255, .4); }
+.tl-char-chip.on .tl-chip-st { background: rgba(0, 0, 0, .26); color: #ffeaf4; }
+.tl-worn-cnt { font-size: 10.5px; color: var(--tl-muted); white-space: nowrap; flex-shrink: 0; }
+
+.tl-header-acts { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.tl-status-pill {
+  font-size: 11px; font-weight: 800; padding: 4px 11px; border-radius: 999px;
+  background: var(--tl-card); color: var(--tl-sub); border: 1px solid var(--tl-line);
+  white-space: nowrap; max-width: 210px; overflow: hidden; text-overflow: ellipsis;
+}
+.tl-status-pill.is-live { background: var(--tl-rose-soft); color: #ffaad4; border-color: var(--tl-rose-bd); }
+.tl-status-pill.is-locked { background: var(--tl-pri-soft); color: #dfc0ff; border-color: var(--tl-pri-bd); }
+.tl-close-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: 31px; padding: 4px 11px; border-radius: 999px;
+  border: 1px solid var(--tl-line); background: rgba(255, 255, 255, .04); color: var(--tl-ink);
+  font-size: 11.5px; font-weight: 700;
+}
+.tl-close-btn:hover { border-color: var(--tl-line-hi); background: var(--tl-rose-soft); }
+.tl-close-btn kbd {
+  font: 600 9.5px/1 ui-monospace, Consolas, monospace;
+  padding: 2px 5px; border-radius: 4px;
+  background: rgba(0, 0, 0, .32); color: var(--tl-sub); border: 1px solid rgba(255, 255, 255, .1);
+}
+
+/* ===== 顶部通栏横幅（锁定 / 门槛） ===== */
+.tl-locked-banner {
+  flex-shrink: 0; margin: 10px 16px 0; padding: 7px 13px; border-radius: 11px;
+  background: linear-gradient(115deg, #2a183b, #44235e);
+  border: 1px solid var(--tl-pri-bd); color: #f7e9ff;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 11.5px;
+}
+.tl-locked-banner[hidden] { display: none; }
+.tl-shop-btn {
+  border: 1px solid rgba(255, 228, 176, .6);
+  background: linear-gradient(100deg, #9b723b, #d9b473);
+  color: #1f1307; font-size: 11px; font-weight: 800;
+  padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+}
+.tl-gate-banner {
+  flex-shrink: 0; margin: 10px 16px 0; padding: 7px 13px; border-radius: 11px;
+  background: linear-gradient(125deg, rgba(52, 32, 22, .96), rgba(32, 20, 18, .96));
+  border: 1px solid var(--tl-amber-bd);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+}
+.tl-gate-banner[hidden] { display: none; }
+.tl-gate-left { display: flex; flex-direction: column; gap: 2px; }
+.tl-gate-hd { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; color: #ffe0b2; }
+.tl-gate-rule {
+  font-size: 10px; padding: 1px 7px; border-radius: 999px;
+  background: var(--tl-amber-soft); border: 1px solid var(--tl-amber-bd); color: #f5cc8b;
+}
+.tl-gate-desc { font-size: 11px; color: #dfc7be; }
+.tl-gate-metrics { display: flex; gap: 6px; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.tl-gate-pill {
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(0, 0, 0, .3); border: 1px solid var(--tl-amber-bd); color: #f0d7b8; font-weight: 700;
+}
+
+/* ===== 主体双栏宽屏工作区 ===== */
+.tl-workspace {
+  flex: 1; min-height: 0;
+  padding: 12px 16px 14px;
+  display: grid;
+  grid-template-columns: 428px minmax(0, 1fr);
+  gap: 14px;
+}
+.tl-col-left {
+  min-height: 0; display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto; padding-right: 2px;
+  scrollbar-width: thin; scrollbar-color: rgba(232, 184, 204, .22) transparent;
+}
+.tl-col-right {
+  min-height: 0; display: flex; flex-direction: column; gap: 10px;
+}
+.tl-col-right-body {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto; padding-right: 2px;
+  scrollbar-width: thin; scrollbar-color: rgba(232, 184, 204, .22) transparent;
+}
+
+/* 通用卡片 */
+.tl-card {
+  background: linear-gradient(180deg, var(--tl-card) 0%, #17101d 100%);
+  border: 1px solid var(--tl-line); border-radius: 14px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+  box-shadow: 0 8px 20px rgba(4, 2, 8, .28), inset 0 1px 0 rgba(255, 232, 244, .06);
+}
+.tl-card-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 11.5px; font-weight: 800; color: #f3e0ec; letter-spacing: .04em;
+}
+.tl-card-hd small { font-weight: 500; font-size: 10.5px; color: var(--tl-sub); }
+
+/* 左栏：对象佩戴条 */
+.tl-wear-card {
+  flex-direction: row; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px;
+}
+.tl-wear-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tl-wear-av {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #7d369c, #cf4683);
+  border: 1.5px solid rgba(255, 206, 230, .52);
+  color: #fff; font-size: 14px; font-weight: 800; display: grid; place-items: center;
+}
+.tl-wear-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tl-wear-name-row { display: flex; align-items: center; gap: 6px; }
+.tl-wear-name { font-size: 13.5px; font-weight: 800; color: #fff2f8; }
+.tl-wear-tag {
+  font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: 999px;
+  background: var(--tl-well); border: 1px solid var(--tl-line); color: var(--tl-sub);
+}
+.tl-wear-tag.is-worn { background: var(--tl-pri-soft); border-color: var(--tl-pri-bd); color: #e2c4ff; }
+.tl-wear-tag.is-live { background: var(--tl-rose-soft); border-color: var(--tl-rose-bd); color: #ffb4d8; }
+.tl-wear-nums { font-size: 11px; color: var(--tl-sub); font-variant-numeric: tabular-nums; }
+.tl-wear-btn {
+  border: 1px solid var(--tl-pri-bd);
+  background: linear-gradient(120deg, rgba(138, 66, 186, .34), rgba(214, 72, 134, .34));
+  color: #ffe8f6; border-radius: 999px; padding: 6px 14px; min-height: 32px;
+  font-size: 11.5px; font-weight: 800; flex-shrink: 0;
+  transition: transform .13s, box-shadow .16s;
+}
+.tl-wear-btn:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(180, 92, 210, .34); }
+.tl-wear-btn:active:not(:disabled) { transform: scale(.97); }
+.tl-wear-btn.is-unwear {
+  border-color: var(--tl-danger-bd); background: var(--tl-danger-bg); color: #ffadb9;
+}
+
+/* 左栏：双弧环舞台 + 监控窗 + 战术栏 */
+.tl-stage-card {
+  position: relative;
+  flex: 1;
+  background:
+    radial-gradient(240px 150px at 50% 26%, rgba(255, 122, 195, .14), transparent 72%),
+    linear-gradient(165deg, #241933 0%, #171022 100%);
+  border: 1px solid rgba(212, 152, 224, .30);
+  border-radius: 16px;
+  padding: 11px 13px;
+  display: flex; flex-direction: column; gap: 9px;
+  box-shadow: 0 14px 32px rgba(5, 2, 10, .52), inset 0 1px 0 rgba(255, 226, 242, .12);
+  transition: border-color .35s ease, box-shadow .35s ease;
+}
+.tl-stage-card[data-tier="1"] { border-color: var(--tl-pri-bd); }
+.tl-stage-card[data-tier="2"] { border-color: var(--tl-danger-bd); }
+.tl-stage-card[data-tier="3"] { border-color: var(--tl-danger); box-shadow: 0 12px 30px var(--tl-overload-glow); }
+.tl-stage-card.is-edging-hit { animation: tlEdgingHit .18s ease-out; }
+@keyframes tlEdgingHit { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-3px); } 65% { transform: translateX(3px); } }
+
+.tl-peak-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tl-peak-badge, .tl-stack-badge {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
+  font-size: 10.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--tl-rose-bd); background: var(--tl-rose-soft); color: #ffb4d8;
+}
+.tl-stage-card[data-tier="1"] .tl-peak-badge,
+.tl-stage-card[data-tier="1"] .tl-stack-badge { border-color: var(--tl-pri-bd); background: var(--tl-pri-soft); color: #e2c4ff; }
+.tl-stage-card[data-tier="2"] .tl-peak-badge,
+.tl-stage-card[data-tier="2"] .tl-stack-badge,
+.tl-stage-card[data-tier="3"] .tl-peak-badge,
+.tl-stage-card[data-tier="3"] .tl-stack-badge { border-color: var(--tl-danger-bd); background: var(--tl-danger-bg); color: #ff9cb0; }
+
+.tl-ring-wrap {
+  position: relative; width: 156px; height: 156px; margin: 2px auto 0;
+  display: grid; place-items: center;
+}
+.tl-ring-svg { width: 156px; height: 156px; transform: rotate(-90deg); display: block; }
+.tl-ring-svg circle { fill: none; stroke-linecap: round; }
+.tl-tr-aro { stroke: var(--tl-track); stroke-width: 8; }
+.tl-arc-base { stroke: transparent; stroke-width: 8; transition: stroke .35s ease; }
+.tl-stage-card[data-tier="1"] .tl-arc-base { stroke: var(--tl-base-t1); }
+.tl-stage-card[data-tier="2"] .tl-arc-base { stroke: var(--tl-base-t2); }
+.tl-stage-card[data-tier="3"] .tl-arc-base { stroke: var(--tl-base-t3); }
+.tl-arc-aro { stroke: var(--tl-rose); stroke-width: 8; transition: stroke .35s ease; }
+.tl-stage-card[data-tier="1"] .tl-arc-aro { stroke: var(--tl-pri); }
+.tl-stage-card[data-tier="2"] .tl-arc-aro { stroke: var(--tl-danger); }
+.tl-stage-card[data-tier="3"] .tl-arc-aro { stroke: var(--tl-danger-deep); }
+.tl-tr-env { stroke: var(--tl-track-2); stroke-width: 5.5; }
+.tl-arc-env { stroke: var(--tl-pri); stroke-width: 5.5; }
+
+.tl-ring-mid {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 0 22px; pointer-events: none;
+}
+.tl-ring-mid b { font-size: 22px; font-weight: 800; color: #fff4fa; line-height: 1.15; }
+.tl-ring-mid small { font-size: 10.5px; color: var(--tl-sub); margin-top: 3px; line-height: 1.3; }
+
+.tl-stage-meta { text-align: center; font-size: 11px; color: var(--tl-sub); font-weight: 700; }
+.tl-stage-hint {
+  text-align: center; font-size: 11px; color: #ffe0a8;
+  background: var(--tl-amber-soft); border: 1px solid var(--tl-amber-bd);
+  border-radius: 9px; padding: 5px 9px;
+}
+.tl-stage-hint[hidden] { display: none; }
+
+/* 实时体感监控窗 */
+.tl-live-feed {
+  padding: 8px 10px; border-radius: 10px;
+  background: rgba(18, 10, 26, .84); border: 1px solid rgba(226, 184, 255, .24);
+  text-align: left;
+}
+.tl-stage-card.is-resisting .tl-live-feed { border-color: #f5a623; background: rgba(56, 32, 12, .82); }
+.tl-stage-card.is-edging .tl-live-feed { border-color: #ff4d79; background: rgba(58, 14, 34, .86); }
+.tl-feed-top {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10.5px; color: #c9a6e8; margin-bottom: 4px; font-variant-numeric: tabular-nums;
+}
+.tl-feed-tag { font-weight: 800; color: #ff85b3; }
+.tl-feed-line { font-size: 11.5px; line-height: 1.48; color: #f7ebf9; min-height: 34px; }
+
+/* 战术操作栏 */
+.tl-tactic-bar { display: flex; gap: 7px; }
+.tl-tac-btn {
+  flex: 1; height: 34px; border-radius: 9px;
+  font-size: 11.5px; font-weight: 800;
+  border: 1px solid rgba(226, 184, 255, .3);
+  background: rgba(45, 27, 62, .9); color: #ebd6ff;
+  transition: transform .12s, background .16s, border-color .16s;
+}
+.tl-tac-btn:active:not(:disabled) { transform: scale(.97); }
+.tl-tac-btn.on { background: linear-gradient(135deg, #7a1c4b, #b8255f); border-color: #ff7aa8; color: #fff; }
+.tl-tac-btn.is-shock { background: rgba(74, 38, 18, .9); border-color: rgba(255, 174, 82, .48); color: #ffd199; }
+.tl-tac-btn.is-shock.is-alert { background: linear-gradient(135deg, #c85a12, #f08c2b); border-color: #ffe0a3; color: #fff; }
+.tl-tac-btn.is-burst { background: linear-gradient(135deg, #a81339, #ff2a6d); border-color: #ff9ebb; color: #fff; }
+.tl-tac-btn[hidden] { display: none; }
+
+/* 图例与手法轨迹 */
+.tl-stage-legend {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 10.5px; color: var(--tl-muted); padding-top: 2px;
+}
+.tl-leg-dots { display: inline-flex; gap: 10px; }
+.tl-leg-item { display: inline-flex; align-items: center; gap: 4px; }
+.tl-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.tl-dot.is-aro { background: var(--tl-rose); }
+.tl-dot.is-env { background: var(--tl-pri); }
+
+.tl-trace-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 10px;
+  background: var(--tl-well); border: 1px solid var(--tl-line);
+  font-size: 11px; color: var(--tl-sub);
+}
+.tl-trace-lbl { font-weight: 800; color: #d6b6f5; flex-shrink: 0; }
+.tl-trace-val { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tl-ink); }
+.tl-trace-val.is-empty { color: var(--tl-muted); }
+
+/* ===== 右栏：九模波形 ===== */
+.tl-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.tl-mode-btn {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 42px; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: var(--tl-ink);
+  text-align: left; transition: border-color .15s, background .15s, transform .12s;
+}
+.tl-mode-btn:hover:not(:disabled) { border-color: var(--tl-pri-bd); }
+.tl-mode-btn:active:not(:disabled) { transform: scale(.98); }
+.tl-mode-btn svg { width: 18px; height: 18px; fill: var(--tl-pri); flex-shrink: 0; }
+.tl-mode-copy { display: flex; flex-direction: column; min-width: 0; }
+.tl-mode-copy b { font-size: 12px; font-weight: 800; line-height: 1.2; }
+.tl-mode-copy small { font-size: 10px; color: var(--tl-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-mode-btn.on {
+  background: linear-gradient(125deg, rgba(132, 62, 184, .32), rgba(214, 72, 134, .28));
+  border-color: var(--tl-rose-bd); color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 224, 240, .2);
+}
+.tl-mode-btn.on svg { fill: #ff9fd0; }
+.tl-mode-btn.on small { color: #f4cbe0; }
+.tl-mode-note {
+  font-size: 11px; color: var(--tl-sub); line-height: 1.45;
+  padding: 6px 10px; border-radius: 9px; background: rgba(0, 0, 0, .26); border: 1px solid var(--tl-line);
+}
+
+/* 右栏：参数与失态风险 */
+.tl-param-row, .tl-exp-row { display: flex; align-items: center; gap: 9px; }
+.tl-param-lbl { width: 58px; font-size: 11.5px; font-weight: 800; color: var(--tl-sub); flex-shrink: 0; }
+.tl-step-btn {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: var(--tl-ink);
+  font-size: 14px; font-weight: 800; display: grid; place-items: center;
+}
+.tl-step-btn:hover:not(:disabled) { border-color: var(--tl-pri-bd); background: var(--tl-pri-soft); }
+.tl-bar {
+  flex: 1; height: 9px; border-radius: 999px; background: var(--tl-well);
+  border: 1px solid var(--tl-line); overflow: hidden;
+}
+.tl-bar > i {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--tl-pri), var(--tl-rose));
+  transition: width .12s linear;
+}
+.tl-bar.is-exp > i { background: linear-gradient(90deg, #f5a623, #ff2a6d); }
+.tl-param-val {
+  width: 82px; text-align: right; font-size: 11.5px; font-weight: 800;
+  color: #ffe8f4; font-variant-numeric: tabular-nums; flex-shrink: 0;
+}
+
+/* 右栏：落点与别处处境（4×2 一屏全显；现场时整块消失） */
+.tl-here-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tl-here-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 210px; flex-shrink: 0; }
+.tl-here-btn {
+  height: 32px; border-radius: 9px;
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: var(--tl-sub);
+  font-size: 12px; font-weight: 800;
+}
+.tl-here-btn.on {
+  background: linear-gradient(120deg, #7d369c, #cf4683);
+  border-color: rgba(255, 198, 224, .58); color: #fff;
+}
+.tl-here-hint { flex: 1; font-size: 11px; color: var(--tl-sub); text-align: right; }
+
+.tl-scene-block { display: flex; flex-direction: column; gap: 7px; padding-top: 7px; border-top: 1px dashed var(--tl-line); }
+.tl-scene-block[hidden] { display: none; }
+.tl-scene-hd { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--tl-sub); }
+.tl-scene-legend { display: inline-flex; gap: 10px; font-size: 10px; }
+.tl-scene-legend i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+.tl-scene-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.tl-scene-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  height: 34px; padding: 0 8px; border-radius: 9px;
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: #d6c3e2;
+  font-size: 11.5px; font-weight: 700;
+  transition: border-color .14s, background .14s, color .14s;
+}
+.tl-scene-btn:hover:not(:disabled) { border-color: var(--tl-pri-bd); color: #fff; }
+.tl-scene-btn.on {
+  background: rgba(148, 66, 206, .34); border-color: #d9a0ff; color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 232, 255, .2);
+}
+.tl-tier-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.tl-tier-dot.is-low { background: var(--tl-ok); }
+.tl-tier-dot.is-mid { background: var(--tl-amber); }
+.tl-tier-dot.is-high { background: var(--tl-danger); }
+.tl-scene-desc {
+  font-size: 11px; color: var(--tl-sub); line-height: 1.4;
+  padding: 5px 9px; border-radius: 8px; background: rgba(0, 0, 0, .24); border: 1px solid var(--tl-line);
+}
+
+/* 右栏底部固定主操作栏 */
+.tl-footer {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #1d1425 0%, #140e1a 100%);
+  border: 1px solid var(--tl-line-hi); border-radius: 14px;
+  padding: 9px 12px 10px;
+  display: flex; flex-direction: column; gap: 7px;
+  box-shadow: 0 10px 26px rgba(4, 2, 8, .44), inset 0 1px 0 rgba(255, 228, 240, .10);
+}
+.tl-footer-hint { font-size: 11px; color: var(--tl-sub); line-height: 1.4; }
+.tl-footer-hint[hidden] { display: none; }
+.tl-footer-acts { display: flex; gap: 10px; }
+.tl-btn-main {
+  flex: 1.3; min-height: 42px; border-radius: 11px; border: 1px solid rgba(255, 204, 228, .46);
+  background: linear-gradient(115deg, #c73c7e 0%, #8b42b8 100%);
+  color: #fff; font-size: 13.5px; font-weight: 800; letter-spacing: .14em;
+  box-shadow: 0 8px 20px rgba(162, 52, 134, .38);
+  transition: transform .13s, box-shadow .16s;
+}
+.tl-btn-main:active:not(:disabled) { transform: scale(.985); }
+.tl-btn-main.is-stop {
+  background: linear-gradient(115deg, #a61e42 0%, #df3a64 100%);
+  border-color: rgba(255, 174, 194, .54);
+  box-shadow: 0 8px 20px rgba(196, 38, 76, .42);
+}
+.tl-btn-sub {
+  flex: 1; min-height: 42px; border-radius: 11px;
+  border: 1px solid var(--tl-pri-bd); background: var(--tl-pri-soft); color: #ecd6ff;
+  font-size: 12.5px; font-weight: 800;
+}
+.tl-btn-sub:hover:not(:disabled) { background: rgba(180, 122, 255, .24); }
+
+/* ===== 双步佩戴模态框 ===== */
+.tl-modal-overlay {
+  position: absolute; inset: 0; z-index: 50;
+  background: rgba(6, 3, 10, .78);
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.tl-modal-overlay.show { display: flex; }
+.tl-modal {
+  width: 100%; max-width: 480px;
+  background: linear-gradient(180deg, #22172c 0%, #181020 100%);
+  color: var(--tl-ink); border: 1px solid var(--tl-rose-bd); border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 224, 240, .14);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.tl-modal-step {
+  font-size: 10.5px; font-weight: 800; color: var(--tl-rose); letter-spacing: .08em;
+}
+.tl-modal h3 { margin: 0; font-size: 16px; color: #fff2f8; }
+.tl-modal p { margin: 0; font-size: 12.5px; color: var(--tl-sub); line-height: 1.6; }
+
+.tl-loc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tl-loc-card {
+  display: flex; flex-direction: column; gap: 5px; text-align: left;
+  padding: 12px; border-radius: 12px;
+  border: 1px solid var(--tl-line); background: var(--tl-well); color: var(--tl-ink);
+  transition: border-color .15s, background .15s;
+}
+.tl-loc-card:hover { border-color: var(--tl-pri-bd); }
+.tl-loc-card.on {
+  border-color: var(--tl-rose-bd);
+  background: linear-gradient(135deg, rgba(142, 54, 178, .28), rgba(214, 72, 134, .24));
+  box-shadow: 0 6px 16px rgba(176, 46, 118, .26);
+}
+.tl-loc-card b { font-size: 13px; color: #fff0f6; }
+.tl-loc-card small { font-size: 11px; color: var(--tl-sub); line-height: 1.45; }
+
+.tl-modal-scenes { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.tl-modal-scenes[hidden] { display: none; }
+.tl-modal-scenes-lbl { font-size: 11px; font-weight: 700; color: var(--tl-sub); }
+.tl-modal-scene-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+
+.tl-modal-err { font-size: 11px; color: #ffd494; min-height: 16px; }
+.tl-modal-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 2px; }
+.tl-mbtn {
+  min-height: 38px; padding: 7px 15px; border-radius: 10px; border: 1px solid var(--tl-line);
+  background: var(--tl-card); color: var(--tl-ink); font-size: 12px; font-weight: 800;
+}
+.tl-mbtn.primary {
+  border-color: rgba(255, 200, 224, .5);
+  background: linear-gradient(115deg, #c73c7e, #8b42b8); color: #fff;
+}
+
+/* 原型专属：底部输入框写入模拟抽屉（仅演示不进卡） */
+.proto-io-drawer {
+  position: fixed; left: 16px; bottom: 14px; z-index: 92;
+  width: min(560px, calc(100vw - 32px));
+  background: rgba(18, 12, 24, .95); border: 1px solid var(--tl-pri-bd);
+  border-radius: 12px; padding: 10px 12px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .65);
+  display: none; flex-direction: column; gap: 6px;
+}
+.proto-io-drawer.show { display: flex; }
+.proto-io-hd { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 800; color: #e2c4ff; }
+.proto-io-body {
+  font-size: 11px; line-height: 1.5; color: #f6ebf0; white-space: pre-wrap;
+  max-height: 130px; overflow-y: auto; background: rgba(0, 0, 0, .35);
+  padding: 7px 9px; border-radius: 8px; border: 1px solid var(--tl-line);
+}
+
+/* Toast */
+.tl-toast {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 98;
+  background: #22142b; color: #ffe8f4; border: 1px solid var(--tl-rose-bd);
+  border-radius: 12px; padding: 9px 16px; font-size: 12px; font-weight: 800;
+  max-width: min(92vw, 480px); text-align: center; opacity: 0; pointer-events: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .58);
+  transition: opacity .18s ease, transform .18s ease;
+}
+.tl-toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+/* ===== 响应式断点 ===== */
+@media (max-width: 1119px) {
+  .tl-overlay { padding: 8px; }
+  .tl-workspace { grid-template-columns: 356px minmax(0, 1fr); gap: 10px; padding: 10px 12px; }
+}
+@media (max-width: 819px) {
+  .tl-overlay { padding: 0; }
+  .tl-shell { border-radius: 0; max-height: none; border: 0; }
+  .tl-header { flex-wrap: wrap; padding: 8px 10px; }
+  .tl-header-target { order: 3; flex-basis: 100%; justify-content: flex-start; }
+  .tl-workspace { display: flex; flex-direction: column; overflow-y: auto; padding: 10px 10px 0; }
+  .tl-col-left, .tl-col-right-body { overflow: visible; }
+  .tl-scene-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tl-footer { position: sticky; bottom: 0; z-index: 8; border-radius: 14px 14px 0 0; }
+}
+</style>
+</head>
+<body>
+<div class="tl-overlay" id="tlOverlay" role="dialog" aria-modal="true" aria-labelledby="tlTitle">
+  <div class="tl-shell" data-screen="toylink-wide">
+    <!-- 顶栏 -->
+    <header class="tl-header">
+      <div class="tl-brand">
+        <div class="tl-brand-mark" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.5" stroke="#b47aff" stroke-width="1.6" stroke-dasharray="4 2.5"/>
+            <path d="M5 13h3l2-5 3 8 2-4h4" stroke="#ff8cc8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="tl-brand-text">
+          <h1 class="tl-title" id="tlTitle">TOY·LINK 遥控终端</h1>
+          <span class="tl-sub">九模变频 · 实时体感遥控</span>
+        </div>
+      </div>
+
+      <div class="tl-header-target">
+        <span class="tl-target-lbl">作用对象</span>
+        <div class="tl-target-strip" id="tlTargetStrip" role="radiogroup" aria-label="作用对象"></div>
+        <span class="tl-worn-cnt" id="tlWornCnt">已佩戴 0 人</span>
+      </div>
+
+      <div class="tl-header-acts">
+        <span class="tl-status-pill" id="tlTopPill">待机</span>
+        <button type="button" class="tl-close-btn" id="tlBtnClose" aria-label="关闭终端">
+          <span>✕ 关闭</span>
+          <kbd>Esc</kbd>
+        </button>
+      </div>
+    </header>
+
+    <!-- 预览锁定横幅 -->
+    <div class="tl-locked-banner" id="tlLockedBanner" hidden>
+      <span>🔒 预览模式 · 需在星愿商城兑换 TOY·LINK 终端控制（3,600✦）后方可操作</span>
+      <button type="button" class="tl-shop-btn" id="tlBtnShop">前往星愿商城</button>
+    </div>
+
+    <!-- 门槛拦截条 -->
+    <div class="tl-gate-banner" id="tlGateBanner" role="status" hidden>
+      <div class="tl-gate-left">
+        <div class="tl-gate-hd">
+          <span id="tlGateTitle"></span>
+          <span class="tl-gate-rule">需好感 ≥ 70 或堕落 ≥ 60</span>
+        </div>
+        <div class="tl-gate-desc" id="tlGateDesc"></div>
+      </div>
+      <div class="tl-gate-metrics" id="tlGateMetrics"></div>
+    </div>
+
+    <!-- 主体双栏工作区 -->
+    <main class="tl-workspace">
+      <!-- 左栏：对象佩戴条 + 双弧环舞台 + 监控窗 + 战术栏 + 手法轨迹 -->
+      <section class="tl-col-left" aria-label="体感监测与战术中枢">
+        <div class="tl-card tl-wear-card">
+          <div class="tl-wear-info">
+            <div class="tl-wear-av" id="tlWearAv"></div>
+            <div class="tl-wear-meta">
+              <div class="tl-wear-name-row">
+                <span class="tl-wear-name" id="tlWearName"></span>
+                <span class="tl-wear-tag" id="tlWearTag">未佩戴</span>
+              </div>
+              <span class="tl-wear-nums" id="tlWearNums"></span>
+            </div>
+          </div>
+          <button type="button" class="tl-wear-btn" id="tlBtnWear">为她佩戴</button>
+        </div>
+
+        <div class="tl-stage-card" id="tlStageCard" data-tier="0">
+          <div class="tl-peak-bar">
+            <span class="tl-peak-badge" id="tlPeakBadge">绝顶 0 次</span>
+            <span class="tl-stack-badge" id="tlStackBadge">初潮 · 1.00×</span>
+          </div>
+
+          <div class="tl-ring-wrap">
+            <svg class="tl-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle cx="60" cy="60" r="52" class="tl-tr-aro"/>
+              <circle cx="60" cy="60" r="52" class="tl-arc-base" id="tlRingBase"/>
+              <circle cx="60" cy="60" r="52" class="tl-arc-aro" id="tlRingAro" stroke-dasharray="0 326.7"/>
+              <circle cx="60" cy="60" r="44" class="tl-tr-env"/>
+              <circle cx="60" cy="60" r="44" class="tl-arc-env" id="tlRingEnv" stroke-dasharray="0 276.5"/>
+            </svg>
+            <div class="tl-ring-mid">
+              <b id="tlStageText">待机</b>
+              <small id="tlStageSub"></small>
+            </div>
+          </div>
+
+          <div class="tl-stage-meta" id="tlStageMeta">待机</div>
+          <div class="tl-stage-hint" id="tlStageHint" hidden></div>
+
+          <div class="tl-live-feed" id="tlLiveFeed">
+            <div class="tl-feed-top">
+              <span class="tl-feed-tag" id="tlFeedTag">待机监测</span>
+              <span id="tlFeedTele">心率 76bpm · 防线平稳</span>
+            </div>
+            <div class="tl-feed-line" id="tlFeedLine"></div>
+          </div>
+
+          <div class="tl-tactic-bar" id="tlTacticBar">
+            <button type="button" class="tl-tac-btn" id="tlBtnEdgeLock">🔒 寸止锁 · 关</button>
+            <button type="button" class="tl-tac-btn is-shock" id="tlBtnShock">💥 瞬时强刺</button>
+            <button type="button" class="tl-tac-btn is-burst" id="tlBtnBurst" hidden>⚡ 破顶释放 (×1.35)</button>
+          </div>
+
+          <div class="tl-stage-legend">
+            <span class="tl-leg-dots">
+              <span class="tl-leg-item"><i class="tl-dot is-aro"></i>外环 · 累积</span>
+              <span class="tl-leg-item"><i class="tl-dot is-env"></i>内环 · 实时波形</span>
+            </span>
+            <span id="tlLegendSpec">潮汐 · 55% · 2.4Hz</span>
+          </div>
+        </div>
+
+        <div class="tl-trace-bar">
+          <span class="tl-trace-lbl">手法轨迹</span>
+          <span class="tl-trace-val is-empty" id="tlTraceVal">启动后自动记录你的切换、寸止与强刺节奏</span>
+        </div>
+      </section>
+
+      <!-- 右栏：九模波形 + 参数失态 + 落点处境 + 底部固定主操作 -->
+      <section class="tl-col-right" aria-label="波形参数与落点控制">
+        <div class="tl-col-right-body">
+          <!-- 九模波形 -->
+          <div class="tl-card">
+            <div class="tl-card-hd">
+              <span>九模波形</span>
+              <small id="tlModeHdRight">潮汐 · 连续叠加</small>
+            </div>
+            <div class="tl-modes" id="tlModeGrid"></div>
+            <div class="tl-mode-note" id="tlModeNote"></div>
+          </div>
+
+          <!-- 参数与失态风险 -->
+          <div class="tl-card">
+            <div class="tl-card-hd">
+              <span>输出参数与失态风险</span>
+              <small>步进 5%</small>
+            </div>
+            <div class="tl-param-row">
+              <span class="tl-param-lbl">强度</span>
+              <button type="button" class="tl-step-btn" data-tl-pow="-5" aria-label="降低强度">−</button>
+              <div class="tl-bar"><i id="tlPowBar" style="width:55%"></i></div>
+              <b class="tl-param-val" id="tlPowVal">55%</b>
+              <button type="button" class="tl-step-btn" data-tl-pow="5" aria-label="提高强度">＋</button>
+            </div>
+            <div class="tl-param-row">
+              <span class="tl-param-lbl">频率</span>
+              <button type="button" class="tl-step-btn" data-tl-freq="-5" aria-label="降低频率">−</button>
+              <div class="tl-bar"><i id="tlFreqBar" style="width:40%"></i></div>
+              <b class="tl-param-val" id="tlFreqVal">2.4Hz</b>
+              <button type="button" class="tl-step-btn" data-tl-freq="5" aria-label="提高频率">＋</button>
+            </div>
+            <div class="tl-exp-row">
+              <span class="tl-param-lbl">失态风险</span>
+              <div class="tl-bar is-exp"><i id="tlExpBar" style="width:0%"></i></div>
+              <b class="tl-param-val" id="tlExpVal">0%</b>
+            </div>
+          </div>
+
+          <!-- 落点与别处处境 -->
+          <div class="tl-card">
+            <div class="tl-here-row">
+              <span class="tl-param-lbl">她在</span>
+              <div class="tl-here-pills" role="radiogroup" aria-label="她在">
+                <button type="button" class="tl-here-btn on" data-tl-here="with">现场</button>
+                <button type="button" class="tl-here-btn" data-tl-here="away">别处</button>
+              </div>
+              <span class="tl-here-hint" id="tlHereHint">紧接上一轮现场场景，无需另选处境</span>
+            </div>
+
+            <div class="tl-scene-block" id="tlSceneBlock" hidden>
+              <div class="tl-scene-hd">
+                <span>别处处境（选定后切她的独立视角）</span>
+                <span class="tl-scene-legend">
+                  <span><i class="tl-tier-dot is-low"></i>私密</span>
+                  <span><i class="tl-tier-dot is-mid"></i>半公开</span>
+                  <span><i class="tl-tier-dot is-high"></i>高危公开</span>
+                </span>
+              </div>
+              <div class="tl-scene-grid" id="tlSceneGrid"></div>
+              <div class="tl-scene-desc" id="tlSceneDesc"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部固定主操作栏 -->
+        <footer class="tl-footer">
+          <div class="tl-footer-hint" id="tlFooterHint" hidden></div>
+          <div class="tl-footer-acts">
+            <button type="button" class="tl-btn-main" id="tlMainBtn">启 动</button>
+            <button type="button" class="tl-btn-sub" id="tlWriteBtn">写进正文</button>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <!-- 双步佩戴模态框 -->
+    <div class="tl-modal-overlay" id="tlModalOverlay" role="dialog" aria-modal="true" aria-labelledby="tlModalTitle">
+      <div class="tl-modal">
+        <span class="tl-modal-step" id="tlModalStep">步骤 1 / 2 · 佩戴确认</span>
+        <h3 id="tlModalTitle"></h3>
+        <p id="tlModalBody"></p>
+
+        <div class="tl-loc-grid" id="tlModalLocGrid" hidden>
+          <button type="button" class="tl-loc-card" data-modal-loc="with">
+            <b>现场 · 就在你面前</b>
+            <small>紧接当前场景，写出你在她身旁亲手替她戴上、或当面看着她羞耻置入的全过程。</small>
+          </button>
+          <button type="button" class="tl-loc-card" data-modal-loc="away">
+            <b>别处 · 远程指令佩戴</b>
+            <small>下一轮切到她的独立视角，写出她收到你的私密指令后，在指定处境下自行戴上的过程。</small>
+          </button>
+        </div>
+
+        <div class="tl-modal-scenes" id="tlModalScenes" hidden>
+          <span class="tl-modal-scenes-lbl">指定她此刻所在的别处处境</span>
+          <div class="tl-modal-scene-grid" id="tlModalSceneGrid"></div>
+        </div>
+
+        <div class="tl-modal-err" id="tlModalErr"></div>
+        <div class="tl-modal-row">
+          <button type="button" class="tl-mbtn" id="tlModalCancel">暂不佩戴</button>
+          <button type="button" class="tl-mbtn primary" id="tlModalOk">确认，选择落点</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="proto-io-body" id="protoIOBody">尚未触发写入正文或佩戴引导。</div>
+</div>
+
+<div class="tl-toast" id="tlToast" role="status" aria-live="polite"></div>
+
+<script>(()=>{var C={nav:{scene:"\u6B64\u523B",women:"\u5979\u4EEC",mine:"\u6211\u7684",wealth:"\u8D22\u5BCC",wheel:"\u8F6E\u76D8"},wheels:{names:{play:"\u547D\u8FD0\u8F6E\u76D8",wish:"\u661F\u613F\u5361\u5305",casino:"\u6697\u591C\u8D4C\u573A"},hub:{pointsLabel:"\u661F\u613F\u79EF\u5206",cardsLabel:"\u85CF\u5361",bagBtn:"\u80CC\u5305",shopBtn:"\u5546\u57CE",bagTitle:"\u6211\u7684\u80CC\u5305",shopTitle:"\u661F\u613F\u5546\u57CE",toylinkBannerTitle:"TOY\xB7LINK \u7EC8\u7AEF\u63A7\u5236\u6A21\u5757\u5DF2\u5C31\u7EEA",toylinkBannerSub:"\u7EC8\u6781\u6743\u9650\u5DF2\u6FC0\u6D3B\uFF0C\u968F\u65F6\u547C\u51FA\u5B9E\u4F53\u9065\u63A7\u5668",toylinkBannerBtn:"\u547C\u51FA\u7EC8\u7AEF",binderBtn:"\u5361\u518C",binderTitle:"\u661F\u613F\u5361\u518C",shopShort:"\u5151\u6362",secWheels:"\u4E09\u91CD\u76D8\u53F0",secWheelsSub:"\u70B9\u51FB\u5168\u5C4F\u542F\u5C01",secAssets:"\u85CF\u54C1\u4E0E\u5151\u6362",secAssetsSub:"\u80CC\u5305 \xB7 \u5361\u518C \xB7 \u5546\u57CE",bagRowSub:"\u73A9\u6CD5\u5238\u4E0E\u8D85\u73B0\u5B9E\u5947\u7269",bagCountUnit:"{count} \u4EF6",binderRowSub:"\u56DB\u6863\u53E0\u5361\u73CD\u85CF \xB7 \u56FE\u9274 {codex}/12",cardCountUnit:"{count} \u5F20",shopRowSub:"\u5F02\u80FD\u89C9\u9192 \xB7 \u5947\u7269\u5151\u6362",toylinkCardTitle:"TOY\xB7LINK \u7EC8\u7AEF\u63A7\u5236",toylinkCardSub:"\u5B9E\u4F53\u8BBE\u5907\u8054\u52A8\u9065\u63A7\u6A21\u5757\uFF0C\u53EF\u968F\u65F6\u547C\u51FA\u7EC8\u7AEF\u9762\u677F",toylinkBtnLocked:"\u9884\u89C8\u7EC8\u7AEF",toylinkBtnMissing:"\u672A\u8FDE\u6269\u5C55",toylinkBtnActive:"\u8FD0\u884C\u4E2D",toylinkPreviewTitle:"TOY\xB7LINK \u5B9E\u4F53\u9065\u63A7\u5668 \xB7 \u9884\u89C8",toylinkPreviewBadge:"\u672A\u89E3\u9501 \xB7 \u4EC5\u9884\u89C8",toylinkPreviewNotice:"\u4F60\u5C1A\u672A\u83B7\u5F97 TOY\xB7LINK \u7EC8\u7AEF\u63A7\u5236\u6743\u9650\uFF0C\u5F53\u524D\u754C\u9762\u4EC5\u4F9B\u9884\u89C8\uFF0C\u6240\u6709\u63A7\u5236\u9879\u5DF2\u9501\u5B9A\u4E0D\u53EF\u64CD\u4F5C\u3002\u524D\u5F80\u661F\u613F\u5546\u57CE\u6D88\u8017 3,600 \u661F\u613F\u79EF\u5206\u5151\u6362\uFF0C\u6216\u5728\u547D\u8FD0\u8F6E\u76D8\u62BD\u4E2D\u8679\u9636\u5927\u5956\u5373\u53EF\u6C38\u4E45\u89E3\u9501\u3002",toylinkPreviewStatus:"\u8BBE\u5907\u72B6\u6001\uFF1A\u6743\u9650\u672A\u6FC0\u6D3B\uFF08\u53EA\u8BFB\u9884\u89C8\uFF09",toylinkPreviewModeLabel:"\u8054\u52A8\u6A21\u5F0F\uFF08\u9501\u5B9A\uFF09",toylinkPreviewModes:["\u6052\u9891\u5FAE\u632F","\u8282\u62CD\u8109\u51B2","\u5267\u60C5\u540C\u6B65"],toylinkPreviewPowerLabel:"\u8F93\u51FA\u5F3A\u5EA6\uFF08\u9501\u5B9A\uFF09",toylinkPreviewBtnShop:"\u524D\u5F80\u661F\u613F\u5546\u57CE",toylinkPreviewBtnClose:"\u5173\u95ED\u9884\u89C8"},cards:{play:{title:"\u547D\u8FD0\u8F6E\u76D8",badgeFree:"\u4ECA\u65E5\u514D\u8D39",badgeCash:"\u73B0\u91D1 {price}",badgePoints:"{points} \u79EF\u5206",metaLine:"\u73B0\u91D1 {paid}/{limit} \xB7 \u4FDD\u5E95 \u7EA2{pRed}/10 \u91D1{pGold}/30 \u8679{pRainbow}/60"},wish:{title:"\u661F\u613F\u5361\u5305",badgeLowFree:"\u661F\u5C18\u4ECA\u65E5\u514D\u8D39",badgeHighFree:"\u5723\u5178\u672C\u5468\u514D\u8D39",badgeReady:"\u4E24\u9636\u5361\u6C60\u5F00\u653E",badgeLowOnly:"\u661F\u5C18\u6C60\u5F00\u653E",metaLine:"\u661F\u5C18 {lowUsed}/3 \u5305 \xB7 \u5723\u5178 {highStatus}",highLockedShort:"\u672A\u89E3\u9501",highCountShort:"{today}/{limit} \u5305"},casino:{title:"\u6697\u591C\u8D4C\u573A",badgeReady:"\u53EF\u62BC {count} \u5F20",badgeEmpty:"\u6682\u65E0\u53EF\u62BC\u5361",metaLine:"\u6218\u7EE9 {wins} \u80DC {losses} \u8D1F \xB7 \u5355\u5361\u6700\u9AD8 {best} \u5206"}}},packs:{stage:{arcTitle:"\u4E94\u66DC\u661F\u9635\u5F85\u547D",arcHint:"\u70B9\u51FB\u4E0B\u65B9\u300C\u542F\u5C01\u5361\u5305\u300D\uFF0C\u786E\u8BA4\u540E\u4E94\u5F20\u661F\u5361\u805A\u62E2\u51DD\u5C01\uFF0C\u63ED\u6653 3 \u5F20\u661F\u613F\u5361",emblemName:"\u661F\u613F\u79D8\u5370",emblemSub:"\u7FA4\u661F\u56DE\u65CB\u4E4B\u5904\uFF0C\u63ED\u6653\u4ECA\u591C\u7684\u547D\u5B9A\u4E4B\u7B7E",btnSkipSpin:"\u8DF3\u8FC7\u52A8\u753B",settledHint:"3 \u5F20\u661F\u613F\u5361\u5DF2\u5168\u90E8\u63ED\u6653\uFF0C\u70B9\u51FB\u4E0B\u65B9\u6536\u5165\u5361\u518C"},low:{name:"\u661F\u5C18\u5361\u5305",tag:"\u4F4E\u9636 \xB7 \u5F00\u5C40\u5373\u542F",sub:"\u6BCF\u5305 3 \u5F20 \xB7 \u4EA7\u51FA\u7070\uFF0810\u5206\uFF09/ \u7EA2\uFF0830\u5206\uFF09\u661F\u613F\u5361",costFree:"\u4ECA\u65E5\u514D\u8D39\u542F\u5C01\uFF080 \u5143\uFF09",costCash:"\u73B0\u91D1\u542F\u5C01 {price}",dailyFull:"\u4ECA\u65E5\u661F\u5C18\u5361\u5305\u5DF2\u542F\u6EE1\uFF083/3\uFF09",ruleText:"\u5F00\u5C40\u5373\u5F00\uFF0C\u6BCF\u65E5 1 \u5305\u514D\u8D39 + 2 \u5305\u73B0\u91D1\uFF08\xA52,000 / \xA55,000\uFF09\u3002\u6BCF\u5305 3 \u5F20\uFF0C5 \u5305\u5FC5\u51FA\u7EA2\u9636\u3002\u5168\u54C1\u9636\u661F\u613F\u5361\u8FDB\u8D4C\u573A\u5747\u4E0D\u8BBE\u9650\u5236\uFF0C\u7EA2\u9ED1\u7FE1\u7FE0\u4EFB\u9009\u3002"},high:{name:"\u5723\u5178\u5361\u5305",tag:"\u9AD8\u9636 \xB7 \u91CD\u91D1\u9650\u91CF",sub:"\u6BCF\u5305 3 \u5F20 \xB7 \u4FDD\u5E95\u7EA2\u9636\uFF0C\u4EA7\u51FA\u7EA2\uFF0860\u5206\uFF09/ \u91D1\uFF08200\u5206\uFF09/ \u8679\uFF08800\u5206\uFF09\u9AD8\u9636\u5361",costFree:"\u672C\u5468\u793C\u9047\u514D\u8D39\u542F\u5C01",costCash:"\u73B0\u91D1\u542F\u5C01 {price}\uFF08\u8EAB\u5BB6 {rate}%\uFF09",locked:"\u8BA1\u7EA7\u8EAB\u5BB6\u6EE1 100 \u4E07\uFF0C\u6216\u5B8C\u6210\u4EFB\u610F 1 \u7B14\u63D0\u73B0\u540E\u542F\u5C01",dailyFull:"\u4ECA\u65E5\u5723\u5178\u5361\u5305\u5DF2\u8FBE\u4E0A\u9650\uFF082/2\uFF09",weeklyFull:"\u672C\u5468\u5723\u5178\u4ED8\u8D39\u989D\u5EA6\u5DF2\u7528\u5C3D\uFF085/5\uFF09",ruleText:"\u767E\u4E07\u8EAB\u5BB6\u6216\u9996\u63D0\u89E3\u9501\u3002\u6BCF\u5468 1 \u5305\u514D\u8D39\u3001\u6BCF\u65E5\u9650 2 \u5305\u3001\u6BCF\u5468\u4ED8\u8D39\u9650 5 \u5305\uFF082/4/8/12/18% \u9636\u68AF\uFF0C\u5E95\u4EF7 20 \u4E07\uFF09\u3002\u6BCF\u5F20\u6700\u4F4E\u7EA2\u9636\uFF0C10 \u5305\u5FC5\u51FA\u91D1+\uFF0C\u8FDB\u8D4C\u573A\u62BC\u6CE8\u65E0\u4E0A\u9650\u3002"},ui:{btnDraw:"\u542F\u5C01\u5361\u5305",btnLocked:"\u6682\u672A\u6EE1\u8DB3\u95E8\u69DB",btnSoldOut:"\u4ECA\u65E5\u5DF2\u6EE1",tearHint:"\u5411\u53F3\u6ED1\u6495\u5F00\u5C01\u53E3\uFF0C\u6216\u70B9\u51FB\u5361\u5305",btnQuickTear:"\u4E00\u952E\u6495\u5F00",btnRevealAll:"\u5168\u90E8\u7FFB\u5F00",btnCollectAll:"\u5168\u90E8\u6536\u5165\u5361\u518C",btnDrawAgain:"\u518D\u5F00\u4E00\u5305",autoSavedToast:"\u5361\u5305\u5185 3 \u5F20\u661F\u613F\u5361\u5DF2\u81EA\u52A8\u6536\u5165\u661F\u613F\u5361\u518C\u3002",packSubtitleLow:"STARDUST PACK \xB7 3 CARDS",packSubtitleHigh:"SANCTUM PACK \xB7 3 CARDS",anchorTag:"\u538B\u8F74\u4F4D",serialPrefix:"NO.",poolLowBadge:"\u661F\u5C18",poolHighBadge:"\u5723\u5178",streakBadge:"\u8FDE\u80DC \xD7{n}",lockedBadge:"\u73CD\u85CF\u9501\u5B9A"}},cards:{gray_1:{name:"\u94F6\u971C\u661F\u5C51",motto:"\u5FAE\u5149\u843D\u638C\u5FC3\uFF0C\u661F\u9014\u81EA\u6B64\u59CB"},gray_2:{name:"\u66AE\u8272\u7B79\u7801",motto:"\u591C\u5E55\u672A\u6DF1\uFF0C\u5148\u843D\u4E00\u679A\u8BD5\u6C34"},gray_3:{name:"\u7070\u70EC\u6B8B\u9875",motto:"\u65E7\u706B\u4F59\u6E29\u91CC\u85CF\u7740\u4E0B\u4E00\u5C40\u98CE\u58F0"},red_1:{name:"\u7EEF\u7EA2\u591C\u5BB4",motto:"\u9152\u676F\u8F7B\u78B0\uFF0C\u5FC3\u52A8\u5148\u4E8E\u8A00\u8BED"},red_2:{name:"\u7329\u7EA2\u73AB\u7470\u5370",motto:"\u5E26\u523A\u7684\u9080\u7EA6\uFF0C\u8D8A\u8FD1\u8D8A\u707C\u4EBA"},red_3:{name:"\u9189\u591C\u8BF7\u67EC",motto:"\u9713\u8679\u6DF1\u5904\uFF0C\u53EA\u7559\u7ED9\u6562\u8FDB\u573A\u7684\u4EBA"},gold_1:{name:"\u938F\u91D1\u5723\u676F",motto:"\u6EE1\u659F\u5962\u534E\uFF0C\u4E00\u996E\u5C3D\u63FD\u98CE\u6708"},gold_2:{name:"\u65E5\u5195\u6743\u6756",motto:"\u91D1\u5149\u6240\u6307\uFF0C\u4F17\u751F\u4FEF\u9996\u542C\u51ED"},gold_3:{name:"\u7425\u73C0\u7687\u51A0",motto:"\u51DD\u4F4F\u6700\u70BD\u70ED\u7684\u4E00\u523B\uFF0C\u52A0\u5195\u4E3A\u738B"},rainbow_1:{name:"\u8679\u5149\u661F\u5195",motto:"\u7FA4\u661F\u504F\u7231\u4E4B\u4EBA\uFF0C\u89C4\u5219\u4E3A\u4F60\u8BA9\u8DEF"},rainbow_2:{name:"\u547D\u8FD0\u7EC7\u673A",motto:"\u62E8\u52A8\u4E1D\u7EBF\uFF0C\u4ECA\u591C\u7ED3\u5C40\u7531\u4F60\u91CD\u5199"},rainbow_3:{name:"\u6C38\u6052\u661F\u6838",motto:"\u51DD\u4E07\u8C61\u4E8E\u4E00\u70B9\uFF0C\u820D\u4E0D\u5F97\u6362\u7684\u9547\u518C\u81F3\u5B9D"}},overlay:{common:{closeLabel:"\u5173\u95ED",goReady:"GO",goSpinning:"\u8F6C\u52A8\u4E2D\u2026",goBusy:"\u751F\u6210\u4E2D",busyBanner:"\u6B63\u6587\u6B63\u5728\u751F\u6210\uFF0C\u8BF7\u7B49\u5F85\u672C\u8F6E\u843D\u5B9A\u540E\u518D\u64CD\u4F5C\u3002",spinningCloseGuard:"\u6F14\u51FA\u8FDB\u884C\u4E2D\uFF0C\u8BF7\u7A0D\u5019\u7247\u523B\u3002",staleRefreshHint:"\u7EC8\u7AEF\u72B6\u6001\u5DF2\u540C\u6B65\uFF0C\u8BF7\u518D\u70B9\u4E00\u6B21\u3002",timeoutError:"\u54CD\u5E94\u8D85\u65F6\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002"},confirm:{btnOk:"\u786E\u8BA4\u6267\u884C",btnCancel:"\u518D\u60F3\u60F3",playTitle:"\u786E\u8BA4\u8F6C\u52A8\u547D\u8FD0\u8F6E\u76D8",playCostFree:"\u672C\u6B21\u6D88\u8017\uFF1A\u4ECA\u65E5\u514D\u8D39\uFF08\xA50\uFF09",playCostCash:"\u672C\u6B21\u6D88\u8017\uFF1A\u73B0\u91D1 {price}\uFF08\u4ECA\u65E5\u73B0\u91D1\u7B2C {next}/{limit} \u6B21\uFF09",playCostPoints:"\u672C\u6B21\u6D88\u8017\uFF1A{points} \u661F\u613F\u79EF\u5206",playDetail:"\u5F53\u524D\u4FDD\u5E95\u8FDB\u5EA6\uFF1A\u7EA2\u9636 {pRed}/10 \xB7 \u91D1\u9636 {pGold}/30 \xB7 \u8679\u9636 {pRainbow}/60",packLowTitle:"\u786E\u8BA4\u542F\u5C01\u661F\u5C18\u5361\u5305",packHighTitle:"\u786E\u8BA4\u542F\u5C01\u5723\u5178\u5361\u5305",packCostFree:"\u672C\u6B21\u6D88\u8017\uFF1A\u514D\u8D39\u542F\u5C01\u793C\u9047\uFF08\xA50\uFF09",packCostCash:"\u672C\u6B21\u6D88\u8017\uFF1A\u73B0\u91D1 {price}",packLowDetail:"\u6BCF\u5305\u4EA7\u51FA 3 \u5F20\u661F\u613F\u5361\uFF08\u7070 10 \u5206 / \u7EA2 30 \u5206\uFF09\xB7 \u8DDD\u5FC5\u51FA\u7EA2\u9636\u8FD8\u5DEE {leftRed} \u5305",packHighDetail:"\u6BCF\u5305\u4EA7\u51FA 3 \u5F20\u9AD8\u9636\u5361\uFF08\u6700\u4F4E\u7EA2\u9636 60\u2013800 \u5206\uFF09\xB7 \u4FDD\u5E95\u8FDB\u5EA6\uFF1A\u91D1+ {pGold}/10 \u5305",casinoTitle:"\u786E\u8BA4\u6697\u591C\u8D4C\u573A\u62BC\u6CE8",casinoCost:"\u62BC\u6CE8\u5361\u724C\uFF1A\u3010{cardName}\u3011\uFF08\u5F53\u524D\u4EF7\u503C {points} \u661F\u613F\u79EF\u5206\uFF09",casinoDetail:"\u62BC\u6CE8\u8272\u533A\uFF1A{betName}\uFF08\u8D54\u7387 {mult}\uFF0C\u547D\u4E2D\u540E\u8DC3\u5347\u81F3 {winPoints} \u79EF\u5206\uFF09",casinoWarn:"\u26A0\uFE0F \u6697\u591C\u6CD5\u5219\uFF1A\u62BC\u9519\u5C06\u5BFC\u81F4\u8BE5\u5F20\u661F\u613F\u5361\u8FDE\u540C\u7D2F\u79EF\u4EF7\u503C\u5F7B\u5E95\u9500\u6BC1\uFF0C\u4E0D\u53EF\u64A4\u56DE\uFF01",cashOutTitle:"\u786E\u8BA4\u6536\u624B\u5151\u6362",cashOutCost:"\u5151\u6362\u5361\u724C\uFF1A\u3010{cardName}\u3011\u2192 +{points} \u661F\u613F\u79EF\u5206",cashOutDetail:"\u786E\u8BA4\u540E\u5C06\u7ACB\u523B\u7ED3\u7B97\u672C\u6B21\u79EF\u5206\u5E76\u5165\u8D26\uFF0C\u5361\u724C\u5C06\u4ECE\u8D4C\u684C\u4E0E\u5361\u518C\u4E2D\u79FB\u9664\u3002",cashOutWarn:"\u26A0\uFE0F \u5151\u6362\u540E\u8BE5\u661F\u613F\u5361\u5C06\u6C38\u4E45\u9500\u6BC1\uFF0C\u4E0D\u53EF\u64A4\u56DE\u3002",cashOutOkBtn:"\u786E\u8BA4\u5151\u6362",casinoCashCost:"\u73B0\u91D1\u62BC\u6CE8\uFF1A{stake}\uFF08\u62BC\u6CE8\u8272\u533A\uFF1A{betName}\uFF09",casinoCashDetail:"\u8D54\u7387 {mult}\uFF1A\u547D\u4E2D\u603B\u8FD4\u8FD8 {payout}\uFF08\u542B\u672C\u91D1\uFF0C\u51C0\u8D5A {profit}\uFF09\u3002",casinoCashWarn:"\u26A0\uFE0F \u6697\u591C\u6CD5\u5219\uFF1A\u62BC\u9519\u5C06\u7ACB\u5373\u6263\u9664\u672C\u7B14\u73B0\u91D1\uFF0C\u4E0D\u53EF\u64A4\u56DE\uFF01",casinoAssetCost:"\u8D44\u4EA7\u62BC\u6CE8\uFF1A\u3010{assetName}\u3011\uFF08\u4F30\u503C {value}\uFF09",casinoAssetDetail:"\u62BC\u6CE8\u8272\u533A\uFF1A{betName}\uFF08\u8D54\u7387 {mult}\uFF09\u3002\u547D\u4E2D\u540E\u8D44\u4EA7\u5B8C\u597D\u4FDD\u7559\uFF0C\u989D\u5916\u8D62\u53D6\u73B0\u91D1 {profit}\u3002",casinoAssetWarn:"\u26A0\uFE0F \u6697\u591C\u6CD5\u5219\uFF1A\u62BC\u9519\u5C06\u76F4\u63A5\u4ECE\u540D\u4E0B\u8D44\u4EA7\u6863\u6848\u6C38\u4E45\u5220\u9664\u8BE5\u9879\u8D44\u4EA7\uFF0C\u4E0D\u53EF\u64A4\u56DE\uFF01"},fx:{qualityHigh:"\u753B\u8D28\uFF1A\u7480\u74A8",qualityMed:"\u753B\u8D28\uFF1A\u5747\u8861",qualityLow:"\u753B\u8D28\uFF1A\u6781\u901F"},play:{sideTitle:"\u2726 \u547D\u8FD0\u8F6E\u76D8 \xB7 53 \u683C\u5947\u9047",payModeFree:"\u4ECA\u65E5\u514D\u8D39\uFF080 \u5143\uFF09",payModeCash:"\u73B0\u91D1\uFF08{price}\uFF09",payModePoints:"\u79EF\u5206\uFF08{points} \u5206\uFF09",ruleText:"\u6BCF\u65E5\u9996\u62BD\u514D\u8D39\uFF1B\u73B0\u91D1 \xA5500 \u8D77\u3001\xA55 \u4E07\u5C01\u9876\uFF08\u65E5\u9650 {limit} \u6B21\uFF09\uFF0C\u6216\u6D88\u8017 {points} \u79EF\u5206\u8F6C\u52A8\u300210 \u62BD\u7EA2+\u300130 \u62BD\u91D1+\u300160 \u62BD\u8679\u9636\u5927\u5956\u3002",resultCollect:"\u6536\u5165\u80CC\u5305",resultAgain:"\u518D\u8F6C\u4E00\u6B21"},casino:{sideTitle:"\u2756 \u6697\u591C\u8D4C\u573A \xB7 37 \u683C\u62BC\u6CE8\u53F0",consoleTitle:"\u2756 \u8D4C\u684C\u4E0B\u6CE8\u53F0",stakePlaceholder:"\u70B9\u51FB\u6216\u62D6\u5165\u4E0B\u65B9\u661F\u613F\u5361\u4F5C\u4E3A\u8D4C\u6CE8",stakeValueLabel:"\u5F53\u524D\u8D4C\u6CE8\u4EF7\u503C",stakeEmptyHint:"\u5C1A\u672A\u653E\u5165\u8D4C\u6CE8",btnReturnCard:"\u6536\u56DE\u80CC\u5305",handTrayTitle:"\u80CC\u5305\u661F\u613F\u5361\uFF08\u70B9\u51FB\u6216\u62D6\u62FD\u4E0A\u684C\uFF09",selectBetLabel:"\u7B2C\u4E00\u6B65\uFF1A\u9009\u62E9\u62BC\u6CE8\u8272\u533A",selectCardLabel:"\u7B2C\u4E8C\u6B65\uFF1A\u62BC\u4E0A\u672A\u9501\u5B9A\u7684\u661F\u613F\u5361",noCardHint:"\u6CA1\u6709\u53EF\u62BC\u6CE8\u7684\u661F\u613F\u5361\uFF08\u5DF2\u9501\u5B9A\u7684\u73CD\u85CF\u5361\u5DF2\u81EA\u52A8\u9690\u85CF\uFF09\u3002\u5148\u53BB\u5F00\u4E00\u5305\u661F\u613F\u5361\u5305\u5427\u3002",goIdle:"\u8BF7\u5148\u9009\u533A\u653E\u5361",ruleText:"\u62BC\u4E2D\u7FFB\u500D\uFF08\u7EEF\u7EA2/\u9ED1\u66DC \xD72\uFF0C\u7FE1\u7FE0 \xD736\uFF09\uFF0C\u62BC\u9519\u8D4C\u6CE8\u5168\u989D\u6CA1\u6536\u3002\u661F\u613F\u5361\u3001\u73B0\u91D1\u4E0E\u540D\u4E0B\u8D44\u4EA7\u7686\u53EF\u4E0A\u684C\uFF0C\u4E0D\u8BBE\u54C1\u9636\u4E0E\u4E0A\u9650\u3002",winTitle:"\u62BC\u4E2D\u7FFB\u500D",winGreenTitle:"\u7FE1\u7FE0\u5723\u683C \xB7 \xD736 \u66B4\u6DA8",winNormal:"\u62BC\u4E2D\u7FFB\u500D\uFF01\u5F53\u524D\u4EF7\u503C {value} \u79EF\u5206\u3002\u7EE7\u7EED\u52A0\u62BC\uFF0C\u8FD8\u662F\u843D\u888B\u6536\u624B\uFF1F",winGreen:"\u7FE1\u7FE0\u5723\u683C\u547D\u4E2D\uFF01\u5361\u724C\u4EF7\u503C\u98D9\u5347\u81F3 {value} \u79EF\u5206\uFF01",loseTitle:"\u6EE1\u76D8\u7686\u8F93",lose:"\u6EE1\u76D8\u7686\u8F93\u3002\u8FD9\u5F20\u661F\u613F\u5361\u8FDE\u540C\u7D2F\u79EF\u4EF7\u503C\u5DF2\u88AB\u6697\u591C\u541E\u566C\u3002",btnAgain:"\u7EE7\u7EED\u52A0\u62BC",btnCashOut:"\u6536\u624B\u5151\u6362",btnLockKeep:"\u9501\u5165\u73CD\u85CF",btnNextCard:"\u518D\u9009\u4E00\u5F20",cashOutOk:"\u843D\u888B\u4E3A\u5B89\uFF0C\u5DF2\u5151\u6362 +{value} \u661F\u613F\u79EF\u5206\u3002",tabCard:"\u661F\u613F\u5361",tabCash:"\u73B0\u91D1",tabAsset:"\u8D44\u4EA7",cashAvailLabel:"\u53EF\u7528\u73B0\u91D1\uFF1A{cash}",cashCustomPlaceholder:"\u8F93\u5165\u6574\u767E\u5143\u91D1\u989D\uFF08\u6700\u4F4E \xA51,000\uFF09",cashChipTenPct:"10% \u4F59\u989D",cashEmptyHint:"\u8BF7\u9009\u62E9\u6216\u8F93\u5165\u62BC\u6CE8\u91D1\u989D",assetWarnBanner:"\u26A0\uFE0F \u8D44\u4EA7\u62BC\u6CE8\u89C4\u5219\uFF1A\u62BC\u4E2D\u540E\u539F\u8D44\u4EA7\u5B8C\u597D\u4FDD\u7559\u3001\u51C0\u76C8\u5229\u6298\u73B0\u5165\u8D26\uFF1B\u62BC\u9519\u8BE5\u8D44\u4EA7\u5C06\u76F4\u63A5\u4ECE\u540D\u4E0B\u8D44\u4EA7\u6863\u6848\u4E2D\u6C38\u4E45\u5220\u9664\uFF0C\u4E0D\u53EF\u64A4\u56DE\uFF01",assetPlaceholder:"\u70B9\u51FB\u4E0B\u65B9\u540D\u4E0B\u8D44\u4EA7\u4F5C\u4E3A\u8D4C\u6CE8",assetEmptyHint:"\u6682\u65E0\u53EF\u62BC\u6CE8\u7684\u540D\u4E0B\u8D44\u4EA7\uFF08\u9700\u5DF2\u5B8C\u6210\u4F30\u503C\u4E14\u6EE1 \xA51,000\uFF09",assetTrayTitle:"\u540D\u4E0B\u6301\u6709\u8D44\u4EA7\uFF08\u70B9\u51FB\u4E0A\u684C\uFF09",assetRiskTag:"\u62BC\u8F93\u5C06\u76F4\u63A5\u5220\u9664\u8BE5\u8D44\u4EA7\uFF0C\u4E0D\u53EF\u64A4\u56DE",goIdleCash:"\u8BF7\u5148\u9009\u533A\u4E0E\u91D1\u989D",goIdleAsset:"\u8BF7\u5148\u9009\u533A\u4E0E\u8D44\u4EA7",winCashNormal:"\u62BC\u4E2D\u7FFB\u500D\uFF01\u672C\u91D1\u8FDE\u76C8\u5229\u5171\u5165\u8D26 {payout}\uFF08\u51C0\u8D5A {profit}\uFF09\u3002",winCashGreen:"\u7FE1\u7FE0\u5723\u683C\u547D\u4E2D \xB7 \xD736 \u72C2\u6F9C\uFF01\u5171\u5165\u8D26 {payout}\uFF08\u51C0\u8D5A {profit}\uFF09\uFF01",loseCash:"\u6EE1\u76D8\u7686\u8F93\u3002\u62BC\u6CE8\u7684 {stake} \u5DF2\u88AB\u6697\u591C\u6089\u6570\u541E\u6CA1\u3002",winAssetNormal:"\u62BC\u4E2D\u7FFB\u500D\uFF01\u3010{assetName}\u3011\u5B8C\u597D\u4FDD\u7559\uFF0C\u989D\u5916\u8D62\u5F97\u73B0\u91D1 {profit} \u5DF2\u5165\u8D26\uFF01",winAssetGreen:"\u7FE1\u7FE0\u5723\u683C\u547D\u4E2D \xB7 \xD736 \u60CA\u5929\u66B4\u51FB\uFF01\u3010{assetName}\u3011\u5B8C\u597D\u4FDD\u7559\uFF0C\u989D\u5916\u8D62\u5F97\u73B0\u91D1 {profit} \u5DF2\u5165\u8D26\uFF01",loseAsset:"\u6EE1\u76D8\u7686\u8F93\u3002\u3010{assetName}\u3011\uFF08\u4F30\u503C {value}\uFF09\u5DF2\u4ECE\u540D\u4E0B\u8D44\u4EA7\u6863\u6848\u4E2D\u6C38\u4E45\u5220\u9664\u3002",btnAgainStake:"\u518D\u6765\u4E00\u5C40"}},bag:{tabs:{cards:"\u661F\u613F\u5361\u518C",prizes:"\u73A9\u6CD5\u5238",surreal:"\u5947\u7269"},binder:{codexProgress:"\u56FE\u9274\u6536\u5F55 {count}/12",btnBet:"\u62BC\u6CE8",btnRedeem:"\u5151\u6362",btnLock:"\u9501\u5B9A\u73CD\u85CF",btnUnlock:"\u89E3\u9664\u9501\u5B9A",lockedToast:"\u5DF2\u9501\u5165\u73CD\u85CF\uFF0C\u4E0D\u4F1A\u5728\u8D4C\u573A\u6216\u5151\u6362\u4E2D\u88AB\u8BEF\u7528\u3002",unlockedToast:"\u5DF2\u89E3\u9664\u73CD\u85CF\u9501\u5B9A\u3002",emptyTitle:"\u661F\u613F\u5361\u518C\u8FD8\u662F\u7A7A\u7684",emptySub:"\u5F00\u5C40\u5C31\u80FD\u514D\u8D39\u62C6\u4E00\u5305\u661F\u5C18\u5361\u5305\uFF0C\u628A\u5FC3\u4EEA\u7684\u5361\u6536\u8FDB\u5361\u518C\u3002",emptyCta:"\u53BB\u5F00\u661F\u613F\u5361\u5305",btnCollapse:"\u6536\u56DE",btnDelete:"\u5220\u9664\u5361\u724C",btnBackBinder:"\u8FD4\u56DE\u5361\u518C",cardMenuAria:"\u5361\u724C\u8BBE\u7F6E",deleteTitle:"\u786E\u8BA4\u5220\u9664\u661F\u613F\u5361",deleteConfirmText:"\u786E\u8BA4\u6C38\u4E45\u5220\u9664\u3010{name}\u3011\uFF08\u5F53\u524D\u4EF7\u503C {points} \u661F\u613F\u79EF\u5206\uFF09\uFF1F\u5220\u9664\u540E\u4E0D\u53EF\u64A4\u56DE\uFF0C\u4E5F\u4E0D\u4F1A\u8FD4\u8FD8\u79EF\u5206\u3002",deletedToast:"\u5DF2\u4ECE\u661F\u613F\u5361\u518C\u4E2D\u5220\u9664\u8BE5\u5361\u724C\u3002",redeemTitle:"\u786E\u8BA4\u5151\u6362\u661F\u613F\u5361",redeemConfirmText:"\u786E\u8BA4\u5C06\u3010{name}\u3011\u5151\u6362\u4E3A {points} \u661F\u613F\u79EF\u5206\uFF1F\u5151\u6362\u540E\u8BE5\u5361\u724C\u5C06\u6C38\u4E45\u9500\u6BC1\uFF0C\u4E0D\u53EF\u64A4\u56DE\u3002",btnRedeemConfirm:"\u786E\u8BA4\u5151\u6362"},common:{btnDelete:"\u5220\u9664",btnCancel:"\u518D\u60F3\u60F3",btnDeleteConfirm:"\u786E\u8BA4\u5220\u9664",deleteTitle:"\u786E\u8BA4\u5220\u9664\u7269\u54C1",deleteReadyText:"\u786E\u8BA4\u5220\u9664\u5C1A\u672A\u4F7F\u7528\u7684\u3010{name}\u3011\uFF1F\u5220\u9664\u540E\u65E0\u6CD5\u6062\u590D\u3002",deleteScheduledText:"\u3010{name}\u3011\u5DF2\u6392\u5165\u65E5\u5386\u65E5\u7A0B\uFF0C\u786E\u8BA4\u5220\u9664\u5C06\u4E00\u5E76\u53D6\u6D88\u5BF9\u5E94\u65E5\u7A0B\u4E14\u65E0\u6CD5\u6062\u590D\u3002",deleteUsedText:"\u786E\u8BA4\u4ECE\u8BB0\u5F55\u4E2D\u79FB\u9664\u5DF2\u4F7F\u7528\u7684\u3010{name}\u3011\uFF1F",deletedToast:"\u5DF2\u4ECE\u80CC\u5305\u4E2D\u5220\u9664\u3002",btnUndoUse:"\u64A4\u9500\u4F7F\u7528",statusPendingDepict:"\u5F85\u6B63\u6587\u751F\u6548",undoTitle:"\u786E\u8BA4\u64A4\u9500\u4F7F\u7528",undoPrizeText:"\u786E\u8BA4\u64A4\u9500\u3010{name}\u3011\u7684\u672C\u6B21\u4F7F\u7528\uFF1F\u64A4\u9500\u540E\u8BE5\u73A9\u6CD5\u5238\u5C06\u9000\u56DE\u80CC\u5305\u5F85\u7528\u72B6\u6001\uFF0C\u5E76\u5C1D\u8BD5\u6E05\u7406\u804A\u5929\u8F93\u5165\u6846\u5185\u5BF9\u5E94\u7684\u5F15\u5BFC\u8BCD\u3002",undoConsumableText:"\u786E\u8BA4\u64A4\u9500\u3010{name}\u3011\u7684\u672C\u6B21\u4F7F\u7528\uFF1F\u64A4\u9500\u540E\u8BE5\u6D88\u8017\u5947\u7269\u5C06\u9000\u56DE\u80CC\u5305\u3001\u8FD8\u539F\u5DF2\u751F\u6548\u7684\u4E34\u65F6\u72B6\u6001\uFF0C\u5E76\u5C1D\u8BD5\u6E05\u7406\u8F93\u5165\u6846\u5185\u5BF9\u5E94\u7684\u5F15\u5BFC\u8BCD\u3002",undoPermanentText:"\u786E\u8BA4\u64A4\u9500\u3010{name}\u3011\u7684\u672C\u6B21\u4F7F\u7528\uFF1F\u64A4\u9500\u540E\u8BE5\u5947\u7269\u5C06\u9000\u56DE\u80CC\u5305\u5F85\u7528\u72B6\u6001\uFF0C\u5E76\u5C1D\u8BD5\u6E05\u7406\u804A\u5929\u8F93\u5165\u6846\u5185\u5BF9\u5E94\u7684\u5F15\u5BFC\u8BCD\u3002",undoBtnConfirm:"\u786E\u8BA4\u64A4\u9500",undoBtnCancel:"\u4FDD\u7559\u4F7F\u7528",undoOkRemovedToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\uFF0C\u7EC8\u7AEF\u72B6\u6001\u4E0E\u8F93\u5165\u6846\u5F15\u5BFC\u8BCD\u5DF2\u540C\u6B65\u8FD8\u539F\u3002",undoOkModifiedToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\uFF0C\u8F93\u5165\u6846\u5185\u6539\u5199\u8FC7\u7684\u5F15\u5BFC\u884C\u5DF2\u4E00\u5E76\u79FB\u9664\u3002",undoOkManualCheckToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\u7684\u7EC8\u7AEF\u72B6\u6001\uFF1B\u8F93\u5165\u6846\u5185\u5BB9\u5DF2\u88AB\u5927\u5E45\u4FEE\u6539\uFF0C\u8BF7\u624B\u52A8\u68C0\u67E5\u5269\u4F59\u6587\u5B57\u3002",undoOkAlreadyEmptyToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\u7684\u7EC8\u7AEF\u751F\u6548\u72B6\u6001\uFF08\u8F93\u5165\u6846\u5185\u672A\u627E\u5230\u5BF9\u5E94\u5F15\u5BFC\u8BCD\uFF0C\u65E0\u9700\u6E05\u7406\uFF09\u3002",undoOkNoInputToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\u7684\u7EC8\u7AEF\u72B6\u6001\uFF1B\u5F53\u524D\u754C\u9762\u672A\u68C0\u6D4B\u5230\u804A\u5929\u8F93\u5165\u6846\uFF0C\u8BF7\u624B\u52A8\u68C0\u67E5\u8F93\u5165\u533A\u3002"},prizes:{usedFoldTitle:"\u5DF2\u6838\u9500\u73A9\u6CD5\u5238\uFF08{count}\uFF09",statusReady:"\u5F85\u4F7F\u7528",statusScheduled:"\u5DF2\u6392\u671F",statusUsed:"\u5DF2\u6838\u9500",btnUse:"\u6392\u5165\u65E5\u7A0B",btnUseNow:"\u7ACB\u5373\u4F7F\u7528",btnSchedule:"\u6392\u5165\u65E5\u7A0B",useNowTitle:"\u7ACB\u5373\u4F7F\u7528\u73A9\u6CD5\u5238",useTargetLabel:"\u540C\u884C\u6216\u4F5C\u7528\u5973\u6027\uFF08\u53EF\u9009\uFF09",useNowNotice:"\u786E\u8BA4\u540E\u5C06\u7ACB\u5373\u6838\u9500\u8BE5\u73A9\u6CD5\u5238\uFF0C\u5E76\u5C06\u4E0B\u65B9\u884C\u52A8\u5F15\u5BFC\u8BCD\u81EA\u52A8\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF08\u53EF\u5728\u53D1\u9001\u524D\u81EA\u7531\u8865\u5145\u7EC6\u8282\uFF09\uFF0C\u4E0B\u4E00\u8F6E\u6B63\u6587\u5C06\u5C55\u5F00\u8BE5\u73A9\u6CD5\u3002",useNowConfirm:"\u786E\u8BA4\u4F7F\u7528\u5E76\u586B\u5165\u8F93\u5165\u6846",useNowToast:"\u5DF2\u6838\u9500\u3010{name}\u3011\u5E76\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u6D88\u606F\u5373\u53EF\u5728\u6B63\u6587\u5C55\u5F00\u4F53\u9A8C\u3002",btnViewCal:"\u67E5\u770B\u65E5\u7A0B",btnCancelSchedule:"\u53D6\u6D88\u6392\u671F",scheduleTitle:"\u4F7F\u7528\u73A9\u6CD5\u5238 \xB7 \u6392\u5165\u65E5\u7A0B",scheduleSubmit:"\u786E\u8BA4\u6392\u5165",scheduleOk:"\u5DF2\u6392\u5165\u65E5\u5386\uFF0C\u5267\u60C5\u8D74\u7EA6\u5B8C\u6210\u540E\u5C06\u81EA\u52A8\u6838\u9500\u3002",cancelOk:"\u5DF2\u53D6\u6D88\u6392\u671F\uFF0C\u73A9\u6CD5\u5238\u5DF2\u9000\u56DE\u80CC\u5305\u3002",emptyTitle:"\u8FD8\u6CA1\u6709\u73A9\u6CD5\u5238",emptySub:"\u53BB\u547D\u8FD0\u8F6E\u76D8\u8F6C\u4E00\u5C40\uFF0C53 \u79CD\u4E91\u6F9C\u5947\u9047\u7B49\u4F60\u62C6\u5C01\u3002",emptyCta:"\u53BB\u8F6C\u547D\u8FD0\u8F6E\u76D8"},surreal:{usedFoldTitle:"\u5DF2\u4F7F\u7528\u5947\u7269\uFF08{count}\uFF09",tagConsumable:"\u6D88\u8017\u5947\u7269",tagPermanent:"\u6301\u6709\u751F\u6548",tagUsed:"\u5DF2\u4F7F\u7528",btnUse:"\u4F7F\u7528",btnPrompt:"\u4F7F\u7528\u63D0\u793A",btnToyLink:"\u547C\u51FA\u7EC8\u7AEF",useTitle:"\u4F7F\u7528\u5947\u7269",useTargetLabel:"\u9009\u62E9\u4F5C\u7528\u5BF9\u8C61",useConfirm:"\u786E\u8BA4\u4F7F\u7528",useOk:"\u5DF2\u4F7F\u7528\u3010{name}\u3011\u3002\u53EF\u5C06\u4E0B\u65B9\u5F15\u5BFC\u8BCD\u5E26\u5165\u6B63\u6587\u7EE7\u7EED\u5267\u60C5\u3002",useNoticeConsumable:"\u786E\u8BA4\u540E\u5C06\u6838\u9500\u8BE5\u6D88\u8017\u5947\u7269\uFF08\u811A\u672C\u6548\u679C\u7ACB\u5373\u751F\u6548\uFF09\uFF0C\u5E76\u5C06\u4E0B\u65B9\u5F15\u5BFC\u8BCD\u81EA\u52A8\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u4E0B\u4E00\u8F6E\u6B63\u6587\u5C06\u6B63\u9762\u63CF\u5199\u5947\u7269\u6548\u679C\u3002",useNoticePermanent:"\u8BE5\u5947\u7269\u4E3A\u6301\u4E45\u751F\u6548\u5947\u7269\uFF0C\u4F7F\u7528\u540E\u4E0D\u4F1A\u6D88\u8017\uFF1B\u786E\u8BA4\u540E\u5C06\u4E0B\u65B9\u5F15\u5BFC\u8BCD\u81EA\u52A8\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u4E0B\u4E00\u8F6E\u6B63\u6587\u5C06\u547C\u5E94\u5176\u6548\u679C\u3002",useConfirmInput:"\u786E\u8BA4\u5E76\u586B\u5165\u8F93\u5165\u6846",useToastInput:"\u5DF2\u5C06\u3010{name}\u3011\u5F15\u5BFC\u8BCD\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u6D88\u606F\u5373\u53EF\u751F\u6548\u3002",promptTitle:"\u5947\u7269\u53D9\u4E8B\u5F15\u5BFC",promptSub:"\u8BE5\u5947\u7269\u6301\u4E45\u751F\u6548\uFF0C\u65E0\u9700\u6D88\u8017\uFF1B\u53EF\u76F4\u63A5\u590D\u5236\u4E0B\u65B9\u53E5\u5B50\u5728\u6B63\u6587\u547C\u5E94\uFF1A",mirrorOk:"\u7AA5\u5FC3\u955C\u5DF2\u663E\u5F71\uFF0C\u3010{target}\u3011\u7684\u6DF1\u5C42\u6697\u4F24\u95E8\u69DB\u5DF2\u7834\u9664\u3002",perfumeOk:"\u6B32\u671B\u6F6E\u6C50\u9999\u6C34\u5DF2\u5F25\u6563\uFF0C\u5728\u573A\u5973\u6027\u60C5\u6B32\u503C\u7ACB\u5373 +25\u3002",toylinkMissing:"\u672A\u68C0\u6D4B\u5230 TOY\xB7LINK \u5B9E\u4F53\u6269\u5C55\uFF0C\u8BF7\u786E\u8BA4\u6269\u5C55\u5DF2\u542F\u7528\u3002",emptyTitle:"\u6682\u65E0\u8D85\u73B0\u5B9E\u5947\u7269",emptySub:"\u6512\u591F\u661F\u613F\u79EF\u5206\uFF0C\u53BB\u661F\u613F\u5546\u57CE\u6311\u4E00\u4EF6\u79F0\u624B\u7684\u5947\u7269\u3002",emptyCta:"\u53BB\u661F\u613F\u5546\u57CE"}},shop:{tabs:{ability:"\u5F02\u80FD\u89C9\u9192",consumable:"\u6D88\u8017\u5947\u7269",permanent:"\u6301\u4E45\u5947\u7269"},btnBuy:"\u2726 {price}",btnOwned:"\u5DF2\u89C9\u9192",btnUnlocked:"\u5DF2\u89E3\u9501",buyOk:"\u5151\u6362\u6210\u529F\uFF0C\u5DF2\u6536\u5165\u56CA\u4E2D\u3002",insufficientPoints:"\u661F\u613F\u79EF\u5206\u4E0D\u8DB3\uFF0C\u8FD8\u5DEE {gap} \u5206\u3002",permanentThresholdBanner:"\u4F7F\u7528\u95E8\u69DB\u63D0\u793A\uFF1A\u4E13\u5C5E\u5370\u8BB0\u3001\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\u4E0E TOY\xB7LINK \u4E09\u9879\u79C1\u57DF\u88C5\u7F6E\uFF0C\u5747\u9700\u76EE\u6807\u5973\u6027\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF08\u4E8C\u9009\u4E00\u8FBE\u6807\u5373\u53EF\uFF09\u65B9\u53EF\u5BF9\u5176\u4F7F\u7528\u3002",permanentThresholdNote:"\u4F7F\u7528\u6761\u4EF6\uFF1A\u9700\u76EE\u6807\u5973\u6027\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u65B9\u53EF\u5BF9\u5176\u4F7F\u7528"},mine:{devices:{secTitle:"\u79C1\u57DF\u88C5\u7F6E \xB7 \u652F\u914D\u4E0E\u70D9\u5370",secSub:"\u70B9\u51FB\u547C\u51FA\u63A7\u5236\u53F0",toylink:{title:"TOY\xB7LINK \u9065\u63A7",ariaLabel:"\u6253\u5F00 TOY\xB7LINK \u6781\u7B80\u9065\u63A7\u9762\u677F",badgeLocked:"\u9884\u89C8\u7EC8\u7AEF",badgeReady:"\u5DF2\u5C31\u7EEA",badgeWorn:"\u5DF2\u4F69\u6234 \xB7 {count}\u4EBA",badgeActive:"\u8FD0\u884C\u4E2D",badgeLabLocked:"\u5B9E\u9A8C\u7248\u5360\u7528",metaLocked:"\u4E09\u6863\u611F\u5B98\u9065\u63A7\uFF08\u5546\u57CE\u5151\u6362\u6216\u8F6E\u76D8\u62BD\u53D6\uFF09",metaReady:"\u7EC8\u6781\u6743\u9650\u5DF2\u6FC0\u6D3B \xB7 \u70B9\u51FB\u6253\u5F00\u6781\u7B80\u9065\u63A7",metaWorn:"\u5F53\u524D\u4F69\u6234\uFF1A{names} \xB7 \u70B9\u51FB\u5F00\u542F\u9065\u63A7",metaActive:"\u6B63\u4F5C\u7528\u4E8E\u3010{name}\u3011\xB7 {gearLabel}",metaLabLocked:"\u5B9E\u9A8C\u7248\u4F7F\u7528\u4E2D\uFF08{summary}\uFF09\xB7 \u70B9\u6B64\u67E5\u770B\u6216\u6E05\u7A7A\u5207\u6362",metaNoEligible:"\u7EC8\u7AEF\u5DF2\u5C31\u7EEA \xB7 \u5C1A\u65E0\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u7684\u53EF\u7528\u76EE\u6807"},choker:{title:"\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708",ariaLabel:"\u6253\u5F00\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\u5DE5\u574A",badgeLocked:"\u9884\u89C8\u5DE5\u574A",badgeReady:"\u53EF\u8D50\u4E88",badgeWorn:"\u4F69\u6234\u4E2D \xB7 {count}\u4EBA",metaLocked:"\u8BA4\u77E5\u906E\u853D \xB7 \u7EDD\u5BF9\u81E3\u670D\u7684\u79C1\u5BC6\u70D9\u5370\uFF081,800\u2726 \u5151\u6362\uFF09",metaReady:"\u8A93\u7EA6\u6743\u9650\u5DF2\u5C31\u7EEA \xB7 \u5C1A\u672A\u8D50\u4E88\u5973\u6027\u4F69\u6234",metaWorn:"\u5F53\u524D\u4F69\u6234\uFF1A{names}"},imprint:{title:"\u4E13\u5C5E\u79C1\u5BC6\u5370\u8BB0",ariaLabel:"\u6253\u5F00\u4E13\u5C5E\u79C1\u5BC6\u5370\u8BB0\u5DE5\u574A",badgeEmpty:"\u53EF\u94ED\u523B",badgeEngraved:"\u5DF2\u94ED\u523B \xB7 {count}\u4EBA",badgeLocked:"\u672A\u89E3\u9501",metaEmpty:"\u9AD8\u5B9A\u6DEB\u7EB9\u4E0E\u523A\u9752\u5DE5\u574A \xB7 \u81EA\u7531\u9009\u4F4D\u4E0E\u82B1\u4F53\u954C\u523B",metaEngraved:"\u5DF2\u843D\u5370\uFF1A{summary}",metaLocked:"3,000\u2726 \u5151\u6362\u540E\u53EF\u81EA\u7531\u843D\u5370\uFF08\u661F\u613F\u5546\u57CE \xB7 \u6301\u4E45\u5947\u7269\uFF09"}},abilityCount:"{count} \u9879",abilityOwnedBadge:"\u5DF2\u89C9\u9192",abilityBtnUse:"\u53D1\u52A8",abilityBtnUndo:"\u64A4\u9500\u53D1\u52A8",abilityPendingBadge:"\u5F85\u6B63\u6587\u751F\u6548",abilityUseTitle:"\u53D1\u52A8\u4E3B\u89D2\u5F02\u80FD",abilityUseTargetLabel:"\u4F5C\u7528\u5BF9\u8C61\uFF08\u53EF\u9009\uFF09",abilityUseNotice:"\u5F02\u80FD\u4E3A\u6C38\u4E45\u6301\u6709\uFF0C\u53D1\u52A8\u4E0D\u6D88\u8017\u6B21\u6570\uFF1B\u786E\u8BA4\u540E\u5C06\u628A\u4E0B\u65B9\u53D1\u52A8\u63CF\u8FF0\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u5728\u4E0B\u4E00\u8F6E\u6B63\u6587\u771F\u5B9E\u751F\u6210\u524D\u53EF\u968F\u65F6\u64A4\u9500\u3002",abilityUseConfirm:"\u786E\u8BA4\u53D1\u52A8\u5E76\u586B\u5165\u8F93\u5165\u6846",abilityUseToast:"\u5DF2\u5C06\u3010{name}\u3011\u53D1\u52A8\u63CF\u8FF0\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u6D88\u606F\u5373\u53EF\u5728\u6B63\u6587\u751F\u6548\u3002",abilityUndoTitle:"\u786E\u8BA4\u64A4\u9500\u5F02\u80FD\u53D1\u52A8",abilityUndoText:"\u786E\u8BA4\u64A4\u9500\u3010{name}\u3011\u7684\u672C\u6B21\u53D1\u52A8\uFF1F\u64A4\u9500\u540E\u5F02\u80FD\u4ECD\u4FDD\u6301\u5DF2\u89C9\u9192\u72B6\u6001\uFF0C\u5E76\u5C1D\u8BD5\u6E05\u7406\u804A\u5929\u8F93\u5165\u6846\u5185\u5BF9\u5E94\u7684\u53D1\u52A8\u63CF\u8FF0\u3002",abilityUndoOkToast:"\u5DF2\u64A4\u9500\u3010{name}\u3011\u7684\u672C\u6B21\u53D1\u52A8\u5E76\u6E05\u7406\u8F93\u5165\u6846\u3002",abilityInputDraft:"\u3010\u53D1\u52A8\u5F02\u80FD\uFF1A{name}\u3011{who}\u6211\u73B0\u5728\u4E3B\u52A8\u53D1\u52A8\u5DF2\u89C9\u9192\u5F02\u80FD\u300C{name}\u300D\uFF08{effect}\uFF09\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u5728\u6B63\u6587\u4E2D\u81EA\u7136\u6F14\u7ECE\u8BE5\u5F02\u80FD\u751F\u6548\u65F6\u7684\u7EC6\u8282\u4E0E\u4EBA\u7269\u53CD\u5E94\uFF0C\u65C1\u4EBA\u4E0D\u5F97\u5BDF\u89C9\u5F02\u80FD\u672C\u8EAB\u3002"},errors:{DEVICE_THRESHOLD_NOT_MET:"\u8BE5\u4EBA\u7269\u5C1A\u672A\u8FBE\u5230\u88C5\u7F6E\u4F7F\u7528\u95E8\u69DB\uFF08\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF09\u3002",TOYLINK_NO_ELIGIBLE_WOMAN:"\u5F53\u524D\u5C1A\u65E0\u6EE1\u8DB3\u6761\u4EF6\u7684\u4EBA\u7269\uFF08\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF09\uFF0C\u6682\u65F6\u65E0\u6CD5\u542F\u52A8 TOY\xB7LINK\u3002",WHEEL_FREE_USED:"\u4ECA\u65E5\u514D\u8D39\u6B21\u6570\u5DF2\u7528\u5B8C\u3002",WHEEL_DAILY_LIMIT:"\u4ECA\u65E5\u547D\u8FD0\u8F6E\u76D8\u73B0\u91D1\u6B21\u6570\u5DF2\u6EE1\uFF0C\u53EF\u5207 120 \u79EF\u5206\u7EE7\u7EED\u3002",LOW_PACK_DAILY_LIMIT:"\u4ECA\u65E5\u661F\u5C18\u5361\u5305\u5DF2\u542F\u6EE1 3 \u5305\uFF0C\u660E\u65E5\u5237\u65B0\u3002",WISH_LOCKED:"\u5723\u5178\u5361\u5305\u5C1A\u672A\u542F\u5C01\uFF08\u9700\u8BA1\u7EA7\u8EAB\u5BB6\u6EE1 100 \u4E07\u6216\u5B8C\u6210 1 \u7B14\u63D0\u73B0\uFF09\u3002",WISH_DAILY_LIMIT:"\u4ECA\u65E5\u5723\u5178\u5361\u5305\u5DF2\u8FBE 2 \u5305\u4E0A\u9650\uFF0C\u660E\u65E5\u518D\u6765\u3002",WISH_WEEKLY_LIMIT:"\u672C\u5468\u5723\u5178\u4ED8\u8D39\u989D\u5EA6\u5DF2\u6EE1 5 \u5305\uFF0C\u4E0B\u5468\u4E00\u5237\u65B0\u3002",CARD_LOCKED:"\u8BE5\u5361\u5DF2\u9501\u5165\u73CD\u85CF\uFF0C\u8BF7\u5148\u5728\u5361\u518C\u4E2D\u89E3\u9501\u540E\u518D\u64CD\u4F5C\u3002",ITEM_NOT_READY:"\u8BE5\u7269\u54C1\u5F53\u524D\u4E0D\u53EF\u4F7F\u7528\u6216\u5DF2\u6D88\u8017\u3002",NO_PRESENT_CHARACTER:"\u5F53\u524D\u573A\u666F\u6CA1\u6709\u5728\u573A\u5973\u6027\uFF0C\u65E0\u6CD5\u4F7F\u7528\u8BE5\u5947\u7269\u3002",INSUFFICIENT_CASH:"\u53EF\u7528\u73B0\u91D1\u4E0D\u8DB3\uFF0C\u65E0\u6CD5\u652F\u4ED8\u672C\u6B21\u8D39\u7528\u3002",INSUFFICIENT_POINTS:"\u661F\u613F\u79EF\u5206\u4E0D\u8DB3\u3002",UNKNOWN_ITEM:"\u672A\u627E\u5230\u5BF9\u5E94\u5361\u724C\u6216\u7269\u54C1\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5\u3002",SHOP_ALREADY_OWNED:"\u8BE5\u9879\u6743\u9650\u5DF2\u62E5\u6709\uFF0C\u65E0\u9700\u91CD\u590D\u5151\u6362\u3002",GENERATION_BUSY:"\u6B63\u6587\u6B63\u5728\u751F\u6210\u4E2D\uFF0C\u8BF7\u7A0D\u5019\u518D\u64CD\u4F5C\u3002",STALE_REVISION:"\u7EC8\u7AEF\u72B6\u6001\u5DF2\u66F4\u65B0\uFF0C\u8BF7\u91CD\u8BD5\u4E00\u6B21\u3002",STALE_SOURCE:"\u5F53\u524D\u6D88\u606F\u697C\u5C42\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5\u3002",WHEEL_BRIDGE_TIMEOUT:"\u8F6E\u76D8\u8FDE\u63A5\u8D85\u65F6\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u3002",CUSTOM_ASSET_DAILY_LIMIT:"\u6BCF\u4E2A\u6545\u4E8B\u65E5\u6700\u591A\u624B\u52A8\u8865\u5F55 2 \u9879\u8D44\u4EA7\u3002",ASSET_DESC_NO_PRICE:"\u8BF7\u53EA\u63CF\u8FF0\u7269\u54C1\u5916\u89C2\u3001\u578B\u53F7\u4E0E\u6765\u5386\uFF0C\u4E0D\u8981\u5728\u540D\u79F0\u6216\u63CF\u8FF0\u4E2D\u586B\u5199\u91D1\u989D\u6216\u4F30\u503C\u3002",CUSTOM_ASSET_NO_CASINO:"\u624B\u52A8\u8865\u5F55\u7684\u81EA\u5B9A\u4E49\u8D44\u4EA7\u4E0D\u53EF\u7528\u4E8E\u6697\u591C\u8D4C\u573A\u62BC\u6CE8\u3002",CASINO_MIN_STAKE:"\u73B0\u91D1\u6216\u8D44\u4EA7\u62BC\u6CE8\u6700\u4F4E\u9700\u6EE1 \xA51,000\u3002",ASSET_NOT_OWNED:"\u8BE5\u8D44\u4EA7\u5DF2\u4E0D\u5C5E\u4E8E\u4F60\uFF0C\u65E0\u6CD5\u4E0A\u684C\u62BC\u6CE8\u3002",ASSET_VALUATION_PENDING:"\u8BE5\u8D44\u4EA7\u6B63\u5728\u7B49\u5F85\u4F30\u503C\uFF0C\u5B8C\u6210\u4F30\u503C\u540E\u65B9\u53EF\u4E0A\u684C\u62BC\u6CE8\u3002",UNDO_EXPIRED:"\u4E0B\u4E00\u8F6E\u6B63\u6587\u5DF2\u7ECF\u751F\u6210\uFF0C\u8BE5\u6B21\u4F7F\u7528\u5DF2\u751F\u6548\u843D\u5B9A\uFF0C\u65E0\u6CD5\u518D\u64A4\u9500\u3002",UNDO_NOT_ALLOWED:"\u5F53\u524D\u7269\u54C1\u672A\u5904\u4E8E\u53EF\u64A4\u9500\u72B6\u6001\uFF08\u5DF2\u6392\u5165\u65E5\u7A0B\u6216\u975E\u672C\u8F6E\u4F7F\u7528\uFF09\u3002",CHOKER_LOCKED:"\u5C1A\u672A\u89E3\u9501\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\uFF0C\u8BF7\u5148\u5728\u661F\u613F\u5546\u57CE\u5151\u6362\u540E\u518D\u8D50\u4E88\u4F69\u6234\u3002",CHOKER_INVALID:"\u9879\u5708\u6750\u8D28\u6837\u5F0F\u6216\u523B\u5B57\u683C\u5F0F\u6709\u8BEF\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u540E\u518D\u8BD5\u3002",NO_RECORDED_WOMAN:"\u5F53\u524D\u6CA1\u6709\u53EF\u64CD\u4F5C\u7684\u5DF2\u6536\u5F55\u5973\u6027\uFF0C\u8BF7\u5148\u5728\u5267\u60C5\u4E2D\u6B63\u5F0F\u7ED3\u8BC6\u3002",IMPRINT_INVALID:"\u5370\u8BB0\u90E8\u4F4D\u3001\u7EB9\u6837\u3001\u4E66\u4F53\u6216\u94ED\u6587\u683C\u5F0F\u65E0\u6548\uFF0C\u8BF7\u68C0\u67E5\u540E\u91CD\u8BD5\u3002",IMPRINT_NO_TARGET:"\u672A\u627E\u5230\u76EE\u6807\u5DF2\u6536\u5F55\u5973\u6027\uFF0C\u65E0\u6CD5\u94ED\u523B\u6216\u62B9\u9664\u5370\u8BB0\u3002",IMPRINT_LIMIT_REACHED:"\u8BE5\u5973\u6027\u5168\u90E8 19 \u5904\u8EAB\u4F53\u90E8\u4F4D\u5747\u5DF2\u94ED\u523B\uFF0C\u53EF\u9009\u62E9\u5DF2\u6709\u90E8\u4F4D\u8986\u76D6\u66F4\u65B0\u6216\u5148\u62B9\u9664\u540E\u518D\u523B\u3002",IMPRINT_DUPLICATE_PLACEMENT:"\u540C\u4E00\u8EAB\u4F53\u90E8\u4F4D\u4EC5\u80FD\u4FDD\u7559\u4E00\u679A\u4E13\u5C5E\u5370\u8BB0\uFF0C\u8BF7\u76F4\u63A5\u8986\u76D6\u66F4\u65B0\u8BE5\u90E8\u4F4D\u3002",TOYLINK_LOCKED:"\u5C1A\u672A\u89E3\u9501 TOY\xB7LINK \u7EC8\u7AEF\u63A7\u5236\u6743\u9650\uFF0C\u53EF\u5728\u661F\u613F\u5546\u57CE\u5151\u6362\u6216\u547D\u8FD0\u8F6E\u76D8\u62BD\u53D6\u3002",TOYLINK_NOT_WORN:"\u8BF7\u5148\u4E3A\u8BE5\u4EBA\u7269\u4F69\u6234 TOY\xB7LINK \u88C5\u7F6E\u540E\u518D\u542F\u52A8\u9065\u63A7\u3002",TOYLINK_MISSING:"TOY\xB7LINK \u5185\u5D4C\u6A21\u5757\u672A\u5C31\u7EEA\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u7EC8\u7AEF\u91CD\u8BD5\u3002",TOYLINK_MODE_LOCKED:"\u53E6\u4E00\u4E2A\u7248\u672C\u6B63\u5728\u4F7F\u7528\u4E2D\uFF0C\u8BF7\u5148\u70B9\u51FB\u300C\u6E05\u7A7A\u72B6\u6001\u300D\u540E\u518D\u5207\u6362\u3002",TOYLINK_OTHER_RUNNING:"\u9065\u63A7\u5668\u6B63\u5728\u4F5C\u7528\u4E8E\u53E6\u4E00\u4F4D\u89D2\u8272\uFF0C\u8BF7\u5148\u5173\u95ED\u540E\u518D\u5207\u6362\u3002",IMPRINT_LOCKED:"\u5C1A\u672A\u89E3\u9501\u4E13\u5C5E\u79C1\u5BC6\u5370\u8BB0\u5DE5\u574A\uFF0C\u8BF7\u5148\u5728\u661F\u613F\u5546\u57CE\u300C\u6301\u4E45\u5947\u7269\u300D\u5151\u6362\u540E\u518D\u843D\u5370\u3002",INPUT_NOT_FOUND:"\u5F53\u524D\u754C\u9762\u672A\u68C0\u6D4B\u5230\u804A\u5929\u8F93\u5165\u6846\uFF0C\u8BF7\u624B\u52A8\u68C0\u67E5\u8F93\u5165\u533A\u3002",ABILITY_NOT_OWNED:"\u5C1A\u672A\u89C9\u9192\u8BE5\u9879\u5F02\u80FD\uFF0C\u65E0\u6CD5\u53D1\u52A8\u3002"},cardFace:{settingTitle:"\u5361\u9762\u753B\u8D28",settingSub:"\u8C03\u8282\u661F\u613F\u5361\u5728\u5361\u518C\u3001\u5361\u5305\u4E0E\u8D4C\u573A\u7684\u6750\u8D28\u4E0E\u626B\u5149\u6548\u679C",qualityHigh:"\u6D41\u5149",qualityMed:"\u7CBE\u7B80",qualityLow:"\u6781\u7B80",menuWheelGroup:"\u8F6E\u76D8\u753B\u8D28",menuCardGroup:"\u5361\u9762\u753B\u8D28",menuHigh:"\u5361\u9762\uFF1A\u6D41\u5149",menuMed:"\u5361\u9762\uFF1A\u7CBE\u7B80",menuLow:"\u5361\u9762\uFF1A\u6781\u7B80",pointsUnit:"{n} \u5206",tiers:{gray:"\u7070\u9636\xB7I",red:"\u7EA2\u9636\xB7II",gold:"\u91D1\u9636\xB7III",rainbow:"\u8679\u9636\xB7IV",mystery:"\u661F\u613F\u79D8\u5370"}},binderPage:{backBtn:"\u2190 \u8FD4\u56DE\u8F6E\u76D8",openFullBtn:"\u524D\u5F80\u661F\u613F\u5361\u518C \u203A",filterAll:"\u5168\u90E8",filterRainbow:"\u8679\u9636",filterGold:"\u91D1\u9636",filterRed:"\u7EA2\u9636",filterGray:"\u7070\u9636",filterEmptyTitle:"\u8FD9\u4E00\u6863\u4F4D\u8FD8\u6CA1\u6709\u85CF\u5361",filterEmptySub:"\u5207\u6362\u5176\u4ED6\u6863\u4F4D\u67E5\u770B\uFF0C\u6216\u53BB\u661F\u613F\u5361\u5305\u518D\u542F\u5C01\u4E00\u5305\u3002"},workshop:{common:{gateTagBlocked:"\u672A\u8FBE\u6807",gateRule:"\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60",gateMetricAff:"\u5F53\u524D\u597D\u611F {affection}/70\uFF08\u5DEE {affGap}\uFF09",gateMetricCor:"\u5F53\u524D\u5815\u843D {corruption}/60\uFF08\u5DEE {corGap}\uFF09",btnBlocked:"\u672A\u8FBE\u6807 \xB7 \u597D\u611F\u5DEE {affGap} \u6216\u5815\u843D\u5DEE {corGap}",toylinkThresholdBanner:"\u{1F512} \u6682\u4E0D\u53EF\u542F\u52A8 \xB7 \u9700\u76EE\u6807\u5973\u6027\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF08\u4E8C\u9009\u4E00\u8FBE\u6807\u5373\u53EF\uFF09",backBtn:"\u2190 \u8FD4\u56DE\u6211\u7684",fillInputLabel:"\u540C\u65F6\u5C06\u672C\u6B21\u5F15\u5BFC\u8BCD\u586B\u5165\u804A\u5929\u8F93\u5165\u6846",noWomanEmpty:"\u6682\u65E0\u5DF2\u6536\u5F55\u5973\u6027\u53EF\u843D\u5370\uFF08\u5728\u5267\u60C5\u4E2D\u6B63\u5F0F\u7ED3\u8BC6\u540E\u5373\u53EF\u94ED\u523B\uFF0C\u5F53\u524D\u53EF\u81EA\u7531\u8BD5\u6837\u9884\u89C8\uFF09",noWomanBtn:"\u6682\u65E0\u5DF2\u6536\u5F55\u5973\u6027",goShopBtn:"\u524D\u5F80\u661F\u613F\u5546\u57CE"},imprint:{title:"\u4E13\u5C5E\u79C1\u5BC6\u5370\u8BB0\u5DE5\u574A",gateTitle:"\u6682\u4E0D\u53EF\u5BF9\u3010{name}\u3011\u94ED\u523B\u5370\u8BB0",gateDescEmpty:"\u597D\u611F\u518D\u63D0\u5347 {affGap} \u70B9\uFF0C\u6216\u5815\u843D\u518D\u63D0\u5347 {corGap} \u70B9\uFF08\u4E8C\u9009\u4E00\u8FBE\u6807\u5373\u53EF\uFF09\u540E\u5F00\u653E\u94ED\u523B\uFF1B\u5F53\u524D\u4ECD\u53EF\u81EA\u7531\u8BD5\u6837\u9884\u89C8\u3002",gateDescMarked:"\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u624D\u53EF\u65B0\u589E\u6216\u8986\u76D6\u5370\u8BB0\uFF1B\u5979\u8EAB\u4E0A\u5DF2\u6709\u7684 {count} \u5904\u5370\u8BB0\u4E0D\u4F1A\u81EA\u52A8\u6E05\u9664\uFF0C\u4ECD\u53EF\u968F\u65F6\u62B9\u9664\u3002",footerReasonBlocked:"\u65E0\u6CD5\u5BF9\u3010{name}\u3011\u843D\u5370\uFF1A\u9700\u597D\u611F \u2265 70\uFF08\u5F53\u524D {affection}\uFF09\u6216\u5815\u843D \u2265 60\uFF08\u5F53\u524D {corruption}\uFF09\u3002",targetLabel:"\u94ED\u523B\u5BF9\u8C61",targetStatusEngraved:"\u5DF2\u94ED\u523B\uFF1A{placementShort}",targetStatusEmpty:"\u5C1A\u672A\u94ED\u523B",secPlacement:"\u8EAB\u4F53\u90E8\u4F4D",secPattern:"\u7EB9\u6837\u56FE\u817E",secTextFont:"\u94ED\u6587\u4E0E\u4E66\u4F53",placeGroups:{chest_abdomen:"\u80F8\u8179",waist_glute:"\u8170\u81C0",neck_shoulder:"\u9888\u80A9",lower_limb:"\u4E0B\u80A2",upper_limb:"\u4E0A\u80A2"},secPatternLayer:"\u7EB9\u6837\u56FE\u817E\u5C42",secTextLayer:"\u4E13\u5C5E\u523B\u5B57\u5C42",layerOn:"\u5DF2\u5F00\u542F",layerOff:"\u5DF2\u5173\u95ED",lblPatternScale:"\u56FE\u817E\u7F29\u653E",lblPatternColor:"\u56FE\u817E\u58A8\u8272",lblTextLayout:"\u523B\u5B57\u4F4D\u7F6E",lblTextScale:"\u5B57\u53F7\u7F29\u653E",lblTextAngle:"\u503E\u659C\u89D2\u5EA6",lblTextFont:"\u523B\u5B57\u4E66\u4F53",lblTextColor:"\u6587\u5B57\u58A8\u8272",layouts:{arc_wrap:"\u5F27\u7ED5\u5916\u7F18",above:"\u56FE\u817E\u4E0A\u65B9",below:"\u56FE\u817E\u4E0B\u65B9",side_stamp:"\u72EC\u7ACB\u843D\u6B3E"},scales:{sm:"\u5C0F",md:"\u4E2D",lg:"\u5927"},errBothOff:"\u7EB9\u6837\u56FE\u817E\u5C42\u4E0E\u4E13\u5C5E\u523B\u5B57\u5C42\u81F3\u5C11\u5F00\u542F\u4E00\u9879\u3002",errTextRequired:"\u5DF2\u5F00\u542F\u523B\u5B57\u5C42\uFF0C\u8BF7\u586B\u5199\u81F3\u5C11 1 \u4E2A\u94ED\u6587\u5B57\u7B26\uFF08\u6216\u5173\u95ED\u523B\u5B57\u5C42\uFF09\u3002",textPlaceholder:"\u8F93\u5165\u4E13\u5C5E\u94ED\u6587\uFF08\u53EF\u9009\uFF0C\u6700\u591A 16 \u5B57\uFF09",textLimitHint:"{len}/16 \u5B57",textInvalidHint:"\u4EC5\u652F\u6301\u4E2D\u82F1\u6587\u3001\u6570\u5B57\u3001\u7A7A\u683C\u53CA\u5E38\u7528\u6807\u70B9\uFF0C\u4E0D\u80FD\u5305\u542B\u6362\u884C\u6216\u5C16\u62EC\u53F7\u3002",inspo1:"\u6BCD\u72D7",inspo2:"Eternal",inspo3:"\u8089\u4FBF\u5668",inspo4:"\u4E13\u5C5E\u96CC\u72AC",btnSaveNew:"\u2726 \u94ED\u523B\u4E8E {name} \u7684{placementShort}",placeMarkedAria:"{placeName}\uFF08\u5DF2\u94ED\u523B\uFF09",placeEmptyAria:"{placeName}\uFF08\u672A\u94ED\u523B\uFF09",placeLegend:"\u7EA2\u70B9\u8868\u793A\u6B64\u5904\u5DF2\u94ED\u523B\uFF08\u70B9\u51FB\u5373\u8F7D\u5165\u5E76\u53EF\u8986\u76D6\u66F4\u65B0\uFF09",statusMulti:"\u5DF2\u94ED\u523B {count} \u5904 \u25BE",statusFull:"\u5DF2\u523B\u6EE1 {count}/19 \u5904 \u25BE",summaryLine:"\u5DF2\u94ED\u523B {count} \u5904 \xB7 {places}",summaryFullLine:"\u5DF2\u523B\u6EE1 19/19 \u5904\u4E0A\u9650 \xB7 \u70B9\u4EFB\u610F\u90E8\u4F4D\u53EF\u8986\u76D6\u66F4\u65B0\u6216\u62B9\u9664",stageSlotMarked:"\u6B64\u5904\u5DF2\u523B",stageSlotEmpty:"\u6B64\u5904\u672A\u523B",btnNoPlace:"\u672A\u9009\u62E9\u94ED\u523B\u90E8\u4F4D",btnUpdatePlace:"\u2726 \u66F4\u65B0 {placementShort} \u5370\u8BB0",btnRemovePlace:"\u62B9\u9664\u6B64\u5904",btnRemoveAll:"\u62B9\u9664\u5168\u90E8\u5370\u8BB0",overwritePlaceTitle:"\u786E\u8BA4\u8986\u76D6\u6B64\u90E8\u4F4D\u5370\u8BB0",overwritePlaceText:"{name} \u7684{placementShort}\u5DF2\u523B\u6709\u300C{oldLabel}\u300D\uFF0C\u786E\u8BA4\u8986\u76D6\u66F4\u65B0\u4E3A\u65B0\u7684\u300C{newLabel}\u300D\u5417\uFF1F\uFF08\u5176\u4F59\u90E8\u4F4D\u5370\u8BB0\u4E0D\u53D7\u5F71\u54CD\uFF09",removePlaceTitle:"\u786E\u8BA4\u62B9\u9664\u6B64\u90E8\u4F4D\u5370\u8BB0",removePlaceText:"\u4EC5\u62B9\u9664\u3010{name}\u3011{placementShort}\u5904\u7684\u300C{label}\u300D\u5370\u8BB0\uFF0C\u5176\u4F59 {remain} \u5904\u5370\u8BB0\u5C06\u4FDD\u7559\u4E0D\u53D7\u5F71\u54CD\u3002\u786E\u8BA4\u7EE7\u7EED\u5417\uFF1F",removeLastPlaceText:"\u4EC5\u62B9\u9664\u3010{name}\u3011{placementShort}\u5904\u7684\u300C{label}\u300D\u5370\u8BB0\u3002\u8FD9\u662F\u5979\u8EAB\u4E0A\u7684\u6700\u540E\u4E00\u5904\u5370\u8BB0\uFF0C\u62B9\u9664\u540E\u5979\u7684\u8089\u4F53\u6863\u6848\u5C06\u6062\u590D\u539F\u6709\u8BB0\u5F55\u3002",removePlaceConfirm:"\u786E\u8BA4\u62B9\u9664\u6B64\u90E8\u4F4D",removeAllTitle:"\u786E\u8BA4\u62B9\u9664\u5168\u90E8\u5370\u8BB0",removeAllText:"\u786E\u8BA4\u4E00\u6B21\u6027\u62B9\u9664\u3010{name}\u3011\u8EAB\u4E0A\u7684\u5168\u90E8 {count} \u5904\u4E13\u5C5E\u5370\u8BB0\uFF1F\u62B9\u9664\u540E\u5979\u7684\u8089\u4F53\u6863\u6848\u5C06\u6062\u590D\u539F\u6709\u8BB0\u5F55\u3002",removeAllConfirm:"\u786E\u8BA4\u5168\u90E8\u62B9\u9664",savePlaceOkToast:"\u5DF2\u5728\u3010{name}\u3011\u7684{placementShort}\u94ED\u523B\u300C{label}\u300D\uFF08\u5171 {total}/19 \u5904\uFF09\u3002",updatePlaceOkToast:"\u5DF2\u66F4\u65B0\u3010{name}\u3011{placementShort}\u5904\u7684\u300C{label}\u300D\u5370\u8BB0\u3002",removePlaceOkToast:"\u5DF2\u62B9\u9664\u3010{name}\u3011{placementShort}\u5904\u7684\u5370\u8BB0\uFF0C\u5176\u4F59 {remain} \u5904\u5370\u8BB0\u5DF2\u4FDD\u7559\u3002",removeAllOkToast:"\u5DF2\u62B9\u9664\u3010{name}\u3011\u5168\u90E8 {count} \u5904\u4E13\u5C5E\u5370\u8BB0\uFF0C\u8089\u4F53\u6863\u6848\u5DF2\u8FD8\u539F\u3002",inputDraft:"\u3010\u4E13\u5C5E\u5370\u8BB0\uFF1A{name}\u3011\u6211\u521A\u521A\u5728{name}\u7684{anchor}\u94ED\u523B\u4E86{colorName}\u8272\u300C{patternName}\u300D\u4E13\u5C5E\u5370\u8BB0{textClause}\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u81EA\u7136\u63CF\u5199\u5979\u5BDF\u89C9\u6216\u89E6\u78B0\u8FD9\u679A\u65B0\u5370\u8BB0\u65F6\u7684\u89E6\u611F\u3001\u7F9E\u803B\u4E0E\u81E3\u670D\u53CD\u5E94\u3002",studioSub:"\u6309\u90E8\u4F4D\u4E00\u5BF9\u4E00 \xB7 \u6700\u591A 19 \u5904",closeBtn:"\u2715 \u5173\u95ED",secColorFont:"\u58A8\u8272\u4E0E\u4E66\u4F53",secLayerSwitch:"\u56FE\u5C42\u5F00\u5173",secLayerSwitchDesc:"\u7EB9\u6837\u4E0E\u523B\u5B57\u53EF\u72EC\u7ACB\u7EC4\u5408",metaAnchorLabel:"\u843D\u70B9\uFF1A",metaPrivacyLabel:"\u79C1\u5BC6\uFF1A",targetStateEligible:"\u53EF\u94ED\u523B",targetStatePreview:"\u8BD5\u6837\u9884\u89C8",targetEmptyQuota:"\u7ED3\u8BC6\u6536\u5F55\u540E\u5373\u53EF\u6B63\u5F0F\u843D\u5370",statAffLabel:"\u5F53\u524D\u597D\u611F",statCorLabel:"\u5F53\u524D\u5815\u843D"},choker:{title:"\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\u5DE5\u574A",gateTitle:"\u6682\u4E0D\u53EF\u4E3A\u3010{name}\u3011\u4F69\u6234\u6216\u66F4\u65B0\u9879\u5708",gateDescEmpty:"\u597D\u611F\u518D\u63D0\u5347 {affGap} \u70B9\uFF0C\u6216\u5815\u843D\u518D\u63D0\u5347 {corGap} \u70B9\uFF08\u4E8C\u9009\u4E00\u8FBE\u6807\u5373\u53EF\uFF09\u540E\u5F00\u653E\u4F69\u6234\uFF1B\u5F53\u524D\u53EF\u81EA\u7531\u9884\u89C8\u6B3E\u5F0F\u3002",gateDescWorn:"\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u624D\u53EF\u4F69\u6234\u6216\u66F4\u6362\u6B3E\u5F0F\uFF1B\u5979\u9888\u95F4\u5DF2\u4F69\u6234\u7684\u9879\u5708\u4E0D\u4F1A\u81EA\u52A8\u6458\u9664\uFF0C\u4F60\u4ECD\u53EF\u968F\u65F6\u624B\u52A8\u6458\u4E0B\u3002",footerReasonLocked:"\u9700\u5148\u5728\u661F\u613F\u5546\u57CE\u5151\u6362\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\uFF081,800\u2726\uFF09\uFF0C\u4E14\u76EE\u6807\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\u3002",footerReasonBlocked:"\u65E0\u6CD5\u4E3A\u3010{name}\u3011{action}\uFF1A\u9700\u597D\u611F \u2265 70\uFF08\u5F53\u524D {affection}\uFF09\u6216\u5815\u843D \u2265 60\uFF08\u5F53\u524D {corruption}\uFF09\u3002",lockedBanner:"\u{1F512} \u9884\u89C8\u6A21\u5F0F \xB7 \u9700\u5728\u661F\u613F\u5546\u57CE\u5151\u6362\u9ED1\u66DC\u8A93\u7EA6\u9879\u5708\uFF081,800\u2726\uFF09\u540E\u65B9\u53EF\u8D50\u4E88\u4F69\u6234",targetLabel:"\u8D50\u4E88\u5BF9\u8C61",targetStatusWorn:"\u4F69\u6234\u4E2D\uFF1A{styleName}",targetStatusNone:"\u672A\u4F69\u6234",wornListSummary:"\u5DF2\u8D50\u4E88 {count} \u4EBA\uFF1A{names}",secStyle:"\u9879\u5708\u6750\u8D28\u6837\u5F0F",secInscription:"\u94ED\u724C\u523B\u5B57",insPlaceholder:"\u8F93\u5165\u94ED\u724C\u523B\u5B57\uFF08\u53EF\u9009\uFF0C\u6700\u591A 12 \u5B57\uFF09",insLimitHint:"{len}/12 \u5B57",btnWear:"\u26D3\uFE0F \u4E3A {name} \u4F69\u6234\u9879\u5708",btnUpdate:"\u26D3\uFE0F \u66F4\u65B0\u9879\u5708\u6B3E\u5F0F",btnRemove:"\u6458\u4E0B",btnLocked:"\u672A\u89E3\u9501 \xB7 \u4EC5\u9884\u89C8",wearConfirmTitle:"\u786E\u8BA4\u8D50\u4E88\u8A93\u7EA6\u9879\u5708",wearConfirmText:"\u786E\u8BA4\u4E3A\u3010{name}\u3011\u4F69\u6234\u300C{styleName}\u300D\uFF1F\u4F69\u6234\u540E\u65C1\u4EBA\u4EC5\u89C6\u4F5C\u5BFB\u5E38\u7EC6\u9888\u94FE\uFF0C\u5979\u7684\u7A7F\u642D\u6863\u6848\u5C06\u540C\u6B65\u8BB0\u5F55\u3002",wearConfirmOk:"\u786E\u8BA4\u4F69\u6234",removeConfirmTitle:"\u786E\u8BA4\u6458\u4E0B\u8A93\u7EA6\u9879\u5708",removeConfirmText:"\u786E\u8BA4\u6458\u4E0B\u3010{name}\u3011\u9888\u95F4\u7684\u8A93\u7EA6\u9879\u5708\uFF1F\u6458\u4E0B\u540E\u5979\u7684\u7A7F\u642D\u6863\u6848\u5C06\u79FB\u9664\u5BF9\u5E94\u8BB0\u5F55\u3002",removeConfirmOk:"\u786E\u8BA4\u6458\u4E0B",wearOkToast:"\u5DF2\u4E3A\u3010{name}\u3011\u6234\u4E0A\u300C{styleName}\u300D\u8A93\u7EA6\u9879\u5708\u3002",wearAndFillToast:"\u5DF2\u4E3A\u3010{name}\u3011\u4F69\u6234\u8A93\u7EA6\u9879\u5708\uFF0C\u5E76\u5C06\u5F15\u5BFC\u8BCD\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\u3002",wearInputDraft:"\u3010\u4F69\u6234\u9879\u5708\uFF1A{name}\u3011\u6211\u628A\u300C{styleName}\u300D\u6263\u4E0A{name}\u7684\u9888\u95F4{inscription}\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u5728\u6B63\u6587\u4E2D\u81EA\u7136\u6F14\u7ECE\u4F69\u6234\u65F6\u7684\u52A8\u4F5C\u3001\u5979\u5F53\u573A\u7684\u53CD\u5E94\u4E0E\u5FC3\u7406\uFF0C\u4EE5\u53CA\u65C1\u4EBA\u773C\u4E2D\u5B83\u53EA\u662F\u4E00\u6761\u5BFB\u5E38\u7EC6\u9888\u94FE\u7684\u9519\u89C9\u3002",removeOkToast:"\u5DF2\u6458\u4E0B\u3010{name}\u3011\u7684\u8A93\u7EA6\u9879\u5708\uFF0C\u7A7F\u642D\u6863\u6848\u5DF2\u540C\u6B65\u66F4\u65B0\u3002"},toylink:{title:"TOY\xB7LINK \u9065\u63A7\u7EC8\u7AEF",pillLocked:"\u9884\u89C8\u53EA\u8BFB",pillIdle:"\u5F85\u673A",pillLive:"\u8FD0\u884C\u4E2D \xB7 {modeName} \xB7 \u7EDD\u9876{peak}\u6B21",lockedBanner:"\u{1F512} \u9884\u89C8\u6A21\u5F0F \xB7 \u9700\u5728\u661F\u613F\u5546\u57CE\u5151\u6362 TOY\xB7LINK \u7EC8\u7AEF\u63A7\u5236\uFF083,600\u2726\uFF09\u540E\u65B9\u53EF\u64CD\u4F5C",gateNoWoman:"\u6682\u65E0\u5DF2\u6536\u5F55\u5973\u6027\uFF0C\u5728\u5267\u60C5\u4E2D\u6B63\u5F0F\u7ED3\u8BC6\u4E14\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u540E\u5373\u53EF\u4F7F\u7528\u3002",gateTitle:"\u6682\u4E0D\u53EF\u5BF9\u3010{name}\u3011\u542F\u52A8\u9065\u63A7",gateDesc:"\u597D\u611F\u518D\u63D0\u5347 {affGap} \u70B9\uFF0C\u6216\u5815\u843D\u518D\u63D0\u5347 {corGap} \u70B9\uFF08\u4E8C\u9009\u4E00\u8FBE\u6807\u5373\u53EF\uFF09\u540E\u5F00\u653E\u4F69\u6234\u4E0E\u542F\u52A8\u3002",targetLabel:"\u4F5C\u7528\u5BF9\u8C61",tagRunning:"\u8FD0\u884C\u4E2D",tagWorn:"\u4F69\u6234\u4E2D",tagUnworn:"\u672A\u4F69\u6234",btnWear:"\u4E3A\u5979\u4F69\u6234",btnUnwear:"\u6458\u4E0B\u88C5\u7F6E",wearHint:"\u9700\u5148\u4E3A\u3010{name}\u3011\u4F69\u6234\u88C5\u7F6E\u540E\u624D\u53EF\u542F\u52A8\u9065\u63A7",otherRunningHint:"\u9065\u63A7\u5668\u6B63\u5728\u4F5C\u7528\u4E8E\u3010{name}\u3011\uFF0C\u8BF7\u5148\u505C\u4E0B\u540E\u518D\u5207\u6362",stageIdle:"\u5F85\u673A",stageSubWorn:"{name} \xB7 \u4F69\u6234\u4E2D \xB7 \u7EDD\u9876 0 \u6B21",stageSubUnworn:"{name} \xB7 \u672A\u4F69\u6234",stageSubLive:"\u7B2C {stage} \u9636\u6BB5 \xB7 \u7EDD\u9876 {peak} \u6B21",peakBadge:"\u7EDD\u9876 {peak} \u6B21",peakBadgeCapped:"\u7EDD\u9876 {peak} \u6B21\uFF08\u6EE1\u8F7D\uFF09",stackBadge:"{tierLabel} \xB7 {rateMult}\xD7",stageMetaLine:"{stageName} \xB7 {tierLabel} \xB7 \u7EDD\u9876 {peak} \u6B21",tierNames:{0:"\u521D\u6F6E",1:"\u4E00\u91CD\u53E0\u52A0",2:"\u4E8C\u91CD\u53E0\u52A0",3:"\u8FC7\u8F7D\u53E0\u52A0"},legendAro:"\u5916\u73AF \xB7 \u7D2F\u79EF\uFF08\u7C89\u2192\u7D2B\u2192\u7EA2\uFF09",legendEnv:"\u5185\u73AF \xB7 \u5B9E\u65F6\u6CE2\u5F62",secModes:"\u4E5D\u6A21\u6CE2\u5F62",secParams:"\u53C2\u6570\u4E0E\u8DDD\u79BB",lblPow:"\u5F3A\u5EA6",lblFreq:"\u9891\u7387",lblHere:"\u5979\u5728",hereWith:"\u73B0\u573A",hereAway:"\u522B\u5904",btnStart:"\u542F \u52A8",btnStop:"\u505C \u4E0B",btnWrite:"\u5199\u8FDB\u6B63\u6587",footerLocked:"\u672A\u89E3\u9501\u72B6\u6001\u4EC5\u53EF\u6D4F\u89C8\u754C\u9762\uFF0C\u524D\u5F80\u661F\u613F\u5546\u57CE\u5151\u6362\u540E\u5373\u53EF\u542F\u7528\u5168\u90E8\u63A7\u5236\u3002",footerRunning:"\u8FDE\u7EED\u8FD0\u8F6C\u4E2D \xB7 \u7EDD\u9876\u540E\u81EA\u52A8\u8FDB\u5165\u66F4\u9AD8\u53E0\u52A0\u6001\uFF0C\u70B9\u51FB\u300C\u5199\u8FDB\u6B63\u6587\u300D\u53EF\u540C\u6B65\u5B8C\u6574\u8FC7\u7A0B\u3002",writeOkToast:"\u5DF2\u5C06 TOY\xB7LINK \u5B8C\u6574\u8FC7\u7A0B\u5F15\u5BFC\u8BCD\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u5373\u53EF\u751F\u6548\u3002",peakToast:"\u3010{name}\u3011\u7B2C {peak} \u6B21\u7EDD\u9876 \xB7 \u8FDB\u5165{tierLabel}\uFF08{rateMult}\xD7\uFF09",unwearOkToast:"\u5DF2\u6458\u4E0B\u3010{name}\u3011\u7684 TOY\xB7LINK \u88C5\u7F6E\u3002",lblScene:"\u5F53\u524D\u5904\u5883",lblExposure:"\u5931\u6001\u98CE\u9669",expSafe:"{exp}%",expDanger:"{exp}% \xB7 \u6FD2\u4E34\u5931\u6001",expBroken:"\u5DF2\u5931\u6001\xD7{count}",btnEdgeLockOff:"\u{1F512} \u5BF8\u6B62\u9501 \xB7 \u5173",btnEdgeLockOn:"\u{1F512} \u5BF8\u6B62\u9501\u6B7B ({count}\u6B21)",btnShock:"\u{1F4A5} \u77AC\u65F6\u5F3A\u523A",btnShockBreak:"\u{1F4A5} \u5F3A\u523A\u7834\u9632 (+18%)",btnShockCd:"\u5F3A\u523A\u51B7\u5374 ({sec}s)",btnBurst:"\u26A1 \u7834\u9876\u91CA\u653E (\xD7{mult})",stageSubEdging:"\u5BF8\u6B62\u9501\u6B7B 96% \xB7 \u5DF2\u5BF8\u6B62 {count} \u6B21",stageSubResisting:"\u5979\u5728\u5939\u817F\u5F3A\u5FCD \xB7 \u70B9\u3010\u5F3A\u523A\u3011\u7834\u9632",feedTagIdle:"\u5F85\u673A\u76D1\u6D4B",feedTagLive:"\u5B9E\u65F6\u4F53\u611F",feedTagResist:"\u26A0\uFE0F \u5F3A\u5FCD\u5BF9\u6297\u4E2D",feedTagEdge:"\u{1F512} \u5BF8\u6B62\u70BC\u72F1",feedTagPeak:"\u26A1 \u7EDD\u9876\u6E83\u5824",feedTeleIdle:"\u5FC3\u7387 76bpm \xB7 \u9632\u7EBF\u5E73\u7A33",feedTeleLive:"\u5FC3\u7387 {bpm}bpm \xB7 \u808C\u5F20\u529B\uFF1A{tension}",tensions:{1:"\u5FAE\u7EF7",2:"\u7D27\u7EF7",3:"\u98A4\u6817",4:"\u75C9\u631B",5:"\u6FD2\u6E83"},feeds:{idle:"\u7B49\u5F85\u542F\u52A8\u4FE1\u53F7\uFF0C\u9690\u85CF\u5F0F\u8DF3\u86CB\u5DF2\u8D34\u5408\u5979\u4F53\u5185\u6700\u6DF1\u5904\u7684\u8F6F\u8089\u3002",start_with:"\u55E1\u9E23\u9AA4\u7136\u5728\u4F53\u5185\u70B8\u5F00\uFF0C\u5979\u8EAB\u8EAF\u731B\u5730\u4E00\u50F5\uFF0C\u4E0B\u610F\u8BC6\u504F\u5934\u770B\u5411\u4F60\u624B\u91CC\u7684\u624B\u673A\u3002",start_away:"\u8FDC\u7AEF\u4FE1\u53F7\u63A5\u901A\u77AC\u95F4\uFF0C\u6BEB\u65E0\u9632\u5907\u7684\u5979\u547C\u5438\u9AA4\u505C\uFF0C\u624B\u6307\u731B\u5730\u6525\u7D27\u4E86\u8EAB\u8FB9\u7684\u652F\u6491\u7269\u3002",stage_1:"\u7EC6\u5BC6\u9165\u9EBB\u987A\u7740\u5C3E\u690E\u5F80\u4E0A\u722C\uFF0C\u5979\u6084\u6084\u5E76\u62E2\u53CC\u819D\uFF0C\u8BD5\u56FE\u88C5\u4F5C\u82E5\u65E0\u5176\u4E8B\u3002",stage_2:"\u6E29\u70ED\u9178\u80C0\u5728\u817F\u5FC3\u6F2B\u5F00\uFF0C\u5979\u8033\u6839\u6CDB\u8D77\u6F6E\u7EA2\uFF0C\u5F00\u53E3\u8BF4\u8BDD\u7684\u5C3E\u97F3\u5F00\u59CB\u53D1\u98D8\u3002",stage_3:"\u6FE1\u6E7F\u70ED\u6D41\u5F7B\u5E95\u5931\u63A7\uFF0C\u5979\u8170\u80A2\u53D1\u8F6F\u5F80\u4E0B\u584C\uFF0C\u538B\u4E0D\u4F4F\u7684\u7EC6\u788E\u9F3B\u97F3\u4ECE\u5507\u7F1D\u5F80\u5916\u6F0F\u3002",stage_4:"\u5FEB\u611F\u903C\u8FD1\u4E34\u754C\uFF0C\u5979\u773C\u89D2\u6CDB\u8D77\u751F\u7406\u6027\u6CEA\u5149\uFF0C\u811A\u8DBE\u6B7B\u6B7B\u8737\u7D27\uFF0C\u7406\u667A\u6B63\u5728\u6210\u7247\u5D29\u584C\u3002",stage_5:"\u5168\u8EAB\u808C\u8089\u7EF7\u6210\u62C9\u6EE1\u7684\u5F13\u5F26\uFF0C\u77B3\u5B54\u5931\u7126\u53D1\u98A4\uFF0C\u53EA\u5269\u6700\u540E\u4E00\u4E1D\u9632\u7EBF\u60AC\u5728\u5D29\u6E83\u8FB9\u7F18\u3002",resist_start:"\u26A0\uFE0F \u5979\u6B63\u6B7B\u6B7B\u5939\u7D27\u5927\u817F\u5185\u4FA7\u3001\u54AC\u4F4F\u4E0B\u5507\u5C4F\u606F\u5F3A\u5FCD\uFF0C\u8BD5\u56FE\u628A\u6D8C\u4E0A\u6765\u7684\u9AD8\u6F6E\u786C\u538B\u4E0B\u53BB\uFF01",resist_hold:"\u5979\u989D\u89D2\u6C81\u51FA\u7EC6\u6C57\uFF0C\u53CC\u817F\u5939\u5F97\u53D1\u6296\uFF0C\u6B63\u5728\u82E6\u82E6\u6B7B\u6491\u5BF9\u6297\u4F53\u5185\u7684\u9707\u98A4\u2026\u2026",resist_pass:"\u5979\u5927\u53E3\u5598\u606F\u7740\u52C9\u5F3A\u538B\u4E0B\u4E00\u6CE2\u6D6A\u6F6E\uFF0C\u4F46\u817F\u5FC3\u5DF2\u88AB\u6C57\u6C34\u4E0E\u871C\u6DB2\u6FE1\u6E7F\u5F97\u66F4\u52A0\u654F\u611F\u3002",shock_hit:"\u{1F4A5} \u6EE1\u5E45\u5F3A\u523A\u76F4\u63A5\u8D2F\u7A7F\u654F\u611F\u70B9\uFF01\u5979\u5939\u7D27\u7684\u53CC\u817F\u5267\u70C8\u4E00\u62BD\uFF0C\u6574\u6761\u9632\u7EBF\u5F53\u573A\u6E83\u6563\uFF01",shock_normal:"\u{1F4A5} \u51B7\u4E0D\u9632\u7684\u4E00\u8BB0\u9AD8\u538B\u91CD\u51FB\u72E0\u72E0\u9876\u5728\u6700\u6DF1\u5904\uFF0C\u649E\u5F97\u5979\u95F7\u54FC\u4E00\u58F0\u3001\u8170\u8EAB\u77AC\u95F4\u8F6F\u584C\uFF01",edge_hit_1:"\u{1F512} \u5361\u5728 96% \u7EDD\u9876\u8FB9\u7F18\u9AA4\u7136\u65AD\u6D41\uFF01\u5C06\u6CC4\u672A\u6CC4\u7684\u9178\u9EBB\u8BA9\u5979\u6D51\u8EAB\u6253\u98A4\uFF0C\u5589\u95F4\u6EA2\u51FA\u59D4\u5C48\u7684\u545C\u54BD\u3002",edge_hit_2:"\u{1F512} \u7B2C {count} \u6B21\u5728\u6700\u9AD8\u70B9\u88AB\u786C\u751F\u751F\u62FD\u56DE\uFF01\u5979\u817F\u5FC3\u62BD\u6410\u7740\u5939\u7A7A\uFF0C\u773C\u795E\u8FF7\u4E71\u5730\u98A4\u58F0\u6C42\u4F60\u7ED9\u5979\u4E2A\u75DB\u5FEB\u3002",edge_hit_3:"\u{1F512} \u8FDE\u7EED {count} \u6B21\u5BF8\u6B62\u6298\u78E8\u5F7B\u5E95\u51FB\u7A7F\u4E86\u5979\u7684\u77DC\u6301\uFF0C\u5979\u5C0F\u8179\u4E00\u8DF3\u4E00\u8DF3\u5730\u75C9\u631B\uFF0C\u51E0\u4E4E\u8981\u54ED\u51FA\u6765\u3002",crave_high:"\u{1F525} \u300C\u64A9\u62E8\u300D\u628A\u5979\u540A\u5F97\u6B32\u706B\u711A\u8EAB\uFF08\u6E34\u6C42\u5EA6 {crave}%\uFF09\uFF0C\u5979\u7684\u8170\u81C0\u6B63\u4E0D\u81EA\u89C9\u5730\u968F\u7740\u7A7A\u62CD\u8F7B\u8F7B\u78E8\u8E6D\u3002",burst_release:"\u26A1 \u5BF8\u6B62\u9501\u8F70\u7136\u89E3\u5F00\uFF01\u79EF\u538B\u5DF2\u4E45\u7684\u706D\u9876\u5FEB\u611F\u5982\u51B3\u5824\u72C2\u6F6E\u822C\u77AC\u95F4\u5C06\u5979\u5F7B\u5E95\u541E\u6CA1\uFF01",peak_1:"\u26A1 \u7B2C 1 \u6B21\u7EDD\u9876\uFF01\u5979\u6B7B\u6B7B\u54AC\u4F4F\u5507\u74E3\uFF0C\u5C0F\u8179\u6DF1\u5904\u5267\u70C8\u6536\u7F29\u75C9\u631B\uFF0C\u6574\u4E2A\u4EBA\u5728\u4F59\u97F5\u4E2D\u8F7B\u8F7B\u62BD\u6CE3\u3002",peak_2:"\u26A1 \u8FDE\u7EED\u7B2C 2 \u6B21\u7EDD\u9876\uFF01\u524D\u4E00\u6CE2\u9AD8\u6F6E\u5C1A\u672A\u5E73\u606F\u4FBF\u88AB\u5F3A\u884C\u63A8\u4E0A\u65B0\u5CF0\uFF0C\u5979\u53CC\u817F\u5931\u529B\u5F7B\u5E95\u8F6F\u6210\u4E00\u6EE9\u6625\u6C34\u3002",peak_3:"\u26A1 \u7B2C {peak} \u6B21\u8FC7\u8F7D\u7EDD\u9876\uFF01\u8FDE\u7EF5\u4E0D\u7EDD\u7684\u9AD8\u6F6E\u53E0\u6D6A\u5C06\u5979\u610F\u8BC6\u5F7B\u5E95\u6405\u767D\uFF0C\u53EA\u5269\u4E0D\u53D7\u63A7\u7684\u75C9\u631B\u4E0E\u6C42\u9976\u3002",exposed_hit:"\u26A0\uFE0F \u5931\u6001\u7834\u9632\uFF01\u5267\u70C8\u523A\u6FC0\u4E0B\u5979\u7EC8\u4E8E\u6CA1\u80FD\u515C\u4F4F\u58F0\u97F3\uFF0C\u5F53\u573A\u6F0F\u51FA\u7F9E\u803B\u5598\u606F\u3001\u53CC\u817F\u4E00\u8F6F\u5931\u6001\u6276\u4F4F\u684C\u6CBF\uFF01"},modeClauses:{pulse:"\u4E00\u8BB0\u8BB0\u77ED\u4FC3\u6DF1\u51FF\u4E13\u6311\u5979\u521A\u677E\u6C14\u7684\u7A7A\u6863\u843D\u4E0B\uFF0C\u628A\u5979\u6697\u81EA\u54AC\u7259\u5E76\u817F\u7684\u5FCD\u8010\u9632\u7EBF\u4E00\u4E0B\u4E0B\u51FF\u7A7F",wave:"\u5982\u6E29\u70ED\u6F6E\u6C34\u822C\u5C42\u5C42\u6F2B\u8FC7\u654F\u611F\u6DF1\u5904\uFF0C\u9000\u6F6E\u65F6\u7684\u7A7A\u865A\u611F\u903C\u5F97\u5979\u817F\u5FC3\u6CE5\u6CDE\u3001\u8170\u81C0\u4E0B\u610F\u8BC6\u8FCE\u5408\u8FFD\u9010",heart:"\u8D34\u7740\u8109\u640F\u7684\u4E00\u8F7B\u4E00\u91CD\u53CC\u8FDE\u8DF3\u52A8\uFF0C\u6084\u65E0\u58F0\u606F\u5730\u593A\u8D70\u5979\u7684\u547C\u5438\u8282\u594F\uFF0C\u8BA9\u5979\u5728\u5916\u4EBA\u9762\u524D\u8138\u988A\u6EDA\u70EB\u5374\u65E0\u5904\u53D1\u4F5C",ramp:"\u4ECE\u4F4E\u5FAE\u9165\u9EBB\u4E00\u8DEF\u6B8B\u5FCD\u62C9\u5347\u81F3\u9876\u5CF0\u53C8\u9AA4\u7136\u62BD\u79BB\uFF0C\u6BCF\u4E00\u6B21\u91CD\u65B0\u722C\u5761\u90FD\u8BA9\u5979\u56E0\u9884\u77E5\u5373\u5C06\u5230\u6765\u7684\u9AD8\u5CF0\u800C\u6D51\u8EAB\u7D27\u7EF7\u53D1\u98A4",chaos:"\u6BEB\u65E0\u89C4\u5F8B\u7684\u5FFD\u8F7B\u5FFD\u91CD\u4E0E\u51B7\u4E0D\u9632\u7684\u6DF1\u5904\u5F3A\u523A\uFF0C\u8BA9\u5979\u5F7B\u5E95\u9884\u5224\u4E0D\u4E86\u4E0B\u4E00\u62CD\uFF0C\u8FDE\u52C9\u5F3A\u7EF4\u6301\u7684\u8868\u60C5\u7BA1\u7406\u90FD\u88AB\u649E\u5F97\u652F\u79BB\u7834\u788E",tease:"\u957F\u6BB5\u7A7A\u767D\u95F4\u4EC5\u7559\u873B\u8713\u70B9\u6C34\u822C\u7684\u522E\u8E6D\uFF0C\u628A\u5979\u6B7B\u6B7B\u540A\u5728\u6500\u5347\u8FB9\u7F18\u4E0D\u5F97\u89E3\u8131\uFF0C\u4F53\u5185\u7A7A\u865A\u4E0E\u6E34\u671B\u88AB\u540A\u5230\u6781\u81F4\u3001\u4E3B\u52A8\u5939\u7D27\u817F\u5FC3\u7948\u6C42\u66F4\u91CD\u4E00\u70B9",storm:"\u5BC6\u4E0D\u900F\u98CE\u7684\u9AD8\u9891\u72C2\u66B4\u9707\u98A4\u5F7B\u5E95\u78BE\u788E\u7406\u667A\uFF0C\u4E0D\u7ED9\u5979\u7559\u51FA\u534A\u79D2\u6362\u6C14\u7A7A\u9699\uFF0C\u903C\u5F97\u5979\u5C0F\u8179\u62BD\u6410\u3001\u8FDE\u538B\u5728\u5589\u5499\u91CC\u7684\u5A9A\u541F\u90FD\u515C\u4E0D\u4F4F\u5F80\u5916\u6EA2",edge:"\u5728\u5373\u5C06\u6500\u4E0A\u9876\u5CF0\u768496%\u6B7B\u7EBF\u5904\u4E00\u6B21\u6B21\u9AA4\u7136\u62BD\u7A7A\u64A4\u529B\uFF0C\u628A\u5C06\u6CC4\u672A\u6CC4\u7684\u9178\u80C0\u903C\u6210\u706D\u9876\u6298\u78E8",rush:"\u6BEB\u65E0\u94FA\u57AB\u5730\u6EE1\u529F\u7387\u5168\u5F00\u78BE\u538B\uFF0C\u4E00\u6B21\u7EDD\u9876\u5C1A\u672A\u5E73\u606F\u4FBF\u5728\u6781\u5EA6\u654F\u611F\u7684\u4F59\u97F5\u4E2D\u5F3A\u884C\u608D\u7136\u63A8\u5165\u4E0B\u4E00\u6CE2\u9AD8\u6F6E\u53E0\u6D6A"},wearConfirmTitle:"\u786E\u8BA4\u4E3A\u3010{name}\u3011\u4F69\u6234\u9065\u63A7\u8DF3\u86CB\uFF1F",wearConfirmBody:"\u786E\u8BA4\u540E\u5C06\u8FDB\u5165\u843D\u70B9\u9009\u62E9\uFF0C\u5E76\u628A\u300C\u4E3A\u5979\u4F69\u6234\u88C5\u7F6E\u300D\u7684\u5267\u60C5\u5F15\u5BFC\u5199\u5165\u804A\u5929\u8F93\u5165\u6846\u3002\u4E0B\u4E00\u8F6E\u6B63\u6587\u4F1A\u7EC6\u81F4\u5C55\u5F00\u5979\u63A5\u53D7\u5E76\u7F6E\u5165\u8FD9\u679A\u9690\u85CF\u5F0F\u8DF3\u86CB\u7684\u5168\u8FC7\u7A0B\u4E0E\u7F9E\u803B\u53CD\u5E94\u3002",wearConfirmOk:"\u786E\u8BA4\uFF0C\u9009\u62E9\u843D\u70B9",wearConfirmCancel:"\u6682\u4E0D\u4F69\u6234",wearLocTitle:"\u9009\u62E9\u3010{name}\u3011\u6B64\u523B\u7684\u4F69\u6234\u843D\u70B9",wearLocSub:"\u4F69\u6234\u672C\u8EAB\u5C31\u662F\u4E00\u573A\u620F\u2014\u2014\u5148\u786E\u5B9A\u5979\u6B64\u523B\u662F\u5728\u4F60\u9762\u524D\uFF0C\u8FD8\u662F\u8EAB\u5904\u522B\u5904\uFF1A",wearLocWithTitle:"\u73B0\u573A \xB7 \u5C31\u5728\u4F60\u9762\u524D",wearLocWithDesc:"\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u5199\u51FA\u4F60\u5728\u5979\u8EAB\u65C1\u4EB2\u624B\u66FF\u5979\u6234\u4E0A\u3001\u6216\u5F53\u9762\u770B\u7740\u5979\u7F9E\u803B\u7F6E\u5165\u7684\u5168\u8FC7\u7A0B\u3002",wearLocAwayTitle:"\u522B\u5904 \xB7 \u8FDC\u7A0B\u6307\u4EE4\u4F69\u6234",wearLocAwayDesc:"\u4E0B\u4E00\u8F6E\u5207\u5230\u5979\u7684\u72EC\u7ACB\u89C6\u89D2\uFF0C\u5199\u51FA\u5979\u6536\u5230\u4F60\u7684\u79C1\u5BC6\u6307\u4EE4\u540E\uFF0C\u5728\u6307\u5B9A\u5904\u5883\u4E0B\u81EA\u884C\u6234\u4E0A\u7684\u8FC7\u7A0B\u3002",wearLocSceneLabel:"\u6307\u5B9A\u5979\u6B64\u523B\u6240\u5728\u7684\u522B\u5904\u5904\u5883",wearLocBack:"\u8FD4\u56DE\u4E0A\u4E00\u6B65",wearLocSubmit:"\u786E\u8BA4\u4F69\u6234\u5E76\u5199\u5165\u6B63\u6587",wearLocNeedPick:"\u8BF7\u5148\u9009\u62E9\u300C\u73B0\u573A\u300D\u6216\u300C\u522B\u5904\u300D",wearInputWith:"\u3010TOY\xB7LINK\u4F69\u6234\uFF1A{name} \xB7 \u73B0\u573A\u3011\u6211\u62FF\u51FA\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF0C\u5C31\u5728\u5F53\u524D\u573A\u666F\u4E2D\u9760\u8FD1{name}\uFF0C\u51C6\u5907\u4EB2\u624B\u66FF\u5979\uFF08\u6216\u5F53\u9762\u547D\u4EE4\u5979\u81EA\u5DF1\uFF09\u5C06\u8FD9\u679A\u8DF3\u86CB\u7F6E\u5165\u4F53\u5185\u6DF1\u5904\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u753B\u9762\uFF0C\u653E\u6162\u8282\u594F\u7EC6\u81F4\u63CF\u5199\u4F69\u6234\u7684\u5168\u8FC7\u7A0B\uFF1A\u5979\u770B\u89C1\u8DF3\u86CB\u65F6\u7684\u795E\u60C5\u4E0E\u7F9E\u803B\u6323\u624E\u3001\u8863\u88D9\u6380\u5F00\u6216\u9000\u53BB\u5185\u88E4\u7684\u77AC\u95F4\u3001\u6307\u5C16\u5206\u5F00\u79C1\u5904\u5C06\u5FAE\u51C9\u5149\u6ED1\u7684\u86CB\u4F53\u4E00\u70B9\u70B9\u63A8\u5165\u7D27\u81F4\u8F6F\u8089\u6DF1\u5904\u7684\u89E6\u611F\u3001\u85CF\u597D\u5C3E\u7EBF\u4E0E\u6574\u7406\u8863\u7269\u7684\u72FC\u72C8\uFF0C\u4EE5\u53CA\u6234\u597D\u540E\u5979\u53CC\u817F\u5FAE\u98A4\u3001\u5939\u7D27\u9002\u5E94\u5F02\u7269\u611F\u7684\u771F\u5B9E\u53CD\u5E94\uFF0C\u5207\u52FF\u4E00\u53E5\u5E26\u8FC7\u3002",wearInputAway:"\u3010TOY\xB7LINK\u4F69\u6234\uFF1A{name} \xB7 \u522B\u5904\uFF08{sceneLabel}\uFF09\u3011\u6211\u7ED9\u6B64\u523B\u4E0D\u5728\u8EAB\u8FB9\u7684{name}\u53D1\u53BB\u79C1\u5BC6\u6D88\u606F\uFF0C\u547D\u4EE4\u5979\u7ACB\u523B\u628A\u968F\u8EAB\u5E26\u7740\u7684\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\u653E\u8FDB\u4F53\u5185\uFF08\u5979\u6B64\u523B\u5904\u5883\uFF1A{sceneDesc}\uFF09\u3002\u8BF7\u5148\u5728\u6B63\u6587\u4E0A\u65B9\u5207\u51FA\u5979\u6240\u5728\u4E4B\u5904\u7684\u72EC\u7ACB\u89C6\u89D2\uFF0C\u7D27\u6263\u300C{sceneLabel}\u300D\u7684\u73AF\u5883\u6C1B\u56F4\uFF0C\u7EC6\u81F4\u63CF\u5199\u5979\u770B\u5230\u6D88\u606F\u65F6\u7684\u7F9E\u607C\u4E0E\u72B9\u8C6B\u3001\u627E\u65F6\u673A\u907F\u5F00\u89C6\u7EBF\u6216\u501F\u8863\u7269\u906E\u63A9\u3001\u6307\u5C16\u53D1\u98A4\u5730\u63A2\u5165\u88D9\u5E95\u892A\u5F00\u5185\u88E4\u5C06\u5FAE\u51C9\u8DF3\u86CB\u4E00\u70B9\u70B9\u585E\u8FDB\u4F53\u5185\u6DF1\u5904\u7684\u9690\u79D8\u8FC7\u7A0B\u3001\u6574\u7406\u4EEA\u5BB9\u91CD\u56DE\u573A\u5408\u65F6\u817F\u5FC3\u53D1\u8F6F\u5939\u7D27\u5F02\u7269\u7684\u714E\u71AC\uFF0C\u4EE5\u53CA\u53D1\u6D88\u606F\u5411\u6211\u786E\u8BA4\u300C\u5DF2\u7ECF\u6234\u597D\u4E86\u300D\u7684\u7F9E\u803B\u53CD\u5E94\uFF0C\u5207\u52FF\u4E00\u53E5\u5E26\u8FC7\u3002",wearPromptWith:`[TOY\xB7LINK \u4F69\u6234\u4E8B\u4EF6 \xB7 \u73B0\u573A]
+\u5BF9\u8C61\uFF1A{name}\uFF08\u5F53\u524D\u4E0E\u73A9\u5BB6\u540C\u5904\u73B0\u573A\uFF0C\u6B63\u5728\u4F69\u6234\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF09
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u7D27\u63A5\u4E0A\u4E00\u8F6E\u5DF2\u786E\u7ACB\u7684\u73B0\u573A\u73AF\u5883\u4E0E\u4E24\u4EBA\u8DDD\u79BB\uFF0C\u7981\u6B62\u53E6\u7F16\u65E0\u5173\u573A\u666F\u3002
+2. \u4F69\u6234\u8FC7\u7A0B\u662F\u672C\u8F6E\u6838\u5FC3\u8272\u60C5\u620F\u7801\uFF0C\u5FC5\u987B\u7EC6\u817B\u5C55\u5F00\uFF1A\u4ECE\u62FF\u51FA\u88C5\u7F6E\u3001\u5979\u7684\u773C\u795E\u52A8\u6447\u4E0E\u53E3\u5934\u8F7B\u55D4\u3001\u62E8\u5F00\u8D34\u8EAB\u8863\u7269\u4E0E\u79C1\u5904\u6E7F\u6DA6\u5FAE\u51C9\u7684\u89E6\u611F\u3001\u8DF3\u86CB\u4E00\u70B9\u70B9\u6324\u5F00\u7D27\u81F4\u8F6F\u8089\u6ED1\u5165\u6DF1\u5904\u7684\u5F02\u7269\u80C0\u6EE1\u611F\uFF0C\u5230\u5F7B\u5E95\u85CF\u59A5\u5C3E\u7EBF\u540E\u5979\u4E0B\u610F\u8BC6\u5939\u7D27\u53CC\u817F\u3001\u547C\u5438\u4E71\u62CD\u7684\u4F59\u97F5\uFF0C\u4E25\u7981\u4E00\u7B14\u5E26\u8FC7\u3002
+3. \u4FDD\u6301\u5979\u5F53\u524D\u597D\u611F/\u5815\u843D\u5EA6\u4E0E\u6027\u683C\u5E95\u8272\uFF1A\u7EAF\u60C5\u9AD8\u597D\u611F\u8005\u4FA7\u91CD\u8138\u7EA2\u8EB2\u95EA\u4E0E\u534A\u63A8\u534A\u5C31\u7684\u4FE1\u4EFB\u4EA4\u4ED8\uFF0C\u9AD8\u5815\u843D\u8005\u4FA7\u91CD\u660E\u77E5\u7F9E\u803B\u5374\u9690\u9690\u671F\u5F85\u7684\u987A\u4ECE\u8FCE\u5408\u3002
+4. \u4EC5\u5B8C\u6210\u4F69\u6234\u4E0E\u8D34\u8EAB\u9002\u5E94\uFF0C\u4E0D\u5F97\u66FF\u73A9\u5BB6\u64C5\u81EA\u5F00\u542F\u9707\u52A8\u6863\u4F4D\uFF08\u9664\u975E\u73A9\u5BB6\u672C\u8F6E\u540C\u65F6\u542F\u52A8\u4E86\u8FD0\u884C\u72B6\u6001\uFF09\u3002`,wearPromptAway:`[TOY\xB7LINK \u4F69\u6234\u4E8B\u4EF6 \xB7 \u522B\u5904]
+\u5BF9\u8C61\uFF1A{name}\uFF08\u5F53\u524D\u4E0D\u5728\u73A9\u5BB6\u8EAB\u8FB9\uFF5C\u5904\u5883\uFF1A\u300C{sceneLabel}\u300D\u2014 {sceneDesc}\uFF09
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u5FC5\u987B\u5728\u6B63\u6587\u5F00\u5934\u5207\u51FA{name}\u6240\u5728\u4E4B\u5904\u7684\u72EC\u7ACB\u89C6\u89D2\uFF0C\u5199\u51FA\u300C{sceneLabel}\u300D\u7684\u5177\u4F53\u73AF\u5883\u58F0\u97F3\u3001\u5149\u7EBF\u4E0E\u65C1\u4EBA\u52A8\u9759\uFF0C\u518D\u5207\u5165\u5979\u6536\u5230\u73A9\u5BB6\u79C1\u5BC6\u6307\u4EE4\u7684\u77AC\u95F4\u3002
+2. \u4F69\u6234\u8FC7\u7A0B\u662F\u672C\u8F6E\u6838\u5FC3\u8272\u60C5\u620F\u7801\uFF0C\u5FC5\u987B\u7EC6\u817B\u5C55\u5F00\uFF1A\u5979\u5728\u5F53\u524D\u5904\u5883\u4E0B\u5F3A\u538B\u5FC3\u8DF3\u5BFB\u627E\u9690\u853D\u95F4\u9699\u3001\u6307\u5C16\u53D1\u6296\u63A2\u5165\u8863\u7269\u62E8\u5F00\u5185\u88E4\u3001\u5C06\u5FAE\u51C9\u5149\u6ED1\u7684\u8DF3\u86CB\u4E00\u70B9\u70B9\u9876\u5165\u7D27\u81F4\u8F6F\u8089\u6DF1\u5904\u7684\u79C1\u5BC6\u89E6\u611F\u4E0E\u80C0\u6EE1\u611F\u3001\u5F3A\u5FCD\u5F02\u7269\u6ED1\u5165\u65F6\u7684\u8F7B\u5598\u4E0E\u817F\u8F6F\uFF0C\u4EE5\u53CA\u91CD\u65B0\u6574\u7406\u8863\u88D9\u8D70\u51FA/\u5750\u6B63\u65F6\u7684\u7D27\u7EF7\u4E0E\u56DE\u62A5\u6D88\u606F\uFF0C\u4E25\u7981\u4E00\u7B14\u5E26\u8FC7\u3002
+3. \u5904\u5883\u53E3\u5F84\u53C2\u8003\uFF1A{sceneDirective}
+4. \u4EC5\u5B8C\u6210\u4F69\u6234\u4E0E\u5C31\u4F4D\uFF0C\u4E0D\u5F97\u66FF\u73A9\u5BB6\u64C5\u81EA\u542F\u52A8\u9707\u52A8\u6863\u4F4D\uFF08\u9664\u975E\u73A9\u5BB6\u672C\u8F6E\u540C\u65F6\u542F\u52A8\u4E86\u8FD0\u884C\u72B6\u6001\uFF09\u3002`,hereWithHint:"\u7D27\u63A5\u4E0A\u4E00\u8F6E\u73B0\u573A\u573A\u666F\uFF0C\u65E0\u9700\u53E6\u9009\u5904\u5883",hereAwayHint:"\u5207\u8FDC\u7A0B\u72EC\u7ACB\u89C6\u89D2\uFF0C\u6309\u4E0B\u65B9\u5904\u5883\u6E32\u67D3\u5F20\u529B",inputLineWith:"\u3010TOY\xB7LINK\uFF1A{name} \xB7 \u73B0\u573A\u3011\u6211\u901A\u8FC7\u624B\u673A\u64CD\u63A7\u8FD1\u5728\u54AB\u5C3A\u7684{name}\u4F53\u5185\u7684\u9065\u63A7\u8DF3\u86CB\uFF08\u4E3B\u6A21\u5F0F\uFF1A{modeName}\uFF5C\u5F3A\u5EA6\uFF1A{pow}%\uFF5C\u9891\u7387\uFF1A{freq}% / {hz}Hz\uFF5C\u5F53\u524D\u7B2C{stage}\u9636\u6BB5\xB7{stageName}\uFF5C\u5DF2\u7EDD\u9876{peak}\u6B21\xB7{tierLabel}\uFF0C\u53E0\u52A0\u500D\u7387{rateMult}\xD7{tacticSummary}\uFF09\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u73B0\u573A\u573A\u666F\uFF0C\u6309\u6B64\u8282\u594F\u4E0E\u4F53\u611F\uFF08{modeClause}\uFF09\u5B8C\u6574\u5199\u51FA\u672C\u6B21\u64CD\u63A7\u4ECE\u542F\u52A8\u63A8\u8FDB\u3001\u5979\u8BD5\u56FE\u63A9\u9970\u5F3A\u5FCD\u3001\u5728\u6211\u7684\u624B\u6CD5\u6298\u78E8\u4E0B\u7684\u8EAB\u4F53\u53CD\u5E94\uFF0C\u76F4\u81F3\u5F53\u524D\u9636\u6BB5\u4E0E\u7EDD\u9876\u4F53\u9A8C\u7684\u5B8C\u6574\u8FC7\u7A0B\uFF0C\u5207\u52FF\u4E00\u53E5\u5E26\u8FC7\u3002",inputLineAway:"\u3010TOY\xB7LINK\uFF1A{name} \xB7 \u522B\u5904\uFF08{sceneLabel}\uFF09\u3011\u6211\u6253\u5F00\u624B\u673A\u8FDC\u7A0B\u64CD\u63A7\u6B64\u523B\u4E0D\u5728\u8EAB\u8FB9\u7684{name}\u4F53\u5185\u7684\u9065\u63A7\u8DF3\u86CB\uFF08\u5F53\u524D\u5904\u5883\uFF1A{sceneDesc}\uFF5C\u4E3B\u6A21\u5F0F\uFF1A{modeName}\uFF5C\u5F3A\u5EA6\uFF1A{pow}%\uFF5C\u9891\u7387\uFF1A{freq}% / {hz}Hz\uFF5C\u5F53\u524D\u7B2C{stage}\u9636\u6BB5\xB7{stageName}\uFF5C\u5DF2\u7EDD\u9876{peak}\u6B21\xB7{tierLabel}\uFF0C\u53E0\u52A0\u500D\u7387{rateMult}\xD7{tacticSummary}\uFF09\u3002\u8BF7\u5148\u5728\u6B63\u6587\u4E0A\u65B9\u5207\u51FA\u4E00\u6BB5\u5979\u6240\u5728\u4E4B\u5904\u7684\u72EC\u7ACB\u89C6\u89D2\uFF08\u7D27\u6263\u300C{sceneLabel}\u300D\u5904\u5883\u5199\u660E\u5979\u5468\u56F4\u73AF\u5883\u3001\u6B63\u5728\u505A\u4EC0\u4E48\u4E0E\u6B64\u523B\u59FF\u52BF\uFF09\uFF0C\u518D\u6309\u6B64\u8282\u594F\u4E0E\u4F53\u611F\uFF08{modeClause}\uFF09\u5B8C\u6574\u5199\u51FA\u672C\u6B21\u8DF3\u86CB\u4ECE\u7A81\u88AD\u8FD0\u8F6C\u3001\u5979\u5F3A\u6491\u63A9\u9970\u5230\u5728\u6211\u7684\u624B\u6CD5\u4E0B\u7834\u9632\u7EDD\u9876\u7684\u5B8C\u6574\u8FC7\u7A0B\uFF0C\u5207\u52FF\u4E00\u53E5\u5E26\u8FC7\u3002",promptBlockWith:`[TOY\xB7LINK \u5B9E\u65F6\u72B6\u6001 \xB7 \u73B0\u573A]
+\u5BF9\u8C61\uFF1A{name}\uFF08\u5F53\u524D\u4E0E\u73A9\u5BB6\u540C\u5904\u73B0\u573A\uFF1B\u4F53\u5185\u6B63\u4F69\u6234\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF09
+\u6A21\u5F0F\uFF1A{modeName}\uFF5C\u5F3A\u5EA6\uFF1A{pow}%\uFF08{tierBodyLabel}\uFF09\uFF5C\u9891\u7387\uFF1A{freq}%\uFF08{hz}Hz\uFF09\uFF5C\u9636\u6BB5\uFF1A\u7B2C{stage}\u9636\u6BB5\xB7{stageName}\uFF08\u672C\u8F6E\u8FDB\u5EA6{aro}%\uFF09
+\u7EDD\u9876\u4E0E\u53E0\u52A0\uFF1A\u5DF2\u8FDE\u7EED\u7EDD\u9876{peak}\u6B21\uFF5C\u53E0\u52A0\u6863\u4F4D\uFF1A{tierLabel}\uFF08\u7D2F\u79EF\u500D\u7387{rateMult}\xD7\uFF09{tacticPromptLine}
+\u8282\u594F\u4F53\u611F\uFF1A{modeFeel}\uFF08{modeClause}\uFF09
+\u8EAB\u4F53\u8868\u73B0\u53C2\u8003\uFF1A{stageBody}\uFF1B{tierBody}
+\u5199\u4F5C\u7EA6\u675F\uFF1A\u4EC5\u4F5C\u5F53\u524D\u73B0\u573A\u5B9E\u65F6\u72B6\u6001\u53C2\u8003\uFF0C\u4E25\u683C\u987A\u5E94\u4E0A\u4E00\u8F6E\u5DF2\u786E\u7ACB\u7684\u73B0\u573A\u73AF\u5883\u3001\u5BF8\u6B62/\u7834\u9632\u624B\u6CD5\u4E0E\u8FDE\u7EED\u7EDD\u9876\u540E\u7684\u654F\u611F\u53E0\u52A0\u8868\u73B0\uFF1B\u4E0D\u5F97\u66FF\u73A9\u5BB6\u64CD\u63A7\u6216\u5173\u95ED\u88C5\u7F6E\u3002`,promptBlockAway:`[TOY\xB7LINK \u5B9E\u65F6\u72B6\u6001 \xB7 \u522B\u5904]
+\u5BF9\u8C61\uFF1A{name}\uFF08\u5F53\u524D\u5904\u4E8E\u522B\u5904\xB7\u300C{sceneLabel}\u300D\uFF1A{sceneDesc}\uFF1B\u4F53\u5185\u6B63\u4F69\u6234\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF09
+\u6A21\u5F0F\uFF1A{modeName}\uFF5C\u5F3A\u5EA6\uFF1A{pow}%\uFF08{tierBodyLabel}\uFF09\uFF5C\u9891\u7387\uFF1A{freq}%\uFF08{hz}Hz\uFF09\uFF5C\u9636\u6BB5\uFF1A\u7B2C{stage}\u9636\u6BB5\xB7{stageName}\uFF08\u672C\u8F6E\u8FDB\u5EA6{aro}%\uFF09
+\u7EDD\u9876\u4E0E\u53E0\u52A0\uFF1A\u5DF2\u8FDE\u7EED\u7EDD\u9876{peak}\u6B21\uFF5C\u53E0\u52A0\u6863\u4F4D\uFF1A{tierLabel}\uFF08\u7D2F\u79EF\u500D\u7387{rateMult}\xD7\uFF09{tacticPromptLine}
+\u8282\u594F\u4F53\u611F\uFF1A{modeFeel}\uFF08{modeClause}\uFF09
+\u5904\u5883\u5199\u4F5C\u53E3\u5F84\uFF1A{sceneDirective}
+\u8EAB\u4F53\u8868\u73B0\u53C2\u8003\uFF1A{stageBody}\uFF1B{tierBody}
+\u5199\u4F5C\u7EA6\u675F\uFF1A\u6B63\u6587\u987B\u5207\u51FA\u5979\u6240\u5728\u5904\u5883\u7684\u72EC\u7ACB\u89C6\u89D2\uFF0C\u987A\u5E94\u300C{sceneLabel}\u300D\u73AF\u5883\u5F20\u529B\u3001\u5BF8\u6B62/\u7834\u9632\u624B\u6CD5\u4E0E\u8FDE\u7EED\u7EDD\u9876\u540E\u7684\u654F\u611F\u53E0\u52A0\u8868\u73B0\uFF1B\u4E0D\u5F97\u66FF\u73A9\u5BB6\u64CD\u63A7\u6216\u5173\u95ED\u88C5\u7F6E\u3002`,closeBtn:"\u2715 \u5173\u95ED",studioSub:"\u4E5D\u6A21\u53D8\u9891 \xB7 \u5B9E\u65F6\u4F53\u611F\u9065\u63A7",traceLabel:"\u624B\u6CD5\u8F68\u8FF9",traceEmpty:"\u542F\u52A8\u540E\u81EA\u52A8\u8BB0\u5F55\u4F60\u7684\u5207\u6362\u3001\u5BF8\u6B62\u4E0E\u5F3A\u523A\u8282\u594F",wearOkFillToast:"\u5DF2\u4E3A\u3010{name}\u3011\u8BB0\u5F55\u4F69\u6234\uFF08{locLabel}\uFF09\uFF0C\u4F69\u6234\u5F15\u5BFC\u5DF2\u5199\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u5373\u53EF\u5728\u6B63\u6587\u5C55\u5F00\u3002",wearOkNoInputToast:"\u5DF2\u4E3A\u3010{name}\u3011\u8BB0\u5F55\u4F69\u6234\uFF08{locLabel}\uFF09\uFF0C\u672A\u68C0\u6D4B\u5230\u804A\u5929\u8F93\u5165\u6846\uFF0C\u8BF7\u624B\u52A8\u7EE7\u7EED\u5267\u60C5\u3002",unwearAndCleanToast:"\u5DF2\u6458\u4E0B\u3010{name}\u3011\u7684\u88C5\u7F6E\uFF0C\u5E76\u540C\u6B65\u64A4\u56DE\u5F85\u751F\u6548\u7684\u4F69\u6234\u5F15\u5BFC\u3002",errNotWorn:"\u8BF7\u5148\u4E3A\u8BE5\u4EBA\u7269\u4F69\u6234\u88C5\u7F6E\uFF0C\u518D\u542F\u52A8\u9065\u63A7\u3002",wornCount:"\u5DF2\u4F69\u6234 {n} \u4EBA",modeHd:"{modeName} \xB7 \u8FDE\u7EED\u53E0\u52A0",wearNums:"\u2665 \u597D\u611F {affection} \xB7 \u2756 \u5815\u843D {corruption}",modalStep1:"\u6B65\u9AA4 1 / 2 \xB7 \u4F69\u6234\u786E\u8BA4",modalStep2:"\u6B65\u9AA4 2 / 2 \xB7 \u9009\u62E9\u4F69\u6234\u843D\u70B9",sceneBlockLabel:"\u522B\u5904\u5904\u5883\uFF08\u9009\u5B9A\u540E\u5207\u5979\u7684\u72EC\u7ACB\u89C6\u89D2\uFF09",tierLow:"\u79C1\u5BC6",tierMid:"\u534A\u516C\u5F00",tierHigh:"\u9AD8\u5371\u516C\u5F00",modes:[{id:"pulse",name:"\u8109\u51B2",tag:"\u7834\u76FE\u91CD\u51FB",icon:'<path d="M4 20h3v-9H4zM10.5 20h3V5h-3zM17 20h3v-6h-3z"/>'},{id:"wave",name:"\u6F6E\u6C50",tag:"\u4F59\u97F5\u4FDD\u5E95",icon:'<path d="M2 15c3-6 6 6 9 0s6 6 9 0v4c-3 6-6-6-9 0s-6-6-9 0z"/>'},{id:"heart",name:"\u5FC3\u8DF3",tag:"\u540C\u9891\u9690\u853D",icon:'<path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/>'},{id:"ramp",name:"\u6E10\u5F3A",tag:"\u9876\u70B9\u51B2\u91CF",icon:'<path d="M3 18 10 6l3 7 3-4 5 9z"/>'},{id:"chaos",name:"\u4E71\u6D41",tag:"\u7A7F\u900F\u5FCD\u8010",icon:'<path d="M3 8h6l3 8h3l3-8h3v3h-2l-3 8h-5l-3-8H3z"/>'},{id:"tease",name:"\u64A9\u62E8",tag:"\u536185\u6512\u6E34\u6C42",icon:'<path d="M12 3c2 5 6 6 6 10a6 6 0 0 1-12 0c0-4 4-5 6-10z"/>'},{id:"storm",name:"\u66B4\u96E8",tag:"\u540E\u7A0B\u66B4\u8D70",icon:'<path d="M6 14h12l-2 7h-8zM9 3h6l-1 9H10z"/>'},{id:"edge",name:"\u4E34\u754C",tag:"96%\u6B7B\u7EBF\u5BF8\u6B62",icon:'<path d="M12 2 4 14h7l-1 8 9-13h-7z"/>'},{id:"rush",name:"\u51B2\u523A",tag:"35%\u57FA\u5E95\u72C2\u9707",icon:'<path d="M13 2 4 14h6l-1 8 11-15h-7zM11 4l-5 8h4l-1 6"/>'}],scenes:{away_home:{label:"\u72EC\u5C45\u79C1\u5BA4",here:"away",tier:"low",expRate:.55,desc:"\u6B63\u72EC\u81EA\u5F85\u5728\u5B89\u9759\u7684\u5367\u5BA4\u6216\u5BA2\u5385\u5185\uFF0C\u56DB\u5468\u65E0\u4EBA\u7AA5\u89C6\uFF0C\u5374\u56E0\u4E0D\u77E5\u4F60\u4F55\u65F6\u4F1A\u7A81\u7136\u8C03\u9AD8\u6863\u4F4D\u800C\u6574\u9897\u5FC3\u60AC\u5728\u534A\u7A7A",directive:"\u4FA7\u91CD\u5199\u5979\u72EC\u81EA\u4E00\u4EBA\u65F6\u7684\u7F9E\u803B\u5C48\u670D\u3001\u5378\u4E0B\u9632\u5907\u540E\u653E\u7EB5\u6EA2\u51FA\u7684\u5598\u606F\uFF0C\u4EE5\u53CA\u5728\u7A7A\u8361\u623F\u95F4\u91CC\u6276\u5899\u8F6F\u5012\u3001\u5374\u53C8\u820D\u4E0D\u5F97\u6458\u4E0B\u7684\u6C89\u6CA6\u611F"},away_fitting:{label:"\u8BD5\u8863\u9694\u95F4",here:"away",tier:"low",expRate:.7,desc:"\u6B63\u72EC\u81EA\u5F85\u5728\u5546\u573A\u8BD5\u8863\u95F4\u6216\u6D17\u624B\u95F4\u9694\u95F4\u5185\uFF0C\u4EC5\u4E00\u95E8\u4E4B\u9694\u4FBF\u662F\u4EBA\u6765\u4EBA\u5F80\u7684\u8D70\u5ECA\uFF0C\u95E8\u5916\u811A\u6B65\u58F0\u4E0E\u95EE\u8BE2\u58F0\u6E05\u6670\u53EF\u95FB",directive:"\u4FA7\u91CD\u5199\u7A84\u5C0F\u9694\u95F4\u91CC\u7684\u56DE\u97F3\u4E0E\u7D27\u8FEB\u611F\uFF0C\u5979\u4E00\u8FB9\u6B7B\u6B7B\u6342\u5634\u538B\u4F4F\u5598\u606F\u3001\u4E00\u8FB9\u63D0\u9632\u95E8\u5916\u5BFC\u8D2D\u6572\u95E8\u50AC\u4FC3\u7684\u60CA\u60B8\u4E0E\u523A\u6FC0"},away_commute:{label:"\u901A\u52E4\u8F66\u53A2",here:"away",tier:"mid",expRate:1.05,desc:"\u6B63\u8EAB\u5904\u884C\u9A76\u4E2D\u7684\u5730\u94C1\u8F66\u53A2\u6216\u7F51\u7EA6\u8F66\u540E\u5EA7\uFF0C\u8EAB\u65C1\u7D27\u6328\u7740\u964C\u751F\u4E58\u5BA2\u6216\u524D\u6392\u53F8\u673A\uFF0C\u8F66\u53A2\u98A0\u7C38\u4E0E\u4F53\u5185\u9707\u98A4\u4E0D\u65AD\u53E0\u5408",directive:"\u4FA7\u91CD\u5199\u6447\u6643\u8F66\u53A2\u4E2D\u5979\u6525\u7D27\u6276\u624B\u6216\u5305\u5E26\u3001\u5E76\u7D27\u53CC\u817F\u5F3A\u88C5\u4F4E\u5934\u770B\u624B\u673A\uFF0C\u751F\u6015\u8863\u88D9\u5FAE\u98A4\u6216\u6025\u4FC3\u9F3B\u606F\u88AB\u8FD1\u5728\u54AB\u5C3A\u7684\u65C1\u4EBA\u5BDF\u89C9"},away_cafe:{label:"\u5496\u5561\u96C5\u5EA7",here:"away",tier:"mid",expRate:1.15,desc:"\u6B63\u5750\u5728\u843D\u5730\u7A97\u8FB9\u7684\u5496\u5561\u9986\u6216\u79C1\u623F\u9910\u5385\u91CC\uFF0C\u90BB\u684C\u4EA4\u8C08\u58F0\u6B64\u8D77\u5F7C\u4F0F\uFF0C\u5979\u7AEF\u7740\u676F\u76CF\u5F3A\u4F5C\u4F18\u96C5\uFF0C\u684C\u4E0B\u53CC\u817F\u5374\u5DF2\u65E0\u5904\u5B89\u653E",directive:"\u4FA7\u91CD\u5199\u5979\u7AEF\u676F\u65F6\u6307\u5C16\u53D1\u6296\u3001\u4E0E\u540C\u4F34\u6216\u5E97\u5458\u5E94\u7B54\u65F6\u8BED\u8C03\u53D1\u98D8\uFF0C\u501F\u4F4E\u5934\u62BF\u996E\u63A9\u9970\u6F6E\u7EA2\u8138\u988A\u4E0E\u684C\u4E0B\u4E0D\u81EA\u89C9\u8F7B\u8E6D\u7684\u5931\u6001\u8FB9\u7F18"},away_office:{label:"\u5DE5\u4F4D\u529E\u516C",here:"away",tier:"mid",expRate:1.25,desc:"\u6B63\u5750\u5728\u5199\u5B57\u697C\u7684\u5F00\u653E\u529E\u516C\u5DE5\u4F4D\u524D\u5904\u7406\u6587\u4EF6\uFF0C\u5DE6\u53F3\u9694\u677F\u5916\u5C31\u662F\u57CB\u5934\u5DE5\u4F5C\u7684\u540C\u4E8B\uFF0C\u968F\u65F6\u6709\u4EBA\u7AEF\u7740\u8D44\u6599\u8D70\u6765\u5F00\u53E3\u8BE2\u95EE",directive:"\u4FA7\u91CD\u5199\u5979\u50F5\u76F4\u810A\u80CC\u5047\u88C5\u4E13\u6CE8\u76EF\u5C4F\u5E55\u3001\u6572\u952E\u76D8\u7684\u624B\u6307\u9891\u9891\u6253\u9519\u5B57\uFF0C\u9762\u5BF9\u540C\u4E8B\u7A81\u7136\u642D\u8BDD\u65F6\u5F3A\u54AC\u7259\u5173\u5410\u51FA\u65AD\u7EED\u5E94\u7B54\u7684\u53CD\u5DEE\u5F20\u529B"},away_party:{label:"\u665A\u5BB4\u4EBA\u7FA4",here:"away",tier:"high",expRate:1.4,desc:"\u6B63\u8EAB\u5904\u8863\u9999\u9B13\u5F71\u7684\u793E\u4EA4\u665A\u5BB4\u6216\u9152\u4F1A\u4EBA\u7FA4\u4E2D\u592E\uFF0C\u811A\u8E29\u9AD8\u8DDF\u978B\u624B\u6301\u9152\u676F\u7AD9\u7ACB\uFF0C\u8D34\u8EAB\u793C\u670D\u4E0B\u6BEB\u65E0\u906E\u853D\u4E0E\u501F\u529B\u4E4B\u5904",directive:"\u4FA7\u91CD\u5199\u5979\u5728\u6EE1\u573A\u76EE\u5149\u4E0E\u5BD2\u6684\u4E2D\u7AD9\u7ACB\u4E0D\u7A33\u3001\u811A\u8E1D\u8F7B\u98A4\u3001\u9152\u6DB2\u5728\u676F\u4E2D\u6643\u51FA\u6D9F\u6F2A\uFF0C\u53EA\u80FD\u501F\u6574\u7406\u88D9\u6446\u6216\u8F7B\u501A\u7ACB\u67F1\u82E6\u6491\u4F53\u9762\u7684\u9AD8\u5371\u7F9E\u803B"},away_meeting:{label:"\u4E25\u8083\u4F1A\u8BAE",here:"away",tier:"high",expRate:1.55,desc:"\u6B63\u5750\u5728\u6C14\u6C1B\u4E25\u8083\u7684\u4F1A\u8BAE\u684C\u524D\u53C2\u4E0E\u8BA8\u8BBA\u6216\u6C47\u62A5\uFF0C\u4E0A\u53F8\u4E0E\u540C\u50DA\u76EE\u5149\u9F50\u805A\uFF0C\u5979\u5FC5\u987B\u62FC\u6B7B\u7EF4\u6301\u7AEF\u5E84\u4E13\u4E1A\u7684\u8BDD\u672F\u4E0E\u795E\u60C5",directive:"\u4FA7\u91CD\u5199\u4F17\u76EE\u777D\u777D\u4E0B\u7684\u6781\u81F4\u80CC\u5FB7\u4E0E\u9AD8\u538B\u5FCD\u8010\uFF1A\u5979\u5728\u6B63\u895F\u5371\u5750\u4E2D\u53CC\u819D\u6B7B\u6B7B\u62B5\u4F4F\u684C\u6CBF\u3001\u6C47\u62A5\u58F0\u7EBF\u9661\u7136\u53D1\u98A4\u5361\u987F\u3001\u773C\u7736\u6CDB\u7EA2\u5374\u4E0D\u6562\u505C\u53E3"},away_boutique:{label:"\u9AD8\u5962\u4E13\u67DC",here:"away",tier:"high",expRate:1.65,desc:"\u6B63\u7AD9\u5728\u706F\u5149\u901A\u660E\u7684\u9876\u5962\u4E13\u67DC\u6216\u7CBE\u54C1\u5E97\u955C\u524D\u6311\u9009\u7269\u4EF6\uFF0C\u5BFC\u8D2D\u5C31\u7AD9\u5728\u4E00\u6B65\u4E4B\u5916\u5FAE\u7B11\u8D34\u8EAB\u4ECB\u7ECD\uFF0C\u56DB\u5468\u843D\u5730\u955C\u6620\u51FA\u5979\u6BCF\u4E00\u4E1D\u795E\u60C5",directive:"\u4FA7\u91CD\u5199\u5F3A\u5149\u4E0E\u955C\u9762\u5E26\u6765\u7684\u8D64\u88F8\u66B4\u9732\u611F\uFF1A\u5979\u5728\u5BFC\u8D2D\u8FD1\u8DDD\u79BB\u6CE8\u89C6\u4E0B\u51B7\u6C57\u5FAE\u6E17\u3001\u63A5\u8FC7\u6258\u76D8\u65F6\u624B\u8155\u53D1\u8F6F\uFF0C\u968F\u65F6\u53EF\u80FD\u5F53\u4F17\u817F\u8F6F\u5931\u6001\u7684\u7A92\u606F\u7D27\u5F20"}}},toylinkLite:{title:"TOY\xB7LINK \u6781\u7B80\u9065\u63A7",pillLocked:"\u9884\u89C8\u53EA\u8BFB",pillIdle:"\u672A\u4F69\u6234",pillWorn:"\u5DF2\u4F69\u6234 \xB7 \u5F85\u673A",pillLive:"\u8FD0\u884C\u4E2D \xB7 {gearShort}",pillLabLocked:"\u5B9E\u9A8C\u7248\u5360\u7528",lockedBanner:"\u9884\u89C8\u6A21\u5F0F \xB7 \u9700\u5728\u661F\u613F\u5546\u57CE\u5151\u6362 TOY\xB7LINK\uFF083,600\u2726\uFF09\u540E\u65B9\u53EF\u64CD\u4F5C",emptyNoWoman:"\u6682\u65E0\u5DF2\u6536\u5F55\u5973\u6027\uFF0C\u5728\u5267\u60C5\u4E2D\u6B63\u5F0F\u7ED3\u8BC6\u4E14\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60 \u540E\u5373\u53EF\u4F7F\u7528\u3002",secTarget:"1 \xB7 \u9009\u62E9\u5BF9\u8C61",wornCount:"\u5DF2\u4F69\u6234 {count} \u4EBA",dotLive:"\u8FD0\u884C\u4E2D",dotWorn:"\u5DF2\u4F69\u6234",dotGate:"\u672A\u8FBE\u6807",gateBanner:"\u6682\u4E0D\u53EF\u5BF9\u3010{name}\u3011\u64CD\u4F5C\uFF1A\u9700\u597D\u611F \u2265 70\uFF08\u5F53\u524D {affection}\uFF09\u6216\u5815\u843D \u2265 60\uFF08\u5F53\u524D {corruption}\uFF09\u3002",otherRunningBanner:"\u9065\u63A7\u5668\u6B63\u4F5C\u7528\u4E8E\u3010{activeName}\u3011\uFF0C\u8BF7\u5148\u5173\u95ED\u540E\u518D\u64CD\u4F5C\u3010{name}\u3011\u3002",btnStopOther:"\u5173\u95ED\u3010{activeName}\u3011",stateUnworn:"\u672A\u4F69\u6234",stateWornIdle:"\u5DF2\u4F69\u6234 \xB7 \u672A\u5F00\u542F",stateRunning:"\u8FD0\u884C\u4E2D \xB7 {gearLabel}",btnWear:"\u4E3A\u5979\u4F69\u6234",btnUnwear:"\u6458\u4E0B\u88C5\u7F6E",btnStart:"\u5F00\u542F\u9707\u52A8",btnStop:"\u5173\u95ED\u9707\u52A8",secGear:"\u6863\u4F4D\u5F3A\u5EA6",gears:[{gear:1,short:"1 \u6863",sub:"\u8F7B\u67D4",label:"1 \u6863 \xB7 \u8F7B\u67D4"},{gear:2,short:"2 \u6863",sub:"\u4E2D\u7B49",label:"2 \u6863 \xB7 \u4E2D\u7B49"},{gear:3,short:"3 \u6863",sub:"\u5F3A\u70C8",label:"3 \u6863 \xB7 \u5F3A\u70C8"}],hint:"\u72B6\u6001\u53D8\u66F4\u5373\u65F6\u540C\u6B65\u81F3\u540E\u53F0\u4E0A\u4E0B\u6587\uFF0C\u4E0B\u4E00\u8F6E\u6B63\u6587\u81EA\u7136\u4F53\u73B0\uFF0C\u4E0D\u4F1A\u5411\u804A\u5929\u8F93\u5165\u6846\u586B\u5B57\u3002",btnOpenLab:"\u5207\u6362\u5B9E\u9A8C\u7248\uFF08\u5BBD\u5C4F\uFF09",btnOpenLabLocked:"\u5207\u6362\u5B9E\u9A8C\u7248\uFF08\u9700\u5148\u6E05\u7A7A\u72B6\u6001\uFF09",btnBackToLab:"\u56DE\u5230\u5B9E\u9A8C\u7248\uFF08\u5BBD\u5C4F\uFF09",labNote:"\u5B9E\u9A8C\u7248\u542B\u4E5D\u6A21\u6CE2\u5F62\u4E0E\u5904\u5883\u73A9\u6CD5\uFF0C\u5DF2\u51BB\u7ED3\u4E0D\u518D\u66F4\u65B0",labLockBanner:"\u5F53\u524D\u6B63\u5728\u4F7F\u7528\u5B9E\u9A8C\u7248\uFF08{summary}\uFF09\uFF0C\u6781\u7B80\u7248\u5DF2\u9501\u5B9A\u4E0D\u53EF\u64CD\u4F5C\u3002\u8BF7\u5148\u70B9\u51FB\u300C\u6E05\u7A7A\u72B6\u6001\u300D\u540E\u518D\u4F7F\u7528\u6781\u7B80\u7248\uFF0C\u6216\u76F4\u63A5\u8FD4\u56DE\u5B9E\u9A8C\u7248\u7EE7\u7EED\u3002",labSwitchBlockedHint:"\u5F53\u524D\u6B63\u5728\u4F7F\u7528\u6781\u7B80\u7248\uFF0C\u8BF7\u5148\u70B9\u51FB\u4E0A\u65B9\u300C\u6E05\u7A7A\u72B6\u6001\u300D\u540E\u518D\u5207\u6362\u81F3\u5B9E\u9A8C\u7248\u3002",toastSwitchLabBlocked:"\u5F53\u524D\u6B63\u5728\u4F7F\u7528\u6781\u7B80\u7248\uFF0C\u8BF7\u5148\u300C\u6E05\u7A7A\u72B6\u6001\u300D\u540E\u518D\u5207\u6362\u5230\u5B9E\u9A8C\u7248\u3002",btnReset:"\u6E05\u7A7A\u72B6\u6001",btnResetIdle:"\u6E05\u7A7A\u72B6\u6001\uFF08\u5F53\u524D\u7A7A\u95F2\uFF09",resetConfirmTitle:"\u786E\u8BA4\u6E05\u7A7A TOY\xB7LINK \u72B6\u6001",resetConfirmBody:"\u6E05\u7A7A\u540E\u5C06\u7ACB\u5373\u505C\u6B62\u9707\u52A8\u3001\u6458\u4E0B\u5168\u90E8\u89D2\u8272\u7684\u8DF3\u86CB\u88C5\u7F6E\u3001\u64A4\u9664\u540E\u53F0\u72B6\u6001\u6CE8\u5165\u5E76\u89E3\u9664\u7248\u672C\u9501\u5B9A\uFF08\u4E0D\u4F1A\u4FEE\u6539\u804A\u5929\u8F93\u5165\u6846\u5185\u5BB9\uFF09\u3002\u6E05\u5B8C\u540E\u53EF\u81EA\u7531\u4F7F\u7528\u6781\u7B80\u7248\u6216\u5B9E\u9A8C\u7248\uFF0C\u786E\u8BA4\u7EE7\u7EED\u5417\uFF1F",resetConfirmCancel:"\u518D\u60F3\u60F3",resetConfirmOk:"\u786E\u8BA4\u6E05\u7A7A",toastResetOk:"\u5DF2\u6E05\u7A7A\u5168\u90E8 TOY\xB7LINK \u72B6\u6001\u4E0E\u540E\u53F0\u6CE8\u5165\uFF0C\u73B0\u5728\u53EF\u81EA\u7531\u9009\u62E9\u6781\u7B80\u7248\u6216\u5B9E\u9A8C\u7248\u3002",toastWear:"\u5DF2\u4E3A\u3010{name}\u3011\u4F69\u6234\u8DF3\u86CB\uFF08\u672A\u5F00\u542F\uFF09\uFF0C\u4E0B\u4E00\u8F6E\u6B63\u6587\u5C06\u81EA\u7136\u4F53\u73B0\u3002",toastUnwear:"\u5DF2\u6458\u4E0B\u3010{name}\u3011\u7684\u8DF3\u86CB\u3002",toastStart:"\u5DF2\u5BF9\u3010{name}\u3011\u5F00\u542F\u8DF3\u86CB\uFF08{gearLabel}\uFF09\u3002",toastStop:"\u5DF2\u5173\u95ED\u3010{name}\u3011\u7684\u8DF3\u86CB\u9707\u52A8\uFF08\u4ECD\u4F69\u6234\u4E2D\uFF09\u3002",toastGearLive:"\u5DF2\u5C06\u3010{name}\u3011\u8C03\u81F3 {gearLabel}\u3002",toastGearPreset:"\u5DF2\u9884\u8BBE\u4E3A {gearLabel}\uFF0C\u5F00\u542F\u540E\u751F\u6548\u3002",otherWornNote:"\u53E6\uFF1A{names}\u4F53\u5185\u4EA6\u4F69\u6234\u7740\u672A\u5F00\u542F\u7684\u8DF3\u86CB\uFF08\u65E0\u9707\u52A8\uFF0C\u4EC5\u4F5C\u80CC\u666F\u72B6\u6001\uFF09\u3002",prompts:{worn:`[\u72B6\u6001\u540C\u6B65 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u5DF2\u4F69\u6234\xB7\u672A\u5F00\u542F\uFF09]
+\u5BF9\u8C61\uFF1A{name}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u672C\u8F6E\u521A\u5C06\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\u7F6E\u5165\u4F53\u5185\u6DF1\u5904\uFF0C\u88C5\u7F6E\u5C1A\u672A\u5F00\u542F\u9707\u52A8\u3002
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u7D27\u63A5\u5F53\u524D\u573A\u666F\u4E0E\u5979\u7684\u4EBA\u8BBE\u5E95\u8272\uFF0C\u81EA\u7136\u5E26\u51FA\u5979\u4F53\u5185\u521A\u521A\u85CF\u5165\u5FAE\u51C9\u5F02\u7269\u7684\u80C0\u6EE1\u611F\u3001\u7F9E\u803B\u4E0E\u5E76\u817F\u9002\u5E94\u7684\u5C0F\u52A8\u4F5C\uFF1B\u4E0D\u53E6\u7F16\u65E0\u5173\u6865\u6BB5\u3002
+2. \u88C5\u7F6E\u5F53\u524D\u5904\u4E8E\u5173\u95ED\u72B6\u6001\uFF0C\u4E25\u7981\u63CF\u5199\u4EFB\u4F55\u9707\u52A8\u3001\u55E1\u9E23\u6216\u9AD8\u6F6E\u53CD\u5E94\uFF0C\u4E5F\u4E0D\u5F97\u66FF\u73A9\u5BB6\u64C5\u81EA\u5F00\u542F\u3002`,idle:`[\u540E\u53F0\u72B6\u6001 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u6301\u7EED\u4F69\u6234\xB7\u672A\u5F00\u542F\uFF09]
+\u5BF9\u8C61\uFF1A{names}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u4F53\u5185\u6B63\u4F69\u6234\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF0C\u5904\u4E8E\u5173\u95ED\u5F85\u673A\u72B6\u6001\u3002
+\u5199\u4F5C\u8981\u6C42\uFF1A\u5207\u52FF\u91CD\u590D\u63CF\u5199\u4F69\u6234\u8FC7\u7A0B\uFF1B\u4E25\u7981\u63CF\u5199\u4EFB\u4F55\u9707\u52A8\u3002\u4EC5\u5728\u8D70\u52A8\u3001\u843D\u5EA7\u6216\u4EB2\u8FD1\u4E92\u52A8\u65F6\uFF0C\u987A\u5E26\u70B9\u51FA\u4E00\u4E24\u7B14\u4F53\u5185\u85CF\u7740\u5F02\u7269\u7684\u5FAE\u5999\u7F9E\u803B\u4E0E\u62D8\u675F\u611F\uFF0C\u4E0D\u62A2\u4E3B\u7EBF\u620F\u4EFD\u3002`,started:`[\u72B6\u6001\u540C\u6B65 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u521A\u5F00\u542F\xB7{gearLabel}\uFF09]
+\u5BF9\u8C61\uFF1A{name}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u4F53\u5185\u4F69\u6234\u7684\u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\u521A\u521A\u88AB\u73A9\u5BB6\u8FDC\u7A0B\u5F00\u542F\uFF0C\u5F53\u524D\u4E3A{gearLabel}\u3002
+\u4F53\u611F\u53C2\u8003\uFF1A{gearDesc}
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u81EA\u7136\u5199\u51FA\u9707\u52A8\u9AA4\u7136\u5728\u4F53\u5185\u542F\u52A8\u77AC\u95F4\u5979\u7684\u7EC6\u5FAE\u50F5\u76F4\u3001\u795E\u6001\u53D8\u5316\u4E0E\u5F3A\u4F5C\u9547\u5B9A\u7684\u53CD\u5E94\uFF0C\u8D34\u5408\u5979\u5F53\u524D\u7684\u6027\u683C\u4E0E\u5904\u5883\u3002
+2. \u4E25\u7981\u66FF\u73A9\u5BB6\u64C5\u81EA\u8C03\u6863\u6216\u5173\u95ED\u88C5\u7F6E\u3002`,gearChanged:`[\u72B6\u6001\u540C\u6B65 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u6863\u4F4D\u5207\u6362\uFF1A{prevGearLabel} \u2192 {gearLabel}\uFF09]
+\u5BF9\u8C61\uFF1A{name}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u4F53\u5185\u6B63\u5728\u8FD0\u8F6C\u7684\u9065\u63A7\u8DF3\u86CB\u521A\u7531{prevGearLabel}\u5207\u6362\u81F3{gearLabel}\uFF08{direction}\uFF09\u3002
+\u5F53\u524D\u4F53\u611F\u53C2\u8003\uFF1A{gearDesc}
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u91CD\u70B9\u5199\u51FA\u6863\u4F4D\u9AA4\u7136{direction}\u5E26\u6765\u7684\u4F53\u611F\u843D\u5DEE\u4E0E\u5979\u547C\u5438\u3001\u795E\u60C5\u3001\u59FF\u6001\u7684\u5373\u65F6\u53CD\u5E94\uFF0C\u5207\u52FF\u91CD\u65B0\u63CF\u5199\u201C\u521A\u6234\u4E0A\u201D\u6216\u201C\u4ECE\u96F6\u542F\u52A8\u201D\u3002
+2. \u8D34\u5408\u5F53\u524D\u573A\u666F\u4E0E\u4EBA\u8BBE\uFF0C\u4E25\u7981\u66FF\u73A9\u5BB6\u64C5\u81EA\u8C03\u6863\u6216\u5173\u95ED\u88C5\u7F6E\u3002`,running:`[\u540E\u53F0\u72B6\u6001 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u6301\u7EED\u8FD0\u884C\xB7{gearLabel}\uFF09]
+\u5BF9\u8C61\uFF1A{name}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u4F53\u5185\u8DF3\u86CB\u6B63\u4EE5{gearLabel}\u6301\u7EED\u8FD0\u8F6C\u4E2D\u3002
+\u4F53\u611F\u53C2\u8003\uFF1A{gearDesc}
+\u5199\u4F5C\u8981\u6C42\uFF1A\u5207\u52FF\u91CD\u590D\u63CF\u5199\u542F\u52A8\u6216\u5207\u6863\u77AC\u95F4\uFF0C\u4E5F\u4E0D\u8981\u6BCF\u8F6E\u5806\u780C\u5927\u6BB5\u91CD\u590D\u4F53\u611F\uFF1B\u5C06\u5176\u4F5C\u4E3A\u6301\u7EED\u80CC\u666F\u72B6\u6001\u81EA\u7136\u878D\u5165\u5979\u7684\u8BED\u6C14\u3001\u505C\u987F\u3001\u795E\u6001\u4E0E\u80A2\u4F53\u53CD\u5E94\u4E2D\uFF0C\u4E25\u7981\u66FF\u73A9\u5BB6\u64C5\u81EA\u8C03\u6863\u6216\u5173\u95ED\u3002`,stopped:`[\u72B6\u6001\u540C\u6B65 \xB7 \u9690\u85CF\u5F0F\u9065\u63A7\u8DF3\u86CB\uFF08\u521A\u5173\u95ED\xB7\u4ECD\u4F69\u6234\uFF09]
+\u5BF9\u8C61\uFF1A{name}\uFF5C\u5F53\u524D\u72B6\u6001\uFF1A\u4F53\u5185\u7684\u9065\u63A7\u8DF3\u86CB\u521A\u521A\u88AB\u73A9\u5BB6\u5173\u95ED\u9707\u52A8\uFF0C\u4F46\u88C5\u7F6E\u4ECD\u7559\u5728\u4F53\u5185\u672A\u6458\u4E0B\u3002
+\u5199\u4F5C\u8981\u6C42\uFF1A
+1. \u81EA\u7136\u5199\u51FA\u9707\u52A8\u9AA4\u7136\u505C\u6B62\u540E\u5979\u6697\u81EA\u677E\u6C14\u3001\u53CC\u817F\u5FAE\u8F6F\u3001\u4F59\u97F5\u672A\u6563\u7684\u677E\u5F1B\u4E0E\u72FC\u72C8\uFF0C\u88C5\u7F6E\u4ECD\u7559\u5728\u4F53\u5185\u5E26\u6765\u8F7B\u5FAE\u5F02\u7269\u611F\u3002
+2. \u9707\u52A8\u5DF2\u505C\u6B62\uFF0C\u4E25\u7981\u7EE7\u7EED\u63CF\u5199\u9707\u52A8\u6216\u64C5\u81EA\u91CD\u65B0\u5F00\u542F\u3002`}}},detailDevices:{chokerTag:"\u26D3\uFE0F \u8A93\u7EA6\u9879\u5708",chokerTip:"\u70B9\u51FB\u524D\u5F80\u9879\u5708\u5DE5\u574A\u4FEE\u6539\u6216\u6458\u4E0B",imprintTag:"\u{1F4AE} {placementShort}\u5370\u8BB0",imprintTip:"\u70B9\u51FB\u67E5\u770B\u6216\u4FEE\u6539\u5979\u7684\u4E13\u5C5E\u5370\u8BB0",toylinkReadyTag:"\u{1F4E1} TOY\xB7LINK \u5F85\u547D",toylinkActiveTag:"\u{1F4E1} TOY\xB7LINK \u8FD0\u884C\u4E2D \xB7 {pow}%",toylinkTip:"\u70B9\u51FB\u547C\u51FA TOY\xB7LINK \u9065\u63A7\u5668\u5E76\u9501\u5B9A\u5979",quickImprint:"+ \u5370\u8BB0",quickChoker:"+ \u9879\u5708",quickToylink:"\u{1F4E1} TOY\xB7LINK",btnViewImprint:"\u67E5\u770B\u5370\u8BB0 \u{1F4AE}"},pendingBar:{label:"\u26A1 \u672C\u8F6E\u5F85\u751F\u6548\uFF1A",btnUndo:"\u64A4\u9500",sep:"\xB7",emptyAria:"\u5F53\u524D\u6CA1\u6709\u5F85\u751F\u6548\u9879\u76EE"},wealthAsset:{btnOpen:"\uFF0B \u767B\u8BB0\u8D44\u4EA7",btnOpenShort:"\uFF0B \u767B\u8BB0",btnOpenAria:"\u624B\u52A8\u8865\u5F55\u540D\u4E0B\u8D44\u4EA7",modalTitle:"\u8865\u5F55\u540D\u4E0B\u8D44\u4EA7",notice:"\u5EFA\u8BAE\u53EA\u5728\u6B63\u6587\u63CF\u5199\u83B7\u5F97\u8D44\u4EA7\u5374\u6CA1\u6709\u8BB0\u5165\u8D44\u4EA7\u624D\u4F7F\u7528\u3002\u65E0\u9700\u586B\u5199\u4EF7\u683C\uFF0C\u63D0\u4EA4\u540E\u5C06\u5728\u4E0B\u4E00\u8F6E\u6B63\u6587\u7531\u7CFB\u7EDF\u7ED3\u5408\u8BBE\u5B9A\u81EA\u52A8\u8865\u5168\u7C7B\u522B\u4E0E\u4F30\u503C\uFF1B\u4E0D\u6263\u51CF\u73B0\u91D1\uFF0C\u4E5F\u4E0D\u8BA1\u5165\u795E\u8C6A\u63D0\u73B0\u8BA1\u7EA7\u8EAB\u5BB6\u3002",nameLabel:"\u8D44\u4EA7\u540D\u79F0",namePlaceholder:"\u5982\uFF1A\u6CD5\u62C9\u5229 SF90\u3001\u4E91\u73BA\u6E7E\u6C5F\u666F\u5E73\u5C42\u3001\u767E\u8FBE\u7FE1\u4E3D\u8155\u8868",descLabel:"\u8D44\u4EA7\u63CF\u8FF0\uFF08\u4E0D\u542B\u4EF7\u683C\uFF0C80 \u5B57\u5185\uFF09",descPlaceholder:"\u53EA\u5199\u5916\u89C2\u578B\u53F7\u3001\u5730\u6BB5\u7279\u5F81\u4E0E\u83B7\u5F97\u6765\u5386\uFF08\u52FF\u586B\u4F30\u503C\u6216\u91D1\u989D\uFF09",btnSubmit:"\u786E\u8BA4\u8865\u5F55",doneToast:"\u5DF2\u8865\u5F55\u3010{name}\u3011\uFF0C\u7CFB\u7EDF\u6838\u5B9A\u4F30\u503C {value}\u3002",pendingBadge:"\u5F85\u4E0B\u8F6E\u4F30\u503C",btnDelete:"\u5220\u9664",deleteTitle:"\u786E\u8BA4\u5220\u9664\u8D44\u4EA7",deleteConfirmText:"\u786E\u8BA4\u6C38\u4E45\u5220\u9664\u3010{name}\u3011\uFF08\u5F53\u524D\u4F30\u503C {value}\uFF09\uFF1F\u5220\u9664\u540E\u8BE5\u8D44\u4EA7\u5C06\u4ECE\u540D\u4E0B\u8D44\u4EA7\u6863\u6848\u4E2D\u5F7B\u5E95\u79FB\u9664\uFF0C\u4E0D\u53EF\u64A4\u56DE\u3002",deletePendingText:"\u786E\u8BA4\u6C38\u4E45\u5220\u9664\u5F85\u4F30\u503C\u8D44\u4EA7\u3010{name}\u3011\uFF1F\u5220\u9664\u540E\u4E0D\u53EF\u64A4\u56DE\u3002",btnDeleteConfirm:"\u786E\u8BA4\u5220\u9664",btnCancel:"\u518D\u60F3\u60F3",deletedToast:"\u5DF2\u4ECE\u540D\u4E0B\u8D44\u4EA7\u4E2D\u5220\u9664\u3010{name}\u3011\u3002",tierLabel:"\u8D44\u4EA7\u6863\u6B21",tierEntry:"\u8F7B\u5962\u5165\u95E8",tierMid:"\u4E2D\u7AEF\u54C1\u8D28",tierHigh:"\u9AD8\u7AEF\u81FB\u54C1",tierTop:"\u9876\u5962\u65D7\u8230",tierHint:"\u6309\u7269\u54C1\u7684\u73B0\u5B9E\u5B9A\u4F4D\u9009\u4E00\u6863\uFF0C\u7CFB\u7EDF\u636E\u6B64\u6838\u5B9A\u4F30\u503C\uFF08\u4E0D\u63A5\u53D7\u624B\u586B\u91D1\u989D\uFF09\u3002"}};function s(e,t={}){return String(e??"").replace(/\{([a-zA-Z0-9_]+)\}/g,(a,n)=>Object.hasOwn(t,n)?String(t[n]):a)}var de=9;var Q=["\u9002\u5E94","\u5347\u6E29","\u6500\u5347","\u6FD2\u4E34","\u4E34\u754C"],Ce=["\u521D\u6F6E","\u4E00\u91CD\u53E0\u52A0","\u4E8C\u91CD\u53E0\u52A0","\u8FC7\u8F7D\u53E0\u52A0"];function y(e,t,a){return e<t?t:e>a?a:e}function me(e){let t=Math.sin(e*127.1)*43758.5453;return t-Math.floor(t)}function J(e){return Math.round(.6*Math.pow(33.3,(e-1)/99)*10)/10}function V(e){let t=y(Math.floor(Number(e)||0),0,de),a=t>=3?3:t;return{peak:t,tier:a,tierLabel:Ce[a],rateMult:Math.min(2.2,Number((1+t*.22).toFixed(2))),envMult:Math.min(1.25,Number((1+t*.06).toFixed(2))),capped:t>=de}}var Ye=(()=>{let e=0,t=720;for(let a=0;a<t;a++){let n=.5+.5*Math.sin(a/t*Math.PI*2);e+=.25+.75*Math.pow(n,1.4)}return e/t})(),q=[{id:"pulse",name:"\u8109\u51B2",gain:1,feel:"\u4E00\u8BB0\u4E00\u8BB0\u77ED\u4FC3\u8F7B\u53E9\uFF0C\u6BCF\u62CD\u4E4B\u95F4\u7559\u51FA\u534A\u606F\u7A7A\u6863\uFF0C\u521A\u677E\u61C8\u7684\u795E\u7ECF\u4F1A\u88AB\u4E0B\u4E00\u62CD\u91CD\u65B0\u62FD\u7D27\u3002",icon:'<path d="M4 20h3v-9H4zM10.5 20h3V5h-3zM17 20h3v-6h-3z"/>',period:function(e){return 1/e.hz},env:function(e,t){let a=this.period(t),n=e%a/a;return y(t.pow*(n<.22?1:.1),0,1)}},{id:"wave",name:"\u6F6E\u6C50",gain:1.05,feel:"\u6E29\u70ED\u9707\u611F\u5982\u6F6E\u6C34\u5C42\u5C42\u6F2B\u6D8C\u518D\u7F13\u7F13\u9000\u53BB\uFF0C\u9000\u6F6E\u65F6\u7684\u7A7A\u843D\u4F1A\u903C\u7740\u5979\u4E0D\u81EA\u89C9\u7EF7\u7D27\u8FFD\u5BFB\u3002",icon:'<path d="M2 15c3-6 6 6 9 0s6 6 9 0v4c-3 6-6-6-9 0s-6-6-9 0z"/>',period:function(e){return 1/Math.max(e.hz,.4)},env:function(e,t){let a=this.period(t),n=.5+.5*Math.sin(e/a*Math.PI*2);return y(t.pow*(.25+.75*Math.pow(n,1.4)),0,1)}},{id:"heart",name:"\u5FC3\u8DF3",gain:1.15,feel:"\u4E00\u8F7B\u4E00\u91CD\u53CC\u8FDE\u640F\u52A8\uFF0C\u8282\u62CD\u8D34\u7740\u8109\u640F\u8D70\uFF0C\u5F88\u5FEB\u4F1A\u628A\u5979\u7684\u547C\u5438\u9891\u7387\u5F7B\u5E95\u5E26\u4E71\u3002",icon:'<path d="M12 21s-8-5.2-8-10.4A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 8 3.6C20 15.8 12 21 12 21z"/>',period:function(e){return 1/e.hz},env:function(e,t){let a=this.period(t),n=e%a/a,d=n<.1?1:0,p=n>.2&&n<.29?.72:0;return y(t.pow*Math.max(d,p,.06),0,1)}},{id:"ramp",name:"\u6E10\u5F3A",gain:1.35,feel:"\u9707\u5E45\u4ECE\u4F4E\u5904\u4E00\u8DEF\u6500\u5347\u5230\u9AD8\u70B9\u518D\u9AA4\u7136\u8DCC\u843D\uFF0C\u6BCF\u4E00\u8F6E\u91CD\u6765\u90FD\u66F4\u78E8\u4EBA\u3002",icon:'<path d="M3 18 10 6l3 7 3-4 5 9z"/>',period:function(e){return 1/Math.max(e.hz*.35,.25)},env:function(e,t){let a=this.period(t),n=e%a/a,d=n<.78?Math.min(1,n/.78):Math.max(0,1-(n-.78)/.22);return y(t.pow*(.08+.92*d),0,1)}},{id:"chaos",name:"\u4E71\u6D41",gain:1.2,feel:"\u8F7B\u91CD\u4E0E\u95F4\u9694\u6BEB\u65E0\u89C4\u5F8B\uFF0C\u731C\u4E0D\u5230\u4E0B\u4E00\u77AC\u7684\u843D\u70B9\uFF0C\u7B49\u5F85\u672C\u8EAB\u6BD4\u9707\u52A8\u66F4\u8BA9\u4EBA\u7D27\u7EF7\u3002",icon:'<path d="M3 8h6l3 8h3l3-8h3v3h-2l-3 8h-5l-3-8H3z"/>',period:function(){return 0},env:function(e,t){let a=me(Math.floor(e*t.hz)+t.phase),n=.5+.5*Math.sin(e*t.hz*Math.PI*2);return y(t.pow*(.25+.75*a)*(.55+.45*n),0,1)}},{id:"tease",name:"\u64A9\u62E8",gain:.88,feel:"\u957F\u6BB5\u9759\u9ED8\u95F4\u5076\u6709\u8F7B\u89E6\u5373\u79BB\uFF0C\u7D2F\u79EF\u7F13\u6162\u5374\u6700\u52FE\u4EBA\uFF0C\u5BB9\u6613\u628A\u5979\u540A\u5F97\u5FC3\u6D6E\u6C14\u8E81\u3002",icon:'<path d="M12 3c2 5 6 6 6 10a6 6 0 0 1-12 0c0-4 4-5 6-10z"/>',period:function(e){return 1/Math.max(e.hz*.3,.22)},env:function(e,t){let a=this.period(t),n=e%a/a;return y(t.pow*(n<.14?.62:.03),0,1)}},{id:"storm",name:"\u66B4\u96E8",gain:1.45,feel:"\u5BC6\u96C6\u8FDE\u7EF5\u7684\u9AD8\u9891\u51B2\u51FB\u51E0\u4E4E\u4E0D\u7559\u5598\u606F\u7A7A\u9699\uFF0C\u601D\u7EEA\u5F88\u5FEB\u88AB\u9707\u6563\u3002",icon:'<path d="M6 14h12l-2 7h-8zM9 3h6l-1 9H10z"/>',period:function(e){return 1/e.hz},env:function(e,t){let a=this.period(t),n=e%a/a,d=.62+.3*Math.sin(e/a*Math.PI*2),p=me(Math.floor(e*t.hz*1.7))>.86?.38:0;return y(t.pow*(n<.62?d+p:.3),0,1)}},{id:"edge",name:"\u4E34\u754C",gain:1.6,feel:"\u6301\u7EED\u9876\u5728\u9AD8\u4F4D\u60AC\u505C\uFF0C\u968F\u540E\u7A81\u7136\u62BD\u7A7A\u56DE\u843D\uFF0C\u6070\u5728\u6FD2\u4E34\u5931\u5B88\u7684\u4E00\u523B\u628A\u5979\u62C9\u4F4F\u3002",icon:'<path d="M12 2 4 14h7l-1 8 9-13h-7z"/>',period:function(e){return 1/Math.max(e.hz*.18,.16)},env:function(e,t){let a=this.period(t),n=e%a/a;return n<.7?y(t.pow*(.8+.2*Math.sin(e*5)),0,1):y(t.pow*(n<.76?.04:.25),0,1)}},{id:"rush",name:"\u51B2\u523A",gain:4.8,feel:"\u6BEB\u65E0\u94FA\u57AB\u76F4\u63A5\u6EE1\u5E45\u62C9\u5347\uFF0C\u4E00\u8DEF\u9AD8\u901F\u538B\u5411\u7EDD\u9876\uFF0C\u7EDD\u9876\u540E\u4ECD\u6301\u7EED\u72C2\u9707\u53E0\u6D6A\u4E0D\u505C\u3002",icon:'<path d="M13 2 4 14h6l-1 8 11-15h-7zM11 4l-5 8h4l-1 6"/>',period:function(){return 0},env:function(e,t){return y(t.pow*(.86+.14*Math.sin(e*7.3)),0,1)}}];function Z(e){for(let t=0;t<q.length;t++)if(q[t].id===e)return q[t];return q[1]}function ue(e){let t=Math.min(5,Math.max(0,Math.floor(Number(e)||0)));return Number((1+t*.35).toFixed(2))}function pe(e){let a=C.workshop.toylink.feeds||{},n=e&&typeof e.feedKey=="string"&&a[e.feedKey]!==void 0?e.feedKey:"idle";return s(a[n],{count:Number(e?.edgeCount)||0,crave:Math.round(Number(e?.crave)||0),peak:Number(e?.peak)||0})}var he=[{id:"lower_abdomen",group:"chest_abdomen",name:"\u5C0F\u8179 \xB7 \u6DEB\u7EB9\u6838\u5FC3",short:"\u5C0F\u8179",privacy:"\u79C1\u5BC6 \xB7 \u9732\u8110\u6216\u5BBD\u8863\u53EF\u89C1",anchor:"\u5C0F\u8179\u803B\u9AA8\u4E0A\u65B9"},{id:"left_breast",group:"chest_abdomen",name:"\u5DE6\u80F8 \xB7 \u5FC3\u53E3\u4E73\u4FA7",short:"\u5DE6\u80F8",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u5185\u8863\u53EF\u89C1",anchor:"\u5DE6\u80F8\u5FC3\u53E3\u5904"},{id:"right_breast",group:"chest_abdomen",name:"\u53F3\u80F8 \xB7 \u4E73\u6655\u5916\u7F18",short:"\u53F3\u80F8",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u5185\u8863\u53EF\u89C1",anchor:"\u53F3\u80F8\u4E73\u4FA7\u5904"},{id:"lower_back",group:"waist_glute",name:"\u540E\u8170 \xB7 \u5C3E\u690E\u8170\u7A9D",short:"\u540E\u8170",privacy:"\u534A\u79C1\u5BC6 \xB7 \u4FEF\u8EAB\u6216\u4F4E\u8170\u53EF\u89C1",anchor:"\u540E\u8170\u5C3E\u690E\u4E0A\u65B9"},{id:"left_glute",group:"waist_glute",name:"\u5DE6\u81C0 \xB7 \u81C0\u5CF0\u5F27\u7EBF",short:"\u5DE6\u81C0",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u4E0B\u88C5\u53EF\u89C1",anchor:"\u5DE6\u81C0\u5F27\u9762\u5904"},{id:"right_glute",group:"waist_glute",name:"\u53F3\u81C0 \xB7 \u81C0\u5CF0\u5F27\u7EBF",short:"\u53F3\u81C0",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u4E0B\u88C5\u53EF\u89C1",anchor:"\u53F3\u81C0\u5F27\u9762\u5904"},{id:"clavicle",group:"neck_shoulder",name:"\u9501\u9AA8 \xB7 \u9888\u4E0B\u80F8\u4E0A",short:"\u9501\u9AA8",privacy:"\u663E\u9732 \xB7 \u65E5\u5E38\u9886\u53E3\u9690\u7EA6\u53EF\u89C1",anchor:"\u9501\u9AA8\u4E0B\u6CBF"},{id:"nape",group:"neck_shoulder",name:"\u540E\u9888 \xB7 \u53D1\u9645\u5782\u843D",short:"\u540E\u9888",privacy:"\u663E\u9732 \xB7 \u633D\u53D1\u6216\u8EAB\u540E\u62E5\u62B1\u53EF\u89C1",anchor:"\u540E\u9888\u53D1\u9645\u7EBF\u4E0B"},{id:"scapula",group:"neck_shoulder",name:"\u80A9\u80DB \xB7 \u8776\u9AA8\u80CC\u5F71",short:"\u80A9\u80DB",privacy:"\u534A\u79C1\u5BC6 \xB7 \u9732\u80CC\u88C5\u6216\u4FEF\u8EAB\u53EF\u89C1",anchor:"\u80CC\u810A\u80A9\u80DB\u9AA8\u5904"},{id:"left_thigh_inner",group:"lower_limb",name:"\u5DE6\u5927\u817F\u5185\u4FA7 \xB7 \u817F\u6839",short:"\u5DE6\u5927\u817F\u5185\u4FA7",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u4E0B\u88C5\u6216\u5206\u817F\u53EF\u89C1",anchor:"\u5DE6\u5927\u817F\u5185\u4FA7\u8FD1\u6839\u5904"},{id:"right_thigh_inner",group:"lower_limb",name:"\u53F3\u5927\u817F\u5185\u4FA7 \xB7 \u817F\u6839",short:"\u53F3\u5927\u817F\u5185\u4FA7",privacy:"\u6781\u79C1\u5BC6 \xB7 \u892A\u53BB\u4E0B\u88C5\u6216\u5206\u817F\u53EF\u89C1",anchor:"\u53F3\u5927\u817F\u5185\u4FA7\u8FD1\u6839\u5904"},{id:"left_thigh_outer",group:"lower_limb",name:"\u5DE6\u5927\u817F\u5916\u4FA7 \xB7 \u80EF\u4FA7",short:"\u5DE6\u5927\u817F\u5916\u4FA7",privacy:"\u79C1\u5BC6 \xB7 \u9AD8\u53C9\u88D9\u6446\u6216\u892A\u8863\u53EF\u89C1",anchor:"\u5DE6\u5927\u817F\u5916\u4FA7\u4E2D\u4E0A\u6BB5"},{id:"right_thigh_outer",group:"lower_limb",name:"\u53F3\u5927\u817F\u5916\u4FA7 \xB7 \u80EF\u4FA7",short:"\u53F3\u5927\u817F\u5916\u4FA7",privacy:"\u79C1\u5BC6 \xB7 \u9AD8\u53C9\u88D9\u6446\u6216\u892A\u8863\u53EF\u89C1",anchor:"\u53F3\u5927\u817F\u5916\u4FA7\u4E2D\u4E0A\u6BB5"},{id:"left_calf",group:"lower_limb",name:"\u5DE6\u5C0F\u817F \xB7 \u811A\u8E1D\u808C\u7406",short:"\u5DE6\u5C0F\u817F",privacy:"\u663E\u9732 \xB7 \u7740\u88D9\u6216\u4E1D\u889C\u9690\u7EA6\u53EF\u89C1",anchor:"\u5DE6\u5C0F\u817F\u809A\u5916\u4FA7"},{id:"right_calf",group:"lower_limb",name:"\u53F3\u5C0F\u817F \xB7 \u811A\u8E1D\u808C\u7406",short:"\u53F3\u5C0F\u817F",privacy:"\u663E\u9732 \xB7 \u7740\u88D9\u6216\u4E1D\u889C\u9690\u7EA6\u53EF\u89C1",anchor:"\u53F3\u5C0F\u817F\u809A\u5916\u4FA7"},{id:"left_arm",group:"upper_limb",name:"\u5DE6\u81C2 \xB7 \u4E0A\u81C2\u5185\u4FA7",short:"\u5DE6\u81C2",privacy:"\u534A\u79C1\u5BC6 \xB7 \u65E0\u8896\u6216\u62AC\u81C2\u53EF\u89C1",anchor:"\u5DE6\u4E0A\u81C2\u5185\u4FA7"},{id:"right_arm",group:"upper_limb",name:"\u53F3\u81C2 \xB7 \u4E0A\u81C2\u5185\u4FA7",short:"\u53F3\u81C2",privacy:"\u534A\u79C1\u5BC6 \xB7 \u65E0\u8896\u6216\u62AC\u81C2\u53EF\u89C1",anchor:"\u53F3\u4E0A\u81C2\u5185\u4FA7"},{id:"left_wrist",group:"upper_limb",name:"\u5DE6\u624B\u8155 \xB7 \u8109\u640F\u5185\u4FA7",short:"\u5DE6\u624B\u8155",privacy:"\u663E\u9732 \xB7 \u62AC\u624B\u633D\u8896\u6E05\u6670\u53EF\u89C1",anchor:"\u5DE6\u624B\u8155\u5185\u4FA7\u8109\u640F\u5904"},{id:"right_wrist",group:"upper_limb",name:"\u53F3\u624B\u8155 \xB7 \u8109\u640F\u5185\u4FA7",short:"\u53F3\u624B\u8155",privacy:"\u663E\u9732 \xB7 \u62AC\u624B\u633D\u8896\u6E05\u6670\u53EF\u89C1",anchor:"\u53F3\u624B\u8155\u5185\u4FA7\u8109\u640F\u5904"}],He=Object.fromEntries(he.map(e=>[e.id,e])),Ke=he.map(e=>e.id);var Ne=[{id:"succubus_heart",name:"\u9B45\u9B54\u5FC3\u7FFC",desc:"\u5012\u5FC3\u7FBD\u7FFC\u73AF\u62B1\uFF0C\u7ECF\u5178\u6DEB\u7EB9\u6838\u5FC3"},{id:"tally_zheng",name:"\u300C\u6B63\u300D\u5B57\u8BA1\u6570",desc:"\u4E94\u5212\u6B63\u5B57\u94ED\u523B\uFF0C\u8BB0\u4E0B\u6BCF\u4E00\u6B21\u81E3\u670D"},{id:"thorn_crown",name:"\u8346\u68D8\u51A0\u5195",desc:"\u68D8\u523A\u7F20\u7ED5\u738B\u51A0\uFF0C\u9AD8\u50B2\u4F4E\u5934\u81E3\u670D"},{id:"lunar_sigil",name:"\u6708\u76F8\u5951\u7EA6",desc:"\u5F26\u6708\u4E0E\u79D8\u7B26\u4EA4\u53E0\uFF0C\u6697\u591C\u5B9A\u5951"},{id:"abyss_butterfly",name:"\u6DF1\u6E0A\u8776\u7FFC",desc:"\u5C55\u7FC5\u9B54\u8776\u7EC6\u7EB9\uFF0C\u8170\u8179\u6447\u66F3\u751F\u59FF"},{id:"rose_vine",name:"\u8537\u8587\u85E4\u8513",desc:"\u5E26\u523A\u82B1\u679D\u8513\u5EF6\uFF0C\u9761\u4E3D\u8D34\u5408\u808C\u7406"},{id:"obsidian_chain",name:"\u9ED1\u66DC\u9501\u94FE",desc:"\u7EC6\u94FE\u73AF\u6263\u9501\u5370\uFF0C\u8C61\u5F81\u5F52\u5C5E\u675F\u7F1A"},{id:"astral_crest",name:"\u661F\u8292\u5723\u5370",desc:"\u516B\u8292\u661F\u8F68\u7EB9\u7AE0\uFF0C\u5962\u534E\u8D35\u65CF\u70D9\u5370"},{id:"coiled_serpent",name:"\u76D8\u86C7\u7F20\u679D",desc:"\u7EC6\u86C7\u7ED5\u8F74\u5410\u4FE1\uFF0C\u51B0\u51B7\u7F20\u7EF5\u5360\u6709"},{id:"chain_cross",name:"\u9501\u94FE\u5341\u5B57",desc:"\u5723\u6D01\u5341\u5B57\u7F20\u9501\uFF0C\u7981\u5FCC\u80CC\u5FB7\u5370\u8BB0"},{id:"rose_window",name:"\u54E5\u7279\u73AB\u7470\u7A97",desc:"\u7E41\u590D\u5BF9\u79F0\u82B1\u7A97\uFF0C\u5E84\u4E25\u6697\u591C\u5723\u5802"},{id:"fallen_wings",name:"\u5815\u5929\u53CC\u7FFC",desc:"\u8212\u5C55\u9510\u5229\u7FBD\u7FFC\uFF0C\u6298\u7FFC\u5F52\u987A\u4E4B\u59FF"},{id:"astrolabe_ring",name:"\u79D8\u4EEA\u661F\u76D8",desc:"\u540C\u5FC3\u661F\u8F68\u523B\u5EA6\uFF0C\u547D\u8FD0\u9501\u6B7B\u5F52\u5C5E"},{id:"bound_heart",name:"\u675F\u7F1A\u4E4B\u5FC3",desc:"\u7F0E\u5E26\u5341\u5B57\u52D2\u7D27\u5FC3\u623F\uFF0C\u7518\u613F\u4EA4\u4ED8"},{id:"spade_thorns",name:"\u9ED1\u6843\u8346\u73AF",desc:"\u5C16\u9510\u9ED1\u6843\u5D4C\u68D8\u73AF\uFF0C\u5371\u9669\u75F4\u8FF7\u5370\u8BB0"}],Ge=Object.fromEntries(Ne.map(e=>[e.id,e])),Se=[{id:"crimson",name:"\u7EEF\u7EA2\u9B45\u5F71",desc:"\u8273\u4E3D\u6DEB\u7EB9\u7C89\u7EA2\uFF0C\u808C\u8868\u707C\u76EE\u5FAE\u5149",fill:"#f05684"},{id:"gold",name:"\u6697\u91D1\u70D9\u5370",desc:"\u7687\u5BB6\u938F\u91D1\u7EC6\u7EBF\uFF0C\u5962\u534E\u8D35\u65CF\u8D28\u611F",fill:"#e4c482"},{id:"obsidian",name:"\u6DF1\u66DC\u58A8\u9ED1",desc:"\u7ECF\u5178\u9AD8\u5B9A\u523A\u9752\u9ED1\uFF0C\u5229\u843D\u51B7\u8273",fill:"#1d1724"},{id:"violet",name:"\u9B45\u7D2B\u5E7D\u5149",desc:"\u9B45\u9B54\u79D8\u7EB9\u7D2B\u8C03\uFF0C\u5E7D\u6697\u8FF7\u79BB",fill:"#b876ff"}],Fe=Object.fromEntries(Se.map(e=>[e.id,e])),Oe=[{id:"script",label:"\u7EA4\u7EC6\u624B\u5199",body:"\u7EA4\u7EC6\u624B\u5199\u4F53"},{id:"gothic",label:"\u54E5\u7279\u82B1\u4F53",body:"\u54E5\u7279\u82B1\u4F53"},{id:"seal",label:"\u53E4\u5178\u7BC6\u523B",body:"\u53E4\u5178\u7BC6\u523B\u4F53"}],Ue=Object.fromEntries(Oe.map(e=>[e.id,e])),Ie=[{id:"arc_wrap",label:"\u5F27\u7ED5\u5916\u7F18"},{id:"above",label:"\u56FE\u817E\u4E0A\u65B9"},{id:"below",label:"\u56FE\u817E\u4E0B\u65B9"},{id:"side_stamp",label:"\u72EC\u7ACB\u843D\u6B3E"}],ze=Object.fromEntries(Ie.map(e=>[e.id,e]));var Me=[{id:"obsidian_velvet",name:"\u9ED1\u66DC\u4E1D\u7ED2\u7EC6\u94FE",desc:"\u54D1\u5149\u9ED1\u66DC\u4E1D\u7ED2\u914D\u9690\u5F62\u6697\u6263\uFF0C\u65E5\u5E38\u5982\u6781\u7B80\u7EC6\u9888\u94FE\u822C\u81EA\u7136",swatch:"is-velvet"},{id:"rose_gold_lock",name:"\u73AB\u7470\u91D1\u94ED\u724C\u9501\u5708",desc:"\u8D34\u9888\u73AB\u7470\u91D1\u7EA4\u73AF\u7F00\u523B\u5B57\u5C0F\u724C\uFF0C\u5782\u843D\u5FAE\u578B\u5341\u5B57\u9501\u6263",swatch:"is-rosegold"},{id:"crimson_thorn",name:"\u7EEF\u7EA2\u8346\u68D8\u76AE\u8D28\u9888\u73AF",desc:"\u6697\u7EEF\u5934\u5C42\u8F6F\u76AE\u6D6E\u96D5\u8346\u68D8\u6697\u7EB9\uFF0C\u8D34\u5408\u5589\u7ED3\u8109\u640F\u7684\u652F\u914D\u611F",swatch:"is-crimson"},{id:"silver_studs",name:"\u94F6\u8D28\u94C6\u9489\u7A84\u5708",desc:"\u51B7\u51BD\u54D1\u9ED1\u7A84\u5E26\u5D4C\u7EC6\u5BC6\u94F6\u9489\uFF0C\u950B\u5229\u51B7\u8273\u7684\u9A6F\u670D\u6807\u8BB0",swatch:"is-studs"},{id:"pearl_strand",name:"\u6708\u767D\u73CD\u73E0\u4E32\u94FE",desc:"\u6E29\u6DA6\u5357\u6D0B\u73E0\u4E32\u7F00\u6697\u91D1\u540A\u724C\uFF0C\u7AEF\u5E84\u540D\u5A9B\u76AE\u56CA\u4E0B\u7684\u79C1\u5BC6\u67B7\u9501",swatch:"is-pearl"},{id:"satin_ribbon",name:"\u58A8\u7EA2\u7F0E\u5E26\u8774\u8776\u7ED3",desc:"\u5782\u987A\u9152\u7EA2\u771F\u4E1D\u7CFB\u51FA\u8F6F\u7ED3\uFF0C\u4F3C\u793C\u76D2\u4E1D\u5E26\u822C\u7B49\u5F85\u62C6\u5C01",swatch:"is-ribbon"},{id:"minimal_torc",name:"\u6781\u7B80\u51B7\u94F6\u91D1\u5C5E\u73AF",desc:"\u4E00\u4F53\u6210\u578B\u629B\u5149\u51B7\u94F6\u9888\u73AF\uFF0C\u8D34\u9AA8\u5FAE\u51C9\u7684\u7EDD\u5BF9\u5F52\u5C5E\u5708",swatch:"is-torc"}],$e=Object.fromEntries(Me.map(e=>[e.id,e]));var ee=70,te=60;function ge(e){let t=Math.max(0,Math.min(100,Math.trunc(Number(e?.affection)||0))),a=Math.max(0,Math.min(100,Math.trunc(Number(e?.corruption)||0))),n=Math.max(0,ee-t),d=Math.max(0,te-a),p=t>=ee,w=a>=te,b=!!(e&&e.trackingState==="RECORDED"&&(p||w));return{eligible:b,affection:t,corruption:a,minAffection:ee,minCorruption:te,affGap:n,corGap:d,metBy:b?p&&w?"both":p?"affection":"corruption":null}}var we="CJ_SHENGHAO_TOYLINK_V1",fe=2*Math.PI*52,be=2*Math.PI*44,r=()=>C.workshop.toylink,i=e=>document.getElementById(e),ve=()=>C.workshop.toylink.modes||[],Le="",M=null,ye=!1,Te=!1,Y=null,xe=0,F=new Map,o={open:!1,step:1,loc:"",scene:""};function B(e,t){try{window.parent.postMessage({channel:we,nonce:Le,type:e,...t||{}},"*")}catch{}}function Ee(){let e=0,t=()=>{if(ye||e>=20){clearInterval(Y),Y=null;return}e+=1,B("TOYLINK_READY")};t(),Y=setInterval(t,300)}function f(e,t){return new Promise(a=>{let n="r"+ ++xe;F.set(n,a),B("TOYLINK_ACTION",{reqId:n,cmd:e,payload:t||{}}),setTimeout(()=>{F.has(n)&&(F.delete(n),a({ok:!1,code:"TIMEOUT"}))},8e3)})}window.addEventListener("message",e=>{let t=e&&e.data;if(!(!t||t.channel!==we)){if(t.type==="TOYLINK_INIT"||t.type==="TOYLINK_OPEN"){t.nonce&&(Le=t.nonce),ye=!0,Y&&(clearInterval(Y),Y=null);let a=i("tlOverlay");a&&(a.hidden=!1,a.classList.remove("is-closing")),t.view&&(M=t.view,u()),Te||(Te=!0,B("TOYLINK_BUILT"));return}if(t.type==="TOYLINK_STATE_SYNC"){t.view&&(M=t.view,u());return}if(t.type==="TOYLINK_TICK"){t.frame&&ke(t.frame);return}if(t.type==="TOYLINK_ACTION_RES"){t.view&&(M=t.view);let a=F.get(t.reqId);a?(F.delete(t.reqId),a(t)):u();return}if(t.type==="TOYLINK_CLOSE_ANIMATE"){let a=i("tlOverlay");a&&a.classList.add("is-closing"),setTimeout(()=>B("TOYLINK_CLOSE_DONE"),180);return}if(t.type==="TOYLINK_CLOSE"){let a=i("tlOverlay");a&&(a.hidden=!0)}}});function R(){return M&&M.toyState||{}}function j(){return M&&M.characters||[]}function v(){let e=R();return j().find(t=>t.id===e.selectedId)||j()[0]||null}function I(e){let t=R();return!!t.running&&!!e&&t.activeTargetId===e.id}function U(e){let t=R();return!!(e&&Array.isArray(t.wearingIds)&&t.wearingIds.indexOf(e.id)>=0)}function O(e){let t=ge(e);return{eligible:t.eligible,affection:t.affection,corruption:t.corruption,affGap:t.affGap,corGap:t.corGap}}function A(e){let t=i("tlToast");t&&(t.textContent=e,t.classList.add("show"),clearTimeout(A._timer),A._timer=setTimeout(()=>t.classList.remove("show"),3200))}function u(){let e=r(),t=R(),a=v(),n=j();document.documentElement.style.setProperty("--cj-font-scale",String(M?.fontScale||1));let d=i("tlTargetStrip");d&&(d.innerHTML=n.map(l=>{let S=O(l),K=U(l),G=t.running&&t.activeTargetId===l.id,$=G?e.tagLive:S.eligible?K?e.tagWorn:e.tagUnworn:e.tagBlocked,_e=G?" is-live":K?" is-worn":"";return`<button type="button" class="tl-char-chip${a&&l.id===a.id?" on":""}${S.eligible?"":" is-blocked"}" data-tl-target="${g(l.id)}"><span class="tl-av">${g(String(l.name||"").slice(0,1))}</span><span>${g(l.name)}</span><span class="tl-chip-st${_e}">${g($)}</span></button>`}).join(""));let p=i("tlWornCnt");p&&(p.textContent=s(e.wornCount,{n:Array.isArray(t.wearingIds)?t.wearingIds.length:0}));let w=i("tlTopPill");w&&(w.className="tl-status-pill"+(t.preview?" is-locked":t.running?" is-live":""),w.textContent=t.preview?e.pillLocked:t.running?s(e.pillLive,{modeName:t.modeName||"",peak:V(t.peak).peak}):e.pillIdle);let b=!t.preview&&(!a||!O(a).eligible),N=i("tlLockedBanner");N&&(N.hidden=!t.preview);let k=i("tlGateBanner");if(k&&(k.hidden=!b),b){let l=O(a);c("tlGateTitle",a?s(e.gateTitle,{name:a.name}):e.gateNoWoman),c("tlGateDesc",a?s(e.gateDesc,{affGap:l.affGap,corGap:l.corGap}):e.gateNoWoman);let S=i("tlGateMetrics");S&&(S.innerHTML=a?`<span class="tl-gate-pill">${g(s(C.workshop.common.gateMetricAff,{affection:l.affection,affGap:l.affGap}))}</span><span class="tl-gate-pill">${g(s(C.workshop.common.gateMetricCor,{corruption:l.corruption,corGap:l.corGap}))}</span>`:"")}let h=U(a),T=I(a);c("tlWearAv",a?String(a.name||"").slice(0,1):"\u2014"),c("tlWearName",a?a.name:"\u2014");let L=i("tlWearTag");L&&(L.textContent=T?e.tagLive:h?e.tagWorn:e.tagUnworn,L.className="tl-wear-tag"+(T?" is-live":h?" is-worn":""));let P=i("tlWearNums");P&&(P.textContent=a?s(e.wearNums,{affection:O(a).affection,corruption:O(a).corruption}):"");let _=i("tlBtnWear");_&&(_.textContent=h?e.btnUnwear:e.btnWear,_.className="tl-wear-btn"+(h?" is-unwear":""),_.disabled=!!t.preview||!a||!h&&!O(a).eligible);let W=j().find(l=>l.id===t.activeTargetId)||null,m="";!t.preview&&a&&O(a).eligible&&!T&&(t.running&&t.activeTargetId&&t.activeTargetId!==a.id?m=s(e.otherRunningHint,{name:W?W.name:""}):h||(m=s(e.wearHint,{name:a.name})));let H=i("tlStageHint");H&&(H.textContent=m,H.hidden=!m);let ne=i("tlModeGrid");ne&&(ne.innerHTML=ve().map(l=>`<button type="button" class="tl-mode-btn${l.id===t.modeId?" on":""}" data-tl-mode="${g(l.id)}"${t.preview?" disabled":""}><svg viewBox="0 0 24 24">${l.icon}</svg><span class="tl-mode-copy"><b>${g(l.name)}</b><small>${g(l.tag)}</small></span></button>`).join(""));let X=Z(t.modeId);c("tlModeHdRight",s(e.modeHd,{modeName:X.name})),c("tlModeNote",X.feel),c("tlLegendSpec",`${X.name} \xB7 ${Math.round(Number(t.pow)||0)}% \xB7 ${J(Number(t.freq)||40)}Hz`);let oe=Math.max(5,Math.min(100,Number(t.pow)||55)),re=Math.max(5,Math.min(100,Number(t.freq)||40)),ie=i("tlPowBar");ie&&(ie.style.width=oe+"%"),c("tlPowVal",oe+"%");let se=i("tlFreqBar");se&&(se.style.width=re+"%"),c("tlFreqVal",J(re)+"Hz"),document.querySelectorAll("[data-tl-pow],[data-tl-freq]").forEach(l=>{l.disabled=!!t.preview});let z=t.here==="away"?"away":"with";document.querySelectorAll("[data-tl-here]").forEach(l=>{l.classList.toggle("on",l.dataset.tlHere===z),l.disabled=!!t.preview}),c("tlHereHint",z==="with"?e.hereWithHint:e.hereAwayHint);let le=i("tlSceneBlock");if(le&&(le.hidden=z!=="away"),z==="away"){let l=e.scenes||{},S=t.sceneId||t.lastAwaySceneId,K=i("tlSceneGrid");K&&(K.innerHTML=Object.entries(l).map(([G,$])=>`<button type="button" class="tl-scene-btn${G===S?" on":""}" data-tl-scene="${g(G)}"${t.preview?" disabled":""}><i class="tl-tier-dot is-${g($.tier)}"></i><span>${g($.label)}</span></button>`).join("")),c("tlSceneDesc",l[S]?l[S].desc:"")}let D=i("tlFooterHint");D&&(t.preview?(D.textContent=e.footerLocked,D.hidden=!1):T?(D.textContent=e.footerRunning,D.hidden=!1):D.hidden=!0);let x=i("tlMainBtn");x&&(T?(x.textContent=e.btnStop,x.className="tl-btn-main is-stop",x.disabled=!1):(x.textContent=e.btnStart,x.className="tl-btn-main",x.disabled=!!t.preview||!a||!O(a).eligible||!h||!!t.running&&t.activeTargetId!==(a&&a.id)));let ce=i("tlWriteBtn");ce&&(ce.disabled=!!t.preview||!a||!h),Ae(!1),o.open&&E()}function g(e){return String(e??"").replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[t])}function c(e,t){let a=i(e);a&&(a.textContent=t)}function ke(e){if(!e)return;let t=i("tlStageCard"),a=V(e.peak);t&&(t.dataset.tier=String(a.tier),t.classList.toggle("is-resisting",!!e.resisting),t.classList.toggle("is-edging",!!(e.edgeLocked||e.modeId==="edge")),e.edgeHit&&(t.classList.remove("is-edging-hit"),t.offsetWidth,t.classList.add("is-edging-hit")));let n=Math.max(0,Math.min(100,Number(e.aro)||0)),d=Math.max(0,Math.min(1,Number(e.env)||0)),p=i("tlRingAro");p&&p.setAttribute("stroke-dasharray",`${(fe*n/100).toFixed(1)} ${fe.toFixed(1)}`);let w=i("tlRingEnv");w&&w.setAttribute("stroke-dasharray",`${(be*d).toFixed(1)} ${be.toFixed(1)}`),c("tlPeakBadge",a.capped?s(r().peakBadgeCapped,{peak:a.peak}):s(r().peakBadge,{peak:a.peak})),c("tlStackBadge",s(r().stackBadge,{tierLabel:a.tierLabel,rateMult:a.rateMult.toFixed(2)}));let b=Math.max(1,Math.min(5,Number(e.stage)||1));if(c("tlStageText",Q[b-1]),!e.running){let m=v(),H=m&&U(m);c("tlStageText",r().stageIdle),c("tlStageSub",m?H?s(r().stageSubWorn,{name:m.name}):s(r().stageSubUnworn,{name:m.name}):""),c("tlStageMeta",s(r().stageMetaLine,{stageName:r().stageIdle,tierLabel:a.tierLabel,peak:a.peak}))}c("tlStageSub",e.edgeLocked||e.modeId==="edge"?s(r().stageSubEdging,{count:e.edgeCount}):e.resisting?r().stageSubResisting:s(r().stageSubLive,{stage:b,peak:a.peak})),c("tlStageMeta",s(r().stageMetaLine,{stageName:e.running?Q[b-1]:r().stageIdle,tierLabel:a.tierLabel,peak:a.peak})),c("tlFeedTag",e.running?e.edgeLocked||e.modeId==="edge"?r().feedTagEdge:e.resisting?r().feedTagResist:a.peak>0?r().feedTagPeak:r().feedTagLive:r().feedTagIdle);let N=92+Math.round(n*.65+a.peak*6);c("tlFeedTele",e.running?s(r().feedTeleLive,{bpm:N,tension:(r().tensions||{})[String(b)]||""}):r().feedTeleIdle),c("tlFeedLine",pe({feedKey:e.feedKey,edgeCount:e.edgeCount,crave:e.crave,peak:a.peak}));let k=Math.round(Number(e.exposure)||0),h=i("tlExpBar");h&&(h.style.width=k+"%"),c("tlExpVal",(Number(e.exposedCount)||0)>0?s(r().expBroken,{count:e.exposedCount}):k>=80?s(r().expDanger,{exp:k}):s(r().expSafe,{exp:k}));let T=i("tlBtnEdgeLock");T&&(T.classList.toggle("on",!!e.edgeLocked),T.textContent=e.edgeLocked?s(r().btnEdgeLockOn,{count:e.edgeCount}):r().btnEdgeLockOff,T.disabled=!U(v()));let L=i("tlBtnShock");if(L){let m=Number(e.shockCd)||0;L.classList.toggle("is-alert",!!e.resisting),L.textContent=m>0?s(r().btnShockCd,{sec:Math.ceil(m)}):e.resisting?r().btnShockBreak:r().btnShock,L.disabled=m>0||!e.running}let P=i("tlBtnBurst");if(P){let m=!!e.running&&(Number(e.edgeCount)||0)>=1;P.hidden=!m,P.textContent=s(r().btnBurst,{mult:ue(e.edgeCount).toFixed(2)})}let _=i("tlTraceVal");if(_){let m=Array.isArray(e.trace)?e.trace:[];m.length?(_.textContent=m.join(" \u2192 "),_.classList.remove("is-empty")):(_.textContent=r().traceEmpty,_.classList.add("is-empty"))}let W=i("tlTopPill");W&&e.running&&(W.textContent=s(r().pillLive,{modeName:Z(e.modeId).name,peak:a.peak}))}function Ae(e){let t=R(),a=v(),n=V(I(a)?t.peak:0),d=i("tlStageCard");d&&(d.dataset.tier=String(n.tier),d.classList.toggle("is-live",I(a)),e&&(d.classList.remove("is-edging-hit"),d.offsetWidth,d.classList.add("is-edging-hit"))),ke({...t,running:!!t.running,peak:n.peak,stage:I(a)?t.stage:1,aro:I(a)?t.aro:0,env:I(a)?t.env:0,exposure:I(a)?t.exposure:0})}function Be(){let e=R();o.open=!0,o.step=1,o.loc="",o.scene=e.lastAwaySceneId||"",E()}function ae(){o.open=!1,E()}function E(){let e=r(),t=v(),a=i("tlModalOverlay");if(!a||(a.hidden=!o.open,a.classList.toggle("show",o.open),!o.open))return;let n=e.scenes||{};c("tlModalStep",o.step===1?e.modalStep1:e.modalStep2),c("tlModalTitle",o.step===1?s(e.wearConfirmTitle,{name:t?t.name:""}):s(e.wearLocTitle,{name:t?t.name:""})),c("tlModalBody",o.step===1?e.wearConfirmBody:e.wearLocSub);let d=i("tlModalLocGrid");d&&(d.hidden=o.step!==2);let p=i("tlModalScenes");p&&(p.hidden=!(o.step===2&&o.loc==="away"));let w=i("tlModalSceneGrid");if(w&&o.step===2){let h=(o.scene||e.scenes)&&o.scene||"";w.innerHTML=Object.entries(n).map(([T,L])=>`<button type="button" class="tl-modal-scene${T===h?" on":""}" data-modal-scene="${g(T)}"><i class="tl-tier-dot is-${g(L.tier)}"></i><span>${g(L.label)}</span></button>`).join("")}document.querySelectorAll("[data-modal-loc]").forEach(h=>h.classList.toggle("on",h.dataset.modalLoc===o.loc));let b=i("tlModalErr");b&&(b.hidden=!(o.step===2&&!o.loc));let N=i("tlModalOk");N&&(N.textContent=o.step===1?e.wearConfirmOk:e.wearLocSubmit,N.disabled=o.step===2&&(!o.loc||o.loc==="away"&&!o.scene));let k=i("tlModalCancel");k&&(k.textContent=o.step===1?e.wearConfirmCancel:e.wearLocBack)}async function Re(){let e=v();if(!e||!o.loc)return;let t={id:e.id,here:o.loc};o.loc==="away"&&(t.sceneId=o.scene);let a=await f("wear",t);if(!a||!a.ok){A(C.errors[a&&a.code]||C.errors.TOYLINK_MISSING);return}ae();let n=o.loc==="with"?r().hereWith:((r().scenes||{})[o.scene]||{}).label||r().hereAway;if(a.data&&a.data.already){u();return}A(a.data&&a.data.filled?s(r().wearOkFillToast,{name:e.name,locLabel:n}):s(r().wearOkNoInputToast,{name:e.name,locLabel:n})),u()}document.addEventListener("click",async e=>{let t=e.target&&e.target.closest?e.target.closest("button"):null;if(t){if(t.id==="tlBtnClose"){B("TOYLINK_CLOSE_REQ",{reason:"USER"});return}if(t.id==="tlBtnShop"){B("TOYLINK_OPEN_SHOP");return}if(t.dataset.tlTarget){await f("select",{id:t.dataset.tlTarget}),u();return}if(t.id==="tlBtnWear"){let a=v();if(!a)return;if(U(a)){let n=await f("unwear",{id:a.id});n&&n.ok&&A(s(r().unwearOkToast,{name:a.name})),u();return}Be();return}if(t.dataset.modalLoc){o.loc=t.dataset.modalLoc,o.loc==="with"&&(o.scene=""),E();return}if(t.dataset.modalScene){o.scene=t.dataset.modalScene,E();return}if(t.id==="tlModalCancel"){o.step===2?(o.step=1,E()):ae();return}if(t.id==="tlModalOk"){if(o.step===1){o.step=2,E();return}await Re();return}if(t.dataset.tlMode){await f("mode",{id:t.dataset.tlMode}),u();return}if(t.dataset.tlPow!==void 0){await f("pow",{delta:Number(t.dataset.tlPow)}),u();return}if(t.dataset.tlFreq!==void 0){await f("freq",{delta:Number(t.dataset.tlFreq)}),u();return}if(t.dataset.tlHere){await f("here",{value:t.dataset.tlHere}),u();return}if(t.dataset.tlScene){await f("scene",{id:t.dataset.tlScene}),u();return}if(t.id==="tlBtnEdgeLock"){await f("edge-lock",{}),u();return}if(t.id==="tlBtnShock"){await f("shock",{}),u();return}if(t.id==="tlBtnBurst"){await f("burst",{}),u();return}if(t.id==="tlMainBtn"){let a=R(),n=v();I(n)?await f("stop",{}):await f("start",{id:n&&n.id}),u();return}if(t.id==="tlWriteBtn"){let a=await f("write",{});a&&a.ok&&a.data&&(a.data.filled===!1?A(C.errors.INPUT_NOT_FOUND):A(r().writeOkToast)),u()}}});document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(o.open){ae();return}B("TOYLINK_CLOSE_REQ",{reason:"USER"})}});u();Ee();})();
+</script>
+</body>
+</html>

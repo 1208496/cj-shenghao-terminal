@@ -1,0 +1,12 @@
+{
+  "rec": {
+    "shotId": "01-imprint-eligible",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots/01-imprint-eligible.png",
+    "verified": false,
+    "fallback": false,
+    "route": "",
+    "error": "CLICK_FAILED([data-open-workshop=\"imprint\"]): F3"
+  },
+  "error": "CLICK_FAILED([data-open-workshop=\"imprint\"]): F3",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots/diag-01-imprint-eligible-full.png"
+}

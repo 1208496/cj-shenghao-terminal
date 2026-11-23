@@ -1,0 +1,66 @@
+{
+  "rec": {
+    "shotId": "04-choker-blocked",
+    "file": "E:/SHZDCHOSSS/reports/rc48-shots-b/04-choker-blocked.png",
+    "verified": false,
+    "fallback": true,
+    "route": "B-clip",
+    "viewport": {
+      "w": 1638,
+      "h": 802
+    },
+    "dpr": 1.5625,
+    "hostTransform": {
+      "html": "matrix(1, 0, 0, 1, 0, 0)",
+      "body": "none",
+      "iframe": "matrix(1, 0, 0, 1, 0, 0)",
+      "scaleX": 1,
+      "scaleY": 1
+    },
+    "innerWidth": 365,
+    "rectCSS": {
+      "x": 1183.6199951171875,
+      "y": 68,
+      "width": 364.79998779296875,
+      "height": 730.239990234375
+    },
+    "rectPx": {
+      "x": 1184,
+      "y": 68,
+      "width": 292,
+      "height": 584
+    },
+    "scroll": {
+      "scrollTop": 0,
+      "scrollHeight": 961,
+      "clientHeight": 961
+    },
+    "attempts": [
+      {
+        "route": "B-clip",
+        "ok": true,
+        "why": ""
+      }
+    ],
+    "checks": [
+      {
+        "name": "size-width",
+        "pass": false,
+        "detail": "got=292 expect=365±1"
+      },
+      {
+        "name": "size-height",
+        "pass": false,
+        "detail": "got=584 expect=730±1"
+      },
+      {
+        "name": "non-empty",
+        "pass": true,
+        "detail": "bytes=23174"
+      }
+    ],
+    "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=23174\"}]"
+  },
+  "error": "VERIFY_FAILED:[{\"name\":\"size-width\",\"pass\":false,\"detail\":\"got=292 expect=365±1\"},{\"name\":\"size-height\",\"pass\":false,\"detail\":\"got=584 expect=730±1\"},{\"name\":\"non-empty\",\"pass\":true,\"detail\":\"bytes=23174\"}]",
+  "diagPng": "E:/SHZDCHOSSS/reports/rc48-shots-b/diag-04-choker-blocked-full.png"
+}

@@ -105,7 +105,8 @@ test('rc.35 赌场：同一局换押注颜色会改变结果（防删楼改押�
     run(JSON.parse(JSON.stringify(s)), 'PLAYER_CASINO_BET', { cardId: 'card_x', betColor })
   );
   const signature = results.map((r) => r.operationHistory[Object.keys(r.operationHistory).pop()].result);
-  assert(new Set(signature.map((x) => (x.win ? 'W' : 'L') + x.points)).size > 1);
+  // rc.42：种子绑定押注颜色，换色必须重摇落点。
+  assert(new Set(signature.map((x) => x.hitIndex)).size > 1, '换押注颜色必须重摇落点');
 });
 
 test('rc.35 兑换：星愿卡按当前价值换积分，卡消失', () => {
@@ -133,13 +134,20 @@ test('rc.35 商城：买异能扣分并升级，余额不足拒绝，超现实�
   const tierBefore = tierBasis(s);
   const assetsBefore = Object.keys(s.finance.assets).length;
 
-  s = run(s, 'PLAYER_SHOP_BUY', { catalogId: 'ab_micro' });
-  assert.equal(s.wheel.starPoints, 650);
-  assert.deepEqual(s.user.abilities.map((a) => [a.abilityId, a.level]), [['ab_micro', 1]]);
+  s = run(s, 'PLAYER_SHOP_BUY', { catalogId: 'ab_voice' });
+  assert.equal(s.wheel.starPoints, 500);
+  assert.deepEqual(s.user.abilities.map((a) => a.abilityId), ['ab_voice']);
 
+  // rc.42：异能不再升级，重复购买直接拒绝，积分不再被扣。
+  const pointsAfterBuy = s.wheel.starPoints;
+  assert.throws(() => run(s, 'PLAYER_SHOP_BUY', { catalogId: 'ab_voice' }), /SHOP_ALREADY_OWNED/);
+  assert.equal(s.wheel.starPoints, pointsAfterBuy);
+
+  // rc.42：纯叙事异能同样一次性买断，不能重复兑换。
+  s = { ...s, wheel: { ...s.wheel, starPoints: 2000 } };
   s = run(s, 'PLAYER_SHOP_BUY', { catalogId: 'ab_micro' });
-  assert.equal(s.user.abilities[0].level, 2);
-  assert.equal(s.wheel.starPoints, 650 - 280);
+  assert.equal(s.user.abilities.find((a) => a.abilityId === 'ab_micro').abilityId, 'ab_micro');
+  assert.throws(() => run(s, 'PLAYER_SHOP_BUY', { catalogId: 'ab_micro' }), /SHOP_ALREADY_OWNED/);
 
   s = run(s, 'PLAYER_SHOP_BUY', { catalogId: 'it_whisky' });
   const surreal = Object.values(s.inventory).filter((i) => i.category === 'SURREAL_ITEM');
