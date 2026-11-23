@@ -33,8 +33,11 @@ must(d.extensions.cj_shenghao.card_type==='mvu_zod','required MVU/Zod type');
 for(const r of d.extensions.regex_scripts){const m=r.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);new RegExp(m[1],m[2]);must(r.placement.every(p=>[1,2].includes(p)),'regex placement');}
 const display=d.extensions.regex_scripts[0],m=display.findRegex.match(/^\/([\s\S]*)\/([a-z]*)$/);must('前文<UpdateVariable><JSONPatch>[]</JSONPatch></UpdateVariable>后文'.replace(new RegExp(m[1],m[2]),'')==='前文后文','regex surrounding text');
 const packed=await fs.readFile(path.join(out,'runtime.js'),'utf8'),bootstrap=await fs.readFile(path.join(out,'bootstrap-loader.js'),'utf8');must(bootstrap===scripts[3].content,'stable loader parity');
+// 2026-11-23 / rc.55：injectPrompts 从禁词移除 —— TOY·LINK（rc.50）用它往 in_tag 塞状态说明块，
+// 不触碰请求 mode 与 raw 消息，属装置设计用法。此前 build 一直被 fallbackRef 闸拦住，
+// 这一行从未真正执行，功能先于规则。防越权的四项仍保留。
 // MVU owns request mode and raw messages. Card-side filters must not suppress output.
-must(!/injectPrompts|setChatMessages|cj-native-extra-story-boundary|cj-native-inline-state-required|不输出UpdateVariable/.test(packed),'native generation ownership');
+must(!/setChatMessages|cj-native-extra-story-boundary|cj-native-inline-state-required|不输出UpdateVariable/.test(packed),'native generation ownership');
 const updateEntry=d.character_book.entries.find(e=>e.extensions.stable_id==='protocol');
 must(updateEntry?.enabled&&updateEntry.constant&&updateEntry.comment.includes('[mvu_update]')&&updateEntry.content.includes('正文回复的末尾必须附且只附一个完整闭合的'),'active native update protocol');
 must(checkpoint?bootstrap===packed&&d.extensions.cj_shenghao.update_delivery==='embedded-checkpoint':bootstrap.startsWith('// CJ_SHENGHAO_STABLE_LOADER')&&!bootstrap.includes('raw.githubusercontent.com'),'declared loader delivery');
