@@ -3,6 +3,7 @@
 // 性能铁律：扇区合并 path、符号走 <symbol>/<use>、零 SVG filter、粒子 1.6s 后停帧；
 // 卡面只播一次扫光，收藏册与背包内零常驻动画。
 
+import {uuid} from '../runtime/safe-crypto.js';
 import { WHEEL_GLYPHS } from './wheel-glyphs.js';
 import { WHEEL_POOL } from '../core/wheel-pool.js';
 import { CASINO_BETS, WISH_CARDS } from '../core/casino-catalog.js';
@@ -417,10 +418,10 @@ function errorText(code) {
 }
 function requestOp(op) {
   return new Promise((resolve, reject) => {
-    const reqId = crypto.randomUUID();
+    const reqId = uuid();
     const timer = setTimeout(() => { inflight.delete(reqId); reject(new Error('WHEEL_BRIDGE_TIMEOUT')); }, OP_TIMEOUT_MS);
     inflight.set(reqId, { resolve, reject, timer });
-    send({ type: 'WHEEL_OP_REQ', reqId, op: { ...op, operationId: crypto.randomUUID(), expectedRevision: view?.revision ?? 0 }, lineage: view?.lineage || '' });
+    send({ type: 'WHEEL_OP_REQ', reqId, op: { ...op, operationId: uuid(), expectedRevision: view?.revision ?? 0 }, lineage: view?.lineage || '' });
   });
 }
 // ---- rc.38 想法 16：三盘共用确认弹窗（#wfConfirm）----

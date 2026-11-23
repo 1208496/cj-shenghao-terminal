@@ -1,3 +1,4 @@
+import {sha256Hex} from './safe-crypto.js';
 import {assertPublicConfig,assertRelease,publicHeaders,cdnUrl,CDN_HOSTS,isCommit} from '../update/release-contract.js';
 const C=assertPublicConfig(__RELEASE_CONFIG__),ROOT=window.parent,SLOT='__CJ_SHENGHAO_SCRIPT_LOADER__';
 const CONTRACT=__BOOK_HASH__,NAME='神豪终端';let disposed=false,running=null,lastPointer=null;
@@ -29,7 +30,7 @@ async function metadata(ref){
   throw last||Error('METADATA_UNAVAILABLE');
 }
 async function codeAt(ref,meta){
-  for(const host of CDN_HOSTS){try{const r=await get(cdnUrl(C,host,ref),12000);if(!r.ok)throw Error('HTTP_'+r.status);const code=r.text;if(code.length>3000000||!code.startsWith('// '+C.mark))throw Error('CORE_MARK_INVALID');const sha=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code)))].map(n=>n.toString(16).padStart(2,'0')).join('');if(sha!==meta.sha256)throw Error('CORE_HASH_MISMATCH');return {code,host};}catch(e){log(host+' 本体失败：'+e.message);}}
+  for(const host of CDN_HOSTS){try{const r=await get(cdnUrl(C,host,ref),12000);if(!r.ok)throw Error('HTTP_'+r.status);const code=r.text;if(code.length>3000000||!code.startsWith('// '+C.mark))throw Error('CORE_MARK_INVALID');const sha=await sha256Hex(code);if(sha!==meta.sha256)throw Error('CORE_HASH_MISMATCH');return {code,host};}catch(e){log(host+' 本体失败：'+e.message);}}
   throw Error('CORE_DOWNLOAD_FAILED');
 }
 const bridge={

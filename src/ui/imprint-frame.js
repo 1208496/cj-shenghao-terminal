@@ -1,3 +1,4 @@
+import {uuid} from '../runtime/safe-crypto.js';
 import {
   PLACEMENTS,
   PLACEMENT_GROUPS,
@@ -313,7 +314,7 @@ function buildDraftText(c, pl, d) {
 
 function sendOp(op, meta) {
   if (st.busy) return;
-  const reqId = crypto.randomUUID();
+  const reqId = uuid();
   st.busy = true;
   st.pendingReqId = reqId;
   st.pendingMeta = meta;

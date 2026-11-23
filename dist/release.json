@@ -2,10 +2,10 @@
   "schemaVersion": 2,
   "projectId": "cj-shenghao-terminal-v2",
   "repository": "1208496/cj-shenghao-terminal",
-  "version": "2.0.0-rc.55",
+  "version": "2.0.0-rc.56",
   "runtimeFile": "dist/terminal.js",
   "mark": "CJ_SHENGHAO_TERMINAL_CORE",
-  "worldbookHash": "1c1b91ac0a551de8c242b9fa0f11d06e36652231bd12884f0b80b6d4125b4ec7",
-  "sha256": "a5d2586f8a767838a8b258d0874980a1fa1dfb85d9008de8cdd6c67335a946d5",
-  "notes": "rc.39：轮盘页按 B 版重排（顶部并排积分/藏卡 → 三重盘台 → 背包·卡册·商城 → TOY·LINK 常驻四态卡）；TOY·LINK 入口常驻、未获得可见但禁用；异能显示正名+等级+效果说明；赌注按钮只留色区名；行头/私密/经历三块去掉重复条目；画质三档真正分级（同一 SVG 骨架 251 节点，配色/刻度/光晕/时长/粒子按档切换，档位随聊天偏好持久化）。"
+  "worldbookHash": "5253f2e729b102a67967c731232a5366133a06d9e75c7526d922e0c28341d0a6",
+  "sha256": "122c9d6efce364611733b8ce93bf2c728ecd5894d2b70a1ffe0ada871d7b88d7",
+  "notes": "v2.0.0-rc.56 正式发行版：修正商城历史写满后购买锁死、切聊覆写同号楼层、装置字段被整对象覆盖、卡包跨周期计数、票券与日程绑定、人物 id 收敛、TOY 切聊注入串聊天、宿主销毁残留 iframe、工坊换款预览与填入输入框、多件香水撤销、同句多资产去重、工坊容器选择器失效共 12 项缺陷；手机端补齐 crypto 兜底（非安全上下文下开局可用）；卡面更换。"
 }

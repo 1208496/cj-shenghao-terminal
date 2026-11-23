@@ -1,3 +1,4 @@
+import {uuid} from './safe-crypto.js';
 import {createToyLinkBridge} from './toylink-bridge.js';
 import {checkDeviceThreshold} from '../core/device-catalog.js';
 import {WHEEL_COPY} from '../core/wheel-ui-copy.js';
@@ -259,7 +260,7 @@ async function expandContact(briefDescription){
   const brief=typeof briefDescription==='string'?briefDescription.trim():'';
   requireRule(brief.length>=2,'INVALID_TEXT');
   const born=branch(),generation=epoch;
-  const requestKey='cj-contact-'+crypto.randomUUID();
+  const requestKey='cj-contact-'+uuid();
   activeExpandKey=requestKey;setupBusy=true;publish();
   let result,cancelled=false;
   try{
@@ -290,7 +291,7 @@ async function submit(draft){
   const rows=messageList(),existing=rows.find(m=>m.swipes_data?.[m.swipe_id]?.cj_native_setup);
   if(existing){await readCurrent();requireRule(current?.state,'INITIALIZATION_UNVERIFIED');return stateView();}
   requireRule(rows.length===1,'OPENING_ALREADY_STARTED');
-  const validated=validateDraft(draft),born=branch(),generation=epoch,key=crypto.randomUUID();setupBusy=true;publish();
+  const validated=validateDraft(draft),born=branch(),generation=epoch,key=uuid();setupBusy=true;publish();
   try{
     setupProgress={phase:'initializing'};publish();
     const state=schemas().state.parse(completeInitialState(initialize(draft,{},key,born),draft));
@@ -370,7 +371,7 @@ async function buildProfile(personRef,lineage){
   requireRule(!busy(),'GENERATION_BUSY');await readCurrent();requireRule(current?.lineage===lineage,'STALE_SOURCE');
   const c=current.state.characters[personRef];requireRule(c?.trackingState==='RECORDED'&&!c.profileFixed,'PROFILE_ALREADY_BUILT');
   const born=branch(),generation=epoch;
-  let requestKey='cj-build-'+crypto.randomUUID();
+  let requestKey='cj-build-'+uuid();
   activeBuildKey=requestKey;setupBusy=true;publish();let completed;
   try{
     const attempt=async key=>{const value=await generateProfile(c,{name:current.state.user.name},key);requireRule(branch()===born&&epoch===generation,'STALE_CHAT');return value;};
@@ -379,7 +380,7 @@ async function buildProfile(personRef,lineage){
       // 新会话里第一次建档常被生成通道吞掉或只返回残缺内容；自动再试一次，玩家无感。
       if(cancelledBuilds.has(requestKey)||String(error?.message)==='STALE_CHAT')throw error;
       console.log('[神豪终端] 建档首次失败，自动重试一次',error?.message);
-      requestKey='cj-build-'+crypto.randomUUID();activeBuildKey=requestKey;publish();
+      requestKey='cj-build-'+uuid();activeBuildKey=requestKey;publish();
       completed=await attempt(requestKey);
     }
     anchorProfileFacts(completed,c);
@@ -390,14 +391,14 @@ async function buildProfile(personRef,lineage){
     if(cancelledBuilds.has(requestKey))throw Error('BUILD_CANCELLED');
     throw error;
   }finally{cancelledBuilds.delete(requestKey);if(activeBuildKey===requestKey)activeBuildKey=null;setupBusy=false;publish();}
-  return mutateState({kind:'action',value:{type:'PLAYER_BUILD_PROFILE',operationId:crypto.randomUUID(),personRef,profileFixed:completed.profile,physiology:completed.physiology,outfit:completed.outfit,intimacy:completed.intimacy,limits:completed.limits,expectedRevision:current.state.meta.revision}},lineage);
+  return mutateState({kind:'action',value:{type:'PLAYER_BUILD_PROFILE',operationId:uuid(),personRef,profileFixed:completed.profile,physiology:completed.physiology,outfit:completed.outfit,intimacy:completed.intimacy,limits:completed.limits,expectedRevision:current.state.meta.revision}},lineage);
 }
 const api={buildProfile,expandContact,error:'',read:stateView,subscribe(fn){listeners.add(fn);fn(stateView());return()=>listeners.delete(fn);},submit,
   cancelExpandContact(){const key=activeExpandKey;if(!key)return false;cancelledExpands.add(key);try{H.stopGenerationById?.(key);}catch{}return true;},
   cancelBuildProfile(){const key=activeBuildKey;if(!key)return false;cancelledBuilds.add(key);activeBuildKey=null;try{H.stopGenerationById?.(key);}catch{}setupBusy=false;publish();return true;},
   clearNotice(){pendingNotice='';},
   async action(op,lineage){return mutateState({kind:'action',value:op},lineage);},
-  async appointment(value,lineage){return mutateState({kind:'appointment',value,operationId:crypto.randomUUID()},lineage);},
+  async appointment(value,lineage){return mutateState({kind:'appointment',value,operationId:uuid()},lineage);},
   async prepareAppointment(id){const item=current?.state.calendar.appointments[id];requireRule(item&&item.status==='PLANNED','APPOINTMENT_UNAVAILABLE');return '我想处理约定「'+item.title+'」（'+item.date+' '+item.time+'，'+item.location+'）。请从当前地点接续，先由我决定是否出发，不要自动赴约或消费。';},
   preferences(patch){prefs={...prefs,...patch};const ok=persistPrefs();publish();return ok;},
   storageInfo(){let chars=0,keys=0,ownChars=0,ownKeys=0;const branches=new Set();try{const ls=win.localStorage;const list=Object.keys(ls);keys=list.length;for(const k of list){const size=k.length+(ls.getItem(k)?.length||0);chars+=size;const prefix=k.startsWith(PREF_PREFIX)?PREF_PREFIX:k.startsWith(OPS_PREFIX)?OPS_PREFIX:k.startsWith(TOYLINK_PREFIX)?TOYLINK_PREFIX:'';if(prefix){ownChars+=size;ownKeys+=1;branches.add(k.slice(prefix.length));}}}catch{}return {chars,keys,ownChars,ownKeys,oldBranches:Math.max(0,branches.size-1),warn:storageWarn,error:lastStorageError};},
@@ -548,7 +549,7 @@ function lockTopScroll(lock){
 }
 function ensureWheelFrame(){
   if(wheelFrame&&wheelFrame.isConnected)return wheelFrame;
-  wheelReady=false;wheelNonce=crypto.randomUUID();
+  wheelReady=false;wheelNonce=uuid();
   wheelFrame=win.document.createElement('iframe');
   wheelFrame.id='cj-shenghao-wheel-frame';wheelFrame.title='神豪终端 · 轮盘';
   wheelFrame.setAttribute('sandbox','allow-scripts allow-same-origin');
@@ -659,7 +660,7 @@ function startImprintAck(payload){stopImprintAck();let tries=0;imprintAckTimer=s
 function postToImprint(msg){if(!imprintFrame?.contentWindow)return;imprintFrame.contentWindow.postMessage({channel:IMPRINT_CHANNEL,nonce:imprintNonce,...msg},'*');}
 function ensureImprintFrame(){
   if(imprintFrame&&imprintFrame.isConnected)return imprintFrame;
-  imprintReady=false;imprintNonce=crypto.randomUUID();
+  imprintReady=false;imprintNonce=uuid();
   imprintFrame=win.document.createElement('iframe');
   imprintFrame.id='cj-shenghao-imprint-frame';imprintFrame.dataset.imprintFrame='1';imprintFrame.title='神豪终端 · 专属私密印记工坊';
   imprintFrame.setAttribute('sandbox','allow-scripts allow-same-origin');
@@ -721,7 +722,7 @@ const onImprintMessage=async(event)=>{
     imprintBusy=true;
     try{
       const live=stateView();
-      const opWithId={...op,operationId:op?.operationId||crypto.randomUUID(),expectedRevision:live?.state?.meta?.revision};
+      const opWithId={...op,operationId:op?.operationId||uuid(),expectedRevision:live?.state?.meta?.revision};
       const next=await api.action(opWithId,live.lineage);
       const hist=next?.state?.operationHistory?.[opWithId.operationId];
       if(op?.action==='save'&&fillInput&&draftText){try{await api.fillChatInput(draftText,{autoSend:false,append:true});}catch{}}
@@ -749,7 +750,7 @@ function startToylinkAck(payload){stopToylinkAck();let tries=0;toylinkAckTimer=s
 function postToToylink(msg){if(!toylinkFrame?.contentWindow)return;toylinkFrame.contentWindow.postMessage({channel:TOYLINK_CHANNEL,nonce:toylinkNonce,...msg},'*');}
 function ensureToylinkFrame(){
   if(toylinkFrame&&toylinkFrame.isConnected)return toylinkFrame;
-  toylinkReady=false;toylinkNonce=crypto.randomUUID();
+  toylinkReady=false;toylinkNonce=uuid();
   toylinkFrame=win.document.createElement('iframe');
   toylinkFrame.id='cj-shenghao-toylink-frame';toylinkFrame.dataset.toylinkFrame='1';toylinkFrame.title='神豪终端 · TOY·LINK 遥控终端';
   toylinkFrame.setAttribute('sandbox','allow-scripts allow-same-origin');

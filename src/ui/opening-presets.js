@@ -1,3 +1,4 @@
+import {uuid, deepClone} from '../runtime/safe-crypto.js';
 import {contactPresets} from './setup-options.js';
 
 export const cashOptions=[0,10000,100000,1000000];
@@ -9,9 +10,9 @@ export const openingPresets=[
  {id:'wealthy',label:'富家公子哥',cashYuan:1000000,fields:{occupation:'家族企业项目负责人',background:'成长于经济宽裕的家庭，目前尝试独立负责项目，手头有一百万元可用现金。名下住房、车辆和腕表均为既有资产，没有未结债务。',currentLocation:'江城区·临江大平层',workLifeDescription:'日程相对自由，同时要处理项目事务和商务沟通，业余保持运动，也愿意接触不同领域的新事物。'},assets:[{kind:'HOUSE',name:'临江大平层',description:"约238㎡四室两厅一线江景大平层，胡桃木石材精装，配书房、健身区与双地下车位。",bookValueCents:800000000,locationNote:'江城区临江住宅区'},{kind:'CAR',name:'豪华轿车',description:"曜石黑奔驰S级长轴（3.0T六缸），米色真皮行政后排带独立空调，静谧尊贵。",bookValueCents:120000000,locationNote:'住宅地下车库'},{kind:'LUXURY',name:'机械腕表',description:"40mm精钢自动机械腕表，银白放射纹表盘配蓝宝石镜面与棕色鳄鱼皮带，背透机芯。",bookValueCents:1500000,locationNote:'本人持有'}],contacts:['startup_partner','gym_coach']}
 ];
 
-export function applyOpeningPreset(draft,presetId,makeId=()=>crypto.randomUUID()){
+export function applyOpeningPreset(draft,presetId,makeId=()=>uuid()){
   const preset=openingPresets.find(p=>p.id===presetId);if(!preset)throw Error('INVALID_DRAFT');
   return {...draft,...common,...preset.fields,name:draft.name,age:draft.age,initialCashCents:preset.cashYuan*100,openingPresetId:preset.id,
     initialAssets:preset.assets.map(a=>({...a,assetId:'asset_'+makeId(),ownershipNote:'本人全额所有，无债务'})),
-    contacts:preset.contacts.map(id=>{const p=contactPresets.find(p=>p.presetId===id);if(!p)throw Error('INVALID_DRAFT');return {...structuredClone(p),id:'char_'+makeId(),present:false};})};
+    contacts:preset.contacts.map(id=>{const p=contactPresets.find(p=>p.presetId===id);if(!p)throw Error('INVALID_DRAFT');return {...deepClone(p),id:'char_'+makeId(),present:false};})};
 }

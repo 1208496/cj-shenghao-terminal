@@ -1,9 +1,7 @@
+import {sha256Hex} from './safe-crypto.js';
 import {clone,applyEnvelope,applyOperation,parseEnvelope,narrative,requireRule,assertState} from '../core/engine.js';
 
-export async function digest(s) {
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');
-}
+export async function digest(s) { return sha256Hex(s); }
 export function messageText(m) { return m.swipes[m.swipe_id] || ''; }
 export function messageData(m) { return m.swipes_data?.[m.swipe_id] || {}; }
 export const cleanSource = s => s.replace(/\s*<StatusPlaceHolderImpl\s*\/>/gi,'').trim();

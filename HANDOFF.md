@@ -15,38 +15,27 @@
 
 ---
 
-## 0. 当前状态（2026-11-23 21:20 更新；RC53/53b 已装 8001；私域三装置零 API 7/7 PASS，待 YG 实机验收）
+## 0. 当前状态（2026-11-24 01:1x 更新；rc.55 已发布，手机版内联卡实测可用）
 
 | 项 | 值 |
 |---|---|
-| 源码版本 | `2.0.0-rc.39` / `cardContractRevision 33`（内部按 rc.46→rc.52 计，YG 已定暂不升） |
-| 工作树 | **未提交**（HEAD=`9686192`，只含头像；rc.38–rc.52 改动仍在工作区） |
-| 线上作者测试指针 | 仍 `b75bcc4` / **rc.37**；回滚点 `4591deb` / rc.29 |
+| 源码版本 | **`2.0.0-rc.55`** / `cardContractRevision 33`（rc.39 → rc.55 已于 2026-11-23 23:3x 正式升版并发布） |
+| 工作树 | **14 处未提交**（手机端 crypto 兜底修复，见 §0.995；HEAD 仍 `528c6ae`，YG 决定暂不发布） |
+| 线上作者测试指针 | **`528c6ae` / rc.55**（2026-11-23 23:3x 已切并回读校验）；回滚点 `b75bcc4` / rc.37 |
 | 玩家发行状态 | **未发行** |
-| 单测 | `npm test` **501 / 501**（rc53 新增 6 条、rc53b 新增 5 条） |
-| 构建 | `node scripts/build.mjs --checkpoint` → **BUILD_OK**；`npm run build` 仍被 fallbackRef 闸拦住（见 §0.3） |
-| 整卡 | `dist/2.0.0-rc.39-checkpoint/神豪终端-rc53d.png`（8,908,389 B），已装 8001 `神豪终端7.png`；改前备份 `.backups/8001-card-神豪终端7-20261123-200715.png` |
+| 单测 | `npm test` **529 / 529**（rc.55 新增 28 条） |
+| 构建 | `npm run build` → **BUILD_OK** + `npm run check` → **CHECK_OK**（fallbackRef 闸已随正式发布抬开，见 §0.99） |
+| 整卡（双版本） | **电脑版**＝热更新，指针 `528c6ae`｜**手机版**＝`dist/2.0.0-rc.55-checkpoint/神豪终端-rc55-checkpoint.png`（8.53 MB 内联，YG 手机实测可用）。8001 当前装的是内联版，改前备份 `.backups/8001-card-神豪终端7-20261123-230632.png` |
 | 零 API | RC53+53b 四条 `rc53.*` ✔；**rc54 私域三装置 7/7 ✔（76 断言，`apiCalls: 0`，连跑两遍同结果）**（`.work/noapi/suite-result-1795439871427.json`）；rc50.toylink-stack-color / scroll-keep 仍待重校 |
 
-### 0.7 RC53 TOY·LINK 极简版（2026-11-23 18:46–19:03）
+### 0.7 RC53 / RC53b TOY·LINK 极简版（2026-11-23 18:46–20:03）
 
-- 方案：`RC53总方案/02_方案_4N-极简版与实验版.md`（497 行）+ `03_方案_4N-模式锁与清空状态.md`（283 行，**冲突处以 03 为准**）；清单 `.work/checklist-rc53-toylink-lite.md`（34 条）、自检 `.work/selfcheck-rc53.md`（9/9）。
-- 结论：**同一 bridge 两个视图**；档位 `TOY_LITE_GEARS=[30,60,90]` 落在现有 `pow`；极简版独立注入 ID `cj_shenghao_toylink_lite`（`in_chat / depth:1 / system`），事件态→`GENERATION_ENDED` 降级持续态；**模式锁** `activeMode: null|'lite'|'lab'` 随分支存进现有 key；被锁一侧的写命令返回 `TOYLINK_MODE_LOCKED`；「清空状态」= 关宽屏 → 停 100ms 定时器 → 撤 3 个注入 → 清内存态 → 删当前分支 TOY key（不碰输入框）。
-- 极简版 UI：手机内嵌面板（`workshopOpen='toylink-lite'`），**不加新 iframe**；我的页卡片与背包 `it_toylink` 唯一入口都进它，实验版只能从面板底部「切换实验版（宽屏）」进。
-- 实验版零改动：`toylink.template.html` / `toylink.css` / `toylink-frame.js` 三件套未动。
-- **YG 批准的两处偏离 03 方案**（依据 2026-11-23 18:46「可以，开工」）：① 摘光最后一人**不自动解锁**、刷新也不自愈清锁，只有「清空状态」解锁；② `buildToyLitePromptBlock` 区分 `ctx.gear`（1–3 序号）与 `ctx.pow`（30/60/90）。
+- 方案 `RC53总方案/02_方案_4N-极简版与实验版.md`（497 行）+ `03_方案_4N-模式锁与清空状态.md`（283 行，**冲突以 03 为准**）；清单 `.work/checklist-rc53-toylink-lite.md`（34 条）、自检 `.work/selfcheck-rc53.md` 9/9。
+- 结论：**同一 bridge 两个视图**；档位 `TOY_LITE_GEARS=[30,60,90]` 落在现有 `pow`；极简版独立注入 ID `cj_shenghao_toylink_lite`（`in_chat/depth:1/system`），事件态→`GENERATION_ENDED` 降级为持续态；**模式锁** `activeMode: null|'lite'|'lab'` 随分支存进现有 key；被锁一侧写命令返回 `TOYLINK_MODE_LOCKED`；「清空状态」= 关宽屏 → 停 100ms 定时器 → 撤 3 个注入 → 清内存态 → 删当前分支 TOY key（不碰输入框）。
+- UI：手机内嵌面板（`workshopOpen='toylink-lite'`），**不加新 iframe**；我的页卡片与背包 `it_toylink` 唯一入口都进它，实验版只能从面板底部「切换实验版（宽屏）」进；实验版三件套零改动。rc53b 补：切换按钮改紫→粉渐变、项圈工坊隐藏手机头部 ⚙/×、商城补 `it_imprint`（3000✦，持久奇物）。
+- **YG 批准的两处偏离 03**（2026-11-23 18:46「可以，开工」）：① 摘光最后一人**不自动解锁**、刷新也不自愈清锁，只有「清空状态」解锁；② `buildToyLitePromptBlock` 区分 `ctx.gear`（1–3 序号）与 `ctx.pow`（30/60/90）。
 - 本批修掉：清空后 `run.selectedId` 丢失导致「为她佩戴」失败（`resetAll()` 补 `currentSelected()`）。
-- 验证：`npm test` 496/496；`BUILD_OK`；整卡 rc53c 已装 8001；零 API **3/3 PASS，`apiCalls: 0`**；截图 `.work/shots/rc53/shoot/lite-p-{idle,worn,running,lab-locked}-crop.png`。
-- 未验证 / 待拍板：① 未解锁态档位按钮无 `:disabled` 视觉（方案 CSS 未含，未自行补）；② 真实生成未跑（注入内容已验，模型产出未验）；③ 实验版原有玩法未回归。
-
-### 0.8 RC53b 三处收尾（2026-11-23 20:03 YG 特批「直接做完」）
-
-- ① 极简版底部「切换实验版（宽屏）」改**紫→粉渐变**（`#8a5cf0 → #ff7aa8`，白字）；被锁态仍为实色底 + 虚线（`style.css:1116-1117`）。
-- ② **项圈工坊进入后隐藏手机头部 ⚙ 设置 / × 折叠**（`app.js:448`，仅 `workshopOpen==='choker'`；极简版面板仍保留这两个按钮）。
-- ③ **星愿商城「持久奇物」补上 `it_imprint`**（RC46 D-2 决议：3000 星愿积分、rainbow、不可消耗）；`engine.js` 购买分支与 `app.js` 已拥有判定原本就在，缺的一直是目录条目与文案。同时补 `errors.IMPRINT_LOCKED`、印记卡「未解锁 / 可铭刻」两态（`screens.js` + `mine.devices.imprint`）。
-- 附带同步陈旧断言：奇物总数 13→14、持久项 2→3、`shop.catalog` 永久购买键 2→3。
-- 验证：`npm test` **501/501**；`BUILD_OK`；零 API **4/4 PASS，`apiCalls: 0`**；截图 `.work/shots/rc53b/shoot/{lite-lab-btn-gradient-tall,choker-no-header-btns,shop-imprint-entry-crop}.png`；自检 `.work/selfcheck-rc53b.md` 9/9。
-- 未做：印记工坊 iframe 无「已解锁」横幅（未兑换时保存报 `IMPRINT_LOCKED` 并指向商城）。
+- 验证：`npm test` 501/501；`BUILD_OK`；零 API 3/3 + 4/4 PASS（`apiCalls: 0`）；截图 `.work/shots/rc53*/shoot/`。**未验证**：未解锁态档位按钮无 `:disabled` 视觉（方案 CSS 未含，未自行补）、真实生成未跑、实验版原玩法未回归。
 
 ### 0.9 私域三装置测试清单（2026-11-23 21:20，**零 API 部分已执行完**）
 
@@ -73,6 +62,23 @@
 - **④extra 解析模式**（YG 自行切模式）：1 轮通过 —— 正文 6831 字 / 52 s，`revision` 1→3、好感 82→83、时间 10:00→10:02、39 个 op 全落；正文自带 patch 全是 `replace` 绝对值，与额外解析结果一致、**不叠加**。8001 已由 YG 切回「随AI输出」；extra 下设备注入与解析失败降级**不验**（YG 22:2x 决定）。
 - **事故（§1.3）**：本轮 dump `mvu_settings` 时把额外解析配置的 `sk-...` 密钥打进了对话。已改为只读字段名/非敏感值，密钥未落任何文件；**建议 YG 轮换该 key**。
 
+### 0.995 手机端适配（2026-11-24 01:0x，YG 实测驱动）
+
+- **现象**：YG 用内联版整卡在手机上打开，开局表单能渲染，但四个开局按钮全不可用，提交报「操作未能完成（TypeError）」。
+- **根因**：`crypto.randomUUID()` / `crypto.subtle` / `structuredClone` 都受 Secure context 限制，只在 HTTPS 或 localhost 存在。玩家用 `http://IP:端口` 打开时前两个是 `undefined`。全卡共 **18 处**依赖（`randomUUID` 15 处：host.js×10 / app.js / wheel-frame×2 / imprint-frame / opening-presets；`subtle` 2 处：script-loader、timeline；`structuredClone` 1 处：opening-presets）。桌面端一律走 `127.0.0.1`（安全上下文），所以从开发到测试从未暴露。
+- **已修（源码，未提交未发布）**：新增 `src/runtime/safe-crypto.js` —— `uuid()`（原生 → `getRandomValues`（不受此限制）→ Math.random）、`sha256Hex()`（Web Crypto → 纯 JS，实测与 Node 标准实现 9 例全一致）、`deepClone()`。18 处调用点全部替换；产物扫描 `crypto.randomUUID` 0 处，`crypto.subtle` 仅兜底模块内部一处且带可选链保护。
+- **验证**：`npm test` 529/529；`build --checkpoint` BUILD_OK；桌面零 API 用例 `rc54.device-shop-choker` PASS（`apiCalls: 0`）；**YG 手机实测开局正常，确认可用**。
+- **发行形态结论（YG 2026-11-24 定）**：**电脑端是主战场，用热更新版（指针 `528c6ae`，localhost 属安全上下文，无此问题）**；**手机端给内联版整卡** `dist/2.0.0-rc.55-checkpoint/神豪终端-rc55-checkpoint.png`（8.53 MB，本体内联、不联网、无远程 loader）。**不为手机端改造发布链路，本次不发版、不切指针。**
+- **发行形态（YG 2026-11-24 定，长期规则）**：以后每次继续做，都要产出**两个版本**——**电脑版＝热更新**（走 Supabase 指针 + CDN，电脑上 localhost 属安全上下文，无兼容问题）；**手机版＝内嵌格式**（即现在的 checkpoint 整卡，本体内联、不联网、无远程 loader）。手机版沿用当前内嵌形态，**不为它改造发布链路**。- **未做**：源码改动留在工作区未提交（下次发版自带）；`schema-entry.js` 的 `mvu_zod` CDN import 仍是潜在隐患（仅当酒馆助手未提供全局 `z` 时才走，实测手机端未触发）。
+### 0.99 rc.55 正式发布（2026-11-23 23:3x，YG「发GIT升版本号，改指针」）
+
+- **版本**：`2.0.0-rc.39` → **`2.0.0-rc.55`**（`package.json` / `project.json`），已提交。
+- **提交**：`34a4b48`（源码 + 测试 + 报告 + 已跟踪 dist 的清理，643 项）→ `528c6ae`（`check.mjs` 规则调整 + `dist/2.0.0-rc.55` 产物）；均已在 origin/release。
+- **指针**：`cj_shenghao_terminal_v2_ref = 528c6ae56bf6eb865ae7bd9dafc4d5a8a3bc2634`，脚本写入后回读一致；紧急开关 `…_off` 仍为 `""`（未启用）。**回滚点 `b75bcc4` / rc.37。**
+- **链路全绿**：`npm test` 529/529 → `--core-only` → 提交推送 → CDN 三域名核对通过 → `fallbackRef` 抬到 `34a4b48` → `npm run build` BUILD_OK → `npm run check` CHECK_OK → 切指针 + 回读。
+- **改了一条发布规则（YG 同意）**：`scripts/check.mjs:40` 的 `native generation ownership` 禁词里去掉了 `injectPrompts`。原因是 rc.50 的 TOY·LINK 用它往 `in_tag` 塞状态说明块，不碰请求 mode 与 raw 消息；而 `npm run build` 从 rc.37 起一直被 `fallbackRef` 闸拦住，这一行**从未真正执行过**（功能先于规则）。防越权的四项仍保留：`setChatMessages` / 两个 `cj-native-*` 边界标记 / `不输出UpdateVariable`。备份 `.backups/check.mjs.bak-20261123-233125`。
+- **`.gitignore` 补三条**（YG 选择方案目录不入库）：`RC*总方案/`、`RC*截图方案/`、`dist/**/*.png`、`dist/*-checkpoint/`；另加 `.backups/`、`.agents/`。避免 500 MB 整卡 PNG 进仓库。
+- **仍然未发行**：玩家发行状态不变（§2.1）。指针切换只影响作者测试更新通道。
 ### 0.98 rc.55 审查缺陷修复（2026-11-23 22:4x–23:0x，YG「开始修复角色卡！」+「B-05 确认修」+「B-01 保持」）
 
 - 范围：codex 审查 14 条里**修了 12 条**，**B-01 按 YG 指示保持原样**，**B-11 与 B-14 的 `.phone` 一处待 YG 定文案/口径**。清单 `.work/checklist-rc55-bugfix.md`，报告 **`reports/rc55-审查缺陷修复-20261123.md`**（全批，含逐条行号与验证）。
@@ -85,66 +91,40 @@
 
 ### 0.97 Codex 只读审查最新整卡（2026-11-23 22:2x–22:4x；想法池 #40 已执行）
 
-### 0.97 Codex 只读审查最新整卡（2026-11-23 22:2x–22:4x；想法池 #40 已执行）
-
 - 调用：`codex exec -m gpt-6.2-sol`（reasoning high、`-s read-only`、session `01a208ca-4f21-7462-9bb4-2e325148b493`、183k tokens）。提示词 `.work/codex-prompt-rc53d-bugreview-20261123.md`、原始输出 `.work/codex-review-rc53d-bug-20261123.md`、**核实报告 `reports/rc54-codex审查最新整卡BUG-20261123.md`（派工以此为准）**。
 - **14 条的行号与源码片段全部对得上**（我逐条 read 核过）：2 P0（B-02 切聊覆写同号楼层、B-08 商城第 201 次购买**永久锁死**——我由 P1 升 P0，历史无截断、不可自愈）；6 P1（B-03 票券被旧日程释放、B-04 新人物 id≠路径键、B-05 免费包继承旧计数、B-06 整对象清 choker/imprints、B-07 同句多资产去重、B-09 切聊注入串聊天）；5 P2（B-10 换款预览分叉、B-11 fillInput 无效、B-12 双香水撤销、B-13 TOY iframe 残留）；1 P3（B-14）。
 - **三处修正**：① B-01「无证据扣款」是 `engine.js:1631` 注释明文的 rc.25「保证零漏单」有意兜底，属经济口径，**不派工，待 YG 选 A 保持/B 仅缺证据时兜底/C 删兜底**（我倾向 B）；② B-14 只有 `style.css:732`（.phone）与 `737`（类嵌自身）真失效，741/744 等「注释 + 后代选择器」是正常命中，不能当 bug 改；③ B-09 与已知「TOY 停止后注入不同步」同根因，应合并一次修。
 - **未验证**：codex 侧 `pwsh` 子进程被系统拒绝（`CreateProcessAsUserW failed: 5`），它靠 MCP `node_repl` 读码 + 内存探针，**`npm test` 未跑**，501/501 是旧值；探针复现我未重放，只核源码路径；需真机验证的 6 条全未跑。**本轮一行源码未改。**
 
-### 0.6 RC52 详情（2026-11-23 03:35–04:15，方案 4N / 施工主代理自己落地）
+### 0.6 RC52 详情（2026-11-23 03:35–04:15，方案 4N）
 
-- 承载：`src/ui/toylink.template.html` + `toylink.css` + `toylink-frame.js` → 构建产出 `src/ui/toylink.html`（153KB）→ `host.js` 内联；顶层 iframe `#cj-shenghao-toylink-frame`，通道 `CJ_SHENGHAO_TOYLINK_V1`（READY 300ms×20 / INIT 1s×6，**不校验 event.source**）。旧手机子页 `src/ui/toylink-lite.js` 已删除，`style.css` 旧 `.workshop-page.is-toylink` 块（1758→1067 行）已删。
-- 逻辑：`here` 文案「你身边」→「现场」；现场 `sceneId=null`、处境整行隐藏、失态倍率固定 `TOY_WITH_EXP_RATE=1.0`；别处处境 8 条（独居私室 0.55 / 试衣隔间 0.70 / 通勤车厢 1.05 / 咖啡雅座 1.15 / 工位办公 1.25 / 晚宴人群 1.40 / 严肃会议 1.55 / 高奢专柜 1.65）。
-- 佩戴：`未佩戴 → 确认框(1/2) → 落点(2/2 现场|别处) → 已佩戴`；确认后记佩戴 + 挂一次性注入 `cj_shenghao_toylink_wear`（`in_chat/depth:1/system`，`GENERATION_ENDED` 撤）+ 把定稿佩戴引导词填进输入框（`autoSend:false`）；摘下撤回注入并清理未发送的引导。**世界书未新增条目**，`schema.js` / `worldbookHash` 未变。
-- YG 三条默认（03:40 批准）：佩戴后留在宽屏不自动关；摘下不弹确认不写正文；佩戴注入单 ID 覆盖。
-- 验证：`npm test` **490 / 490**；`BUILD_OK`；整卡 `神豪终端-rc52f.png` 已装 8001；零 API **7 / 7 PASS，`apiCalls: 0`**（`.work/noapi/suite-result-1795378346930.json`）；截图 `.work/shots/rc52/shoot/toy-wide-{with,away,running}.png`。
-- 本批修掉的坑（记在清单 R-02/R-06）：CSS 花括号手术切坏 `@keyframes`/`@media`、弹窗缺 `.show` 类、复开帧残留 `.is-closing` 致整页 opacity:0、待机态环心误显示「适应」。
-- 真实生成（2026-11-23 04:2x，YG 在 8001 手发一轮，`__NOAPI_TEST_rc47_gate`）：文本 10,800 字（`<game>` 正文 8,013 字）。**通过两项**——① 正文只写客厅现场，八个别处处境名一个没出现（现场口径干净）；② 运行态照口径落地（「切进名为『乱流』的最高档位 / 100%强度，20Hz满频无规律震动」+ 指节泛白、脚尖蜷缩、旁人只当作低烧）。**未验证一项**——发送时输入框只有运行态引导词、没有佩戴引导词，所以「戴上要写进正文」没被触发；`clearPendingWear` 的撤除同样未观察到。分析落盘 `.work/rc52-gen-analysis.md`。
-- 已知噪声（YG 判定不处理）：模型把 `<think>` / `<think_nya>` 思考块留在消息里，属酒馆预设/模型侧；四轮真实生成都有，分析时剥离。
-- 遗留：整卡 +0.53MB（帧 bundle 内联了 WHEEL_COPY 全文，未瘦身）；`rc50.toylink-stack-color` 旧用例待重校；P1 双女同频 / P2 预设曲谱未做；项圈宽屏未开工（YG 说先不做）。
+- 承载：`toylink.template.html` + `toylink.css` + `toylink-frame.js` → `toylink.html`（153KB）→ `host.js` 内联；顶层 iframe `#cj-shenghao-toylink-frame`，通道 `CJ_SHENGHAO_TOYLINK_V1`（READY 300ms×20 / INIT 1s×6，**不校验 event.source**）。
+- 逻辑：「现场」`sceneId=null`、处境隐藏、失态倍率固定 1.0；别处处境 8 条（0.55 / 0.70 / 1.05 / 1.15 / 1.25 / 1.40 / 1.55 / 1.65）。佩戴链路：未佩戴 → 确认 → 落点(现场|别处) → 已佩戴，挂一次性注入 `cj_shenghao_toylink_wear`，摘下撤回并清引导。**世界书未新增，`worldbookHash` 未变。**
+- YG 三条默认（03:40）：佩戴后不自动关宽屏；摘下不弹确认不写正文；佩戴注入单 ID 覆盖。
+- 验证：490/490；零 API 7/7 PASS；真实生成一轮（`__NOAPI_TEST_rc47_gate`，10,800 字）——现场口径干净、运行态照口径落地；**「戴上要写进正文」未触发**（发送时输入框只有运行态引导词）。
+- 遗留：整卡 +0.53MB 未瘦身；`rc50.toylink-stack-color` 待重校；P1 双女同频 / P2 预设曲谱未做。
 
 ### 0.4 RC49 印记工坊独立宽屏（2026-11-22 22:2x–23:1x）
 
-- 方案与原型：`RC49总方案/02_方案_4N.md`（333 行）、`RC49总方案/03_原型/rc49-proto-imprint-wide.html`（1764 行）；照抄清单 `.work/checklist-rc49-imprint.md`（21 条 MATCH）。
-- 新增：`src/ui/imprint.template.html`、`imprint.css`、`imprint-frame.js`，构建产出 `imprint.html` 并内联进 `runtime.js`（不动 `targets` 与 `worldbookHash`）。
-- 改动：`scripts/build.mjs`、`src/runtime/host.js`（`CJ_SHENGHAO_IMPRINT_V1` + `openImprint/closeImprint`）、`src/ui/app.js`、`workshop.js`（只留 choker）、`style.css`（删旧印记样式 697–1006）、`wheel-ui-copy.js`（+12 文案键）、`screens.js`（`workshop(kind)` 只留 choker）。
-- 修 4H 交付后的三处缺陷：① 帧侧 if(event.source!==window.parent)return 在真酒馆必为真（TH 脚本活在自己 iframe 里）→ 改为只认 channel + nonce；② 帧侧 READY 重发（300ms×20）与宿主 6×1s ack 双向兜底；③ 模板清掉原型演示值（苏婉/88-70/52-60/可铭刻/0-19），避免握手失败显示假数据。
-- 验收（2026-11-22 23:35，按 YG 要求只跑目标用例）：印记 4 条 **4 / 4 PASS**，`apiCalls: 0` —— `workshop.imprint-open`、`workshop.imprint-save-remove-all`、`workshop.dock-mode`、`rc47.workshop-imprint-gate`。**纪律**：`.work/noapi/noapi-ctl.json` 的 `only` 只写本轮目标用例，choker 等回归另开一次跑并在开跑前说明；调试脚本不混进正式验证（YG 2026-11-22 指出）。
-- 文案改动（YG 2026-11-22 23:20）：`src/core/wheel-ui-copy.js:567,569` 灵感预填词 `inspo1` 由「{surname}氏私有」改为「母狗」、`inspo3` 由「Property of {userName}」改为「肉便器」；已构建、打包 `神豪终端-rc49d.png` 并装入 8001；真机实测点「母狗」落进刻字框（2/16 字）并出现在舞台。
-- 截图（23:30）：印记工坊全宽只走 shoot-simple.mjs（ctl .work/noapi/shot-simple-ctl.json，expandViewport 1600×1000）→ .work/shots/rc49/shoot/imprint-1600.png。**教训**：不要用 page.screenshot() + CDP 视口模拟——iframe 按旧宽度排版，右栏会被切掉。
-- 备份：`.backups/src-backup-20261122-2209/`（整份源码）、`.backups/8001-card-神豪终端7-20261122-2256.png`（改前整卡）。
+- 产出 `imprint.template.html` + `imprint.css` + `imprint-frame.js`，构建后内联进 `runtime.js`（不动 `targets` / `worldbookHash`）；通道 `CJ_SHENGHAO_IMPRINT_V1`，`host.js` 加 `openImprint/closeImprint`。
+- 修 4H 交付三处：帧侧 `event.source` 校验在真酒馆必假 → 改认 channel + nonce；READY/ack 双向兜底重发；模板清掉原型演示值。
+- 验收：印记 4 条 4/4 PASS（`apiCalls: 0`）。**截图教训**：不要用 `page.screenshot()+CDP` 模拟视口，iframe 按旧宽排版会切掉右栏。
+- 备份 `.backups/src-backup-20261122-2209/`、`.backups/8001-card-神豪终端7-20261122-2256.png`。
 
 ### 0.1 早前（2026-11-22 03:2x–05:2x）完成的四件事
 
-**A. rc.48 截图工具跑通并沉淀成 skill**
-- 实测推翻旧判「宿主对 iframe 叠加 0.34× 缩放」：那张图其实是**被裁的左上一角**。栅格系数 `rasterK = PNG宽 ÷ 视口CSS宽`（本机 1.25 / 1.5625 都出现过，**必须每次实测**）；CDP `Page.captureScreenshot` 无怪相。
-- 工具：**用户级** `ego-pixel-shot`（`shoot-tab`/`crop-verify`/`pick-colors`/`stitch` + sharp）+ **项目级** `ego-precise-screenshot`；报告见 `reports/rc48-*.md`、`RC48截图方案/`。
+- **A. 截图工具**：实测推翻「宿主 0.34× 缩放」旧判（那其实是被裁的左上角）；栅格系数 `rasterK = PNG宽 ÷ 视口CSS宽` 每次必测（见过 1.25 / 1.5625）。已固化为用户级 `ego-pixel-shot` + 项目级 `ego-precise-screenshot`，报告 `reports/rc48-*.md`。
+- **B. 头像库 60 → 88 张**：`tools/avatars/build-avatars.py` 追加 28 张 192px WebP；图库仓 `0088bd0`（资源）→ `1e769db`（清单）；卡内 `avatar-manifest.generated.js` 随 `9686192` 提交。备份 `.work/avatars-backup-20261122-0452`。
+- **C. 工坊四处缺陷**：① `app.js` 缺 `data-ws-pattern` 分发分支致纹样点不动；② `composeImprint` 未传部位致换部位图案不变；③ `wsOpen` 硬写 `group:'all'` → 改按当前部位分组；④ 补 `.phone:has(.workshop-page.is-imprint)` 壳本体配色（`--ui-frame:#251a2b`，项圈 `#241920`）。
+- **D. 对照原型三处收敛**：工坊标题缩到 `13px × 字体缩放`；删手机头部英文副标；项圈舞台补颈部剪影 `NECK_SIL`（取自 `rc47-proto-choker.html:616`）。
 
-**B. 头像库追加 28 张并推送**
-- 来源 `C:\Users\Administrator\Desktop\tx\2`（7 张四宫格）→ 192px 正方形 WebP，走既有 `tools/avatars/build-avatars.py`（`CROP_SIDE=1.0`，`90分` 组 0.70 头部收紧）。
-- **追加**（非整批替换）：b1 +4（0009–0012）、b2 +4（0013–0016）、b3 +8（0017–0024）、b4 +8（0025–0032）、b5 +4（0009–0012）；总量 60 → **88**。
-- 图库仓 `1208496/cj-shenghao-avatars`：`0088bd0`（资源，29 文件）→ `1e769db`（清单 `assetRef=0088bd0`）；远端核验 raw 可取。
-- 卡内同步：`node tools/avatars/emit-manifest.mjs` 重新生成 `src/ui/avatar-manifest.generated.js`（88 条、15 张内联 data、`version 2026.11.22-1`），已随 `9686192` 提交。
-- 备份：`.work/avatars-backup-20261122-0452`、`.work/avatar-repo-backup-20261122-0452`。
+### 0.2 仍未验证 / 未做（2026-11-24 01:1x 重写）
 
-**C. 工坊四处缺陷修复（源码已改，未提交；整卡已装 8001）**
-1. **纹样图腾层点不动**：`app.js` 的事件分发缺 `data-ws-pattern` 分支（其他控件都有），补一条分支后可选。
-2. **换部位图案不变**：`workshop.js` 的 `composeImprint(draft)` 未传部位 → 永远画第一个部位剪影；改为 `composeImprint({...draft, placement: ui.placement})`。实测剪影 path 由 `M50 18 C58 64…` 变为 `M56 16 C64 72…`（19 个部位 `cx/cy` 原型里本来就是同一个点 120,78，变的是剪影）。
-3. **进工坊默认显示全部部位**：`wsOpen` 里 `group:'all'` 硬写 → 改为取当前部位所属分组（现默认「胸腹」，3 个部位）。
-4. **绿壳/绿顶块与暗紫工坊突兀**：已有 `:has()` 只改了顶栏、没改壳本体；补 `.phone:has(.workshop-page.is-imprint){--ui-frame:#251a2b;…}`（项圈 `#241920`）。实测边框 `rgb(37,26,43)`、背板 `#120d15`、顶部弧块同步。
-
-**D. 对照原型后的三处收敛**
-- 工坊标题缩小到 `13px × 字体缩放`（原字号在刘海下被遮，会被看成「上」字，实际是「工」）。
-- 删掉手机头部整条英文副标 `YOUR STORY · YOUR FORTUNE`（全局生效）。
-- 项圈舞台补颈部剪影 `NECK_SIL`，逐字取自 `rc47-proto-choker.html:616`。
-
-### 0.2 仍未验证 / 未做
-
-- **三装置线已跑完**：清单 §六 7 条零 API 全通（§0.9）、§七 R 系列 4 轮真实生成跑完（R-01~R-05 达成、R-06 部分，§0.95）。**仍缺**：RC52「佩戴引导词进正文 + 摘下撤注入」未验、xtra 解析模式从未跑、实验版九模/寸止与商城其余奇物异能未回归、全量 suite 自 rc53 起未重跑；印记工坊仍无「已解锁」横幅（功能缺失，非未测）。
-- 上面 C、D 的改动**只做了 ego 实机截图核对 + 单测 470**，未跑零 API 套件、未做逐条清单比对。
-- 卡内与原型仍有三处结构差异（已截图对比 `reports` 未建，图在 `.work/shots/cmp-ws/compare.png`）：① 卡内多「预览锁定横幅 + 门槛提示块」，把舞台挤下去；② 项圈默认款 `obsidian_velvet` vs 原型玫瑰金铭牌锁圈；③ 可视高度 365×730 vs 原型 375×812，首屏看不到纹样层。
-- `fallbackRef` 闸仍会拦正式构建（见 §0.3）。
+- **手机端**：crypto 兜底修复后 YG 已实测开局可用。仍未验：手机上的 TOY 实验版宽屏、印记宽屏、三主题切换。
+- **电脑端热更新**：指针 `528c6ae` 跑的是 crypto 修复**之前**的代码；工作区那批修复未提交未推送，下次发版才带上。
+- **功能面未验**：RC52「佩戴引导词进正文 + 摘下撤注入」、extra 解析模式下设备注入与解析失败降级、实验版九模/寸止回归；印记工坊「已解锁」横幅仍是功能缺失（非未测）。
+- **旧用例待重校**：`rc50.toylink-stack-color`、`rc50.toylink-scroll-keep`、`rc47.workshop-choker-gate` —— 均为用例侧问题（旧选择器 / 滚动量不足致 F3），非卡缺陷。
+- **潜在隐患**：`schema-entry.js` 的 `mvu_zod` CDN import，仅在酒馆助手未提供全局 `z` 时才会走；实测手机端未触发。
 
 ### 0.3 `fallbackRef` 闸是什么（本轮已查明，写清免得再问）
 
@@ -197,15 +177,12 @@
 
 ## 4. 下一步（按优先级）
 
-0. **RC53 / RC53b 已装 8001，等实机验收**（2026-11-23 20:35）：见 §0.7 / §0.8。三件待定——① 印记工坊是否需要「已解锁」横幅（要则先出方案）；② 极简版面板头部 ⚙/× 是否也隐藏；③ 真实生成 6 条要不要跑。
-0.5 **私域三装置补测**（2026-11-23 22:1x 收束）：7 条零 API 7/7（§0.9）、真实生成 4 轮（§0.95）、补测四件全跑完（§0.96）。**YG 已定：发现 B（TOY 注入恢复）与发现 C（配饰吞并）都是小瑕疵，暂不修**。仍要 YG 定的：① 印记工坊「已解锁」横幅要不要出方案；② 8001 要不要从 extra 模式切回「随AI输出」；③ `sk-...` 那个 key 要不要轮换。
-1. **RC52 已收尾（2026-11-23 22:2x）**：宽屏、现场口径、佩戴引导词进正文（9328 字）、`clearPendingWear` 撤除（第 2 句对照）全部通过。剩 extra 下设备注入与解析失败降级不验（YG 决定）。
-2. **旧用例重校**：`rc50.toylink-stack-color`（旧手机子页的档位时间轴）与 `rc50.toylink-scroll-keep`（§8.10 判为用例自伤）在独立宽屏下已不适用；**另加 `rc47.workshop-choker-gate`**——2026-11-23 单跑复现 F3「被 button.tab.active 遮挡」，与 rc54 同因（点装置卡前需先 `scrollTo .phone-screen`），下次回归批次一并改。
-3. **瘦身**（可选）：`toylink.html` 153KB，帧 bundle 内联了 `WHEEL_COPY` 全文；要压可改成由宿主把文案随 `view` 下发。
-4. **RC52 的 P1/P2 与项圈宽屏**：双女同频 / 预设曲谱 / 项圈工坊改宽屏，方案里都没有可照抄的细则，要做先派 agy。
-5. **RC50 遗留阻塞**：`it_imprint` 目录条目与印记卡锁定态文案仍未定稿，`imprintUnlocked` 无法经商城置真（印记实际锁死），需派 4N 或 YG 给稿。
-6. 把 §0.2 的三处结构差异对齐原型（或随新方案一起重做）。
-7. 发布链：`fallbackRef` 抬升与发版时机由 YG 单独发话。
+0. **双版本产出**（YG 2026-11-24 定，长期）：每次继续做都要同时出**电脑版＝热更新**与**手机版＝内嵌 checkpoint 整卡**，手机版沿用现内嵌形态。
+1. **等 YG 决定**：① 工作区那批 crypto 修复要不要提交（现 14 处未提交、未 push）；② 内联版整卡要不要另存备份（现在只在本机 `dist/2.0.0-rc.55-checkpoint/`，不在 Git 里）。
+2. **旧用例重校**：`rc50.toylink-stack-color`、`rc50.toylink-scroll-keep`、`rc47.workshop-choker-gate`（用例侧，非卡缺陷）。
+3. **瘦身**（可选）：`toylink.html` 153KB 内联了 `WHEEL_COPY` 全文，可改成随 `view` 下发。
+4. **P1/P2 与项圈宽屏**：双女同频 / 预设曲谱 / 项圈工坊改宽屏，方案里无可照抄细则，要做先派 agy。
+5. **发布链**：`fallbackRef` 已在 rc.55 发布时抬到 `34a4b48`；下次发版由 YG 单独发话。
 
 ## 5. 方案与留痕位置
 

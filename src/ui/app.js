@@ -1,3 +1,4 @@
+import {uuid} from '../runtime/safe-crypto.js';
 import {cashOptions,openingPresets,applyOpeningPreset} from './opening-presets.js';
 import {contactPresets,contactPresetValues,installFieldOptions} from './setup-options.js';
 import {createScreens} from './screens.js';
@@ -18,7 +19,7 @@ import {composeChoker} from './imprint-art.js';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v ?? '').replace(/[&<>"']/g,c=>String.fromCharCode(38)+({'&':'amp;','<':'lt;','>':'gt;','"':'quot;',"'":'#39;'}[c]));
 const yuan=n=>'¥'+new Intl.NumberFormat('zh-CN',{minimumFractionDigits:n%100?2:0,maximumFractionDigits:2}).format(n/100);
-const uid=()=>crypto.randomUUID();
+const uid=()=>uuid();
 const setup=document.body.dataset.surface==='setup';
 const draftStore=setup?setupDraftStore(window.parent):null;
 let draftEdited=false,connectionExpired=false;
