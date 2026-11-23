@@ -15,17 +15,17 @@
 
 ---
 
-## 0. 当前状态（2026-11-24 01:1x 更新；rc.55 已发布，手机版内联卡实测可用）
+## 0. 当前状态（2026-11-24 01:3x 更新；**rc.56 已正式发行**，电脑版 + 手机版双形态产出）
 
 | 项 | 值 |
 |---|---|
-| 源码版本 | **`2.0.0-rc.55`** / `cardContractRevision 33`（rc.39 → rc.55 已于 2026-11-23 23:3x 正式升版并发布） |
-| 工作树 | **14 处未提交**（手机端 crypto 兜底修复，见 §0.995；HEAD 仍 `528c6ae`，YG 决定暂不发布） |
-| 线上作者测试指针 | **`528c6ae` / rc.55**（2026-11-23 23:3x 已切并回读校验）；回滚点 `b75bcc4` / rc.37 |
-| 玩家发行状态 | **未发行** |
+| 源码版本 | **`2.0.0-rc.56`（正式发行版）** / `cardContractRevision 33` |
+| 工作树 | **干净**，HEAD=`a716b42`，已在 origin/release |
+| 线上更新指针 | **`e5c00bf` / rc.56**（2026-11-24 01:3x 已切并回读校验）；回滚点 `528c6ae` / rc.55 |
+| 玩家发行状态 | **已发行**（2026-11-24，YG 明确指示「确认为已向玩家发行、已为正式版本」）—— 自此改字段须考虑旧存档兼容，见 `AGENTS.md` §2.3 |
 | 单测 | `npm test` **529 / 529**（rc.55 新增 28 条） |
-| 构建 | `npm run build` → **BUILD_OK** + `npm run check` → **CHECK_OK**（fallbackRef 闸已随正式发布抬开，见 §0.99） |
-| 整卡（双版本） | **电脑版**＝热更新，指针 `528c6ae`｜**手机版**＝`dist/2.0.0-rc.55-checkpoint/神豪终端-rc55-checkpoint.png`（8.53 MB 内联，YG 手机实测可用）。8001 当前装的是内联版，改前备份 `.backups/8001-card-神豪终端7-20261123-230632.png` |
+| 构建 | `npm run build` → **BUILD_OK** + `npm run check` → **CHECK_OK**（fallbackRef 已抬到 `34a4b48`） |
+| 整卡（双版本） | **电脑版**＝`dist/2.0.0-rc.56/神豪终端-rc56-电脑版.png`（3.16 MB，热更新，指针 `e5c00bf`）｜**手机版**＝`dist/2.0.0-rc.56-checkpoint/神豪终端-rc56-手机版.png`（9.19 MB，内联）。卡面源图 `assets/card-face-rc56.png`（480×720，已入库） |
 | 零 API | RC53+53b 四条 `rc53.*` ✔；**rc54 私域三装置 7/7 ✔（76 断言，`apiCalls: 0`，连跑两遍同结果）**（`.work/noapi/suite-result-1795439871427.json`）；rc50.toylink-stack-color / scroll-keep 仍待重校 |
 
 ### 0.7 RC53 / RC53b TOY·LINK 极简版（2026-11-23 18:46–20:03）
@@ -62,6 +62,15 @@
 - **④extra 解析模式**（YG 自行切模式）：1 轮通过 —— 正文 6831 字 / 52 s，`revision` 1→3、好感 82→83、时间 10:00→10:02、39 个 op 全落；正文自带 patch 全是 `replace` 绝对值，与额外解析结果一致、**不叠加**。8001 已由 YG 切回「随AI输出」；extra 下设备注入与解析失败降级**不验**（YG 22:2x 决定）。
 - **事故（§1.3）**：本轮 dump `mvu_settings` 时把额外解析配置的 `sk-...` 密钥打进了对话。已改为只读字段名/非敏感值，密钥未落任何文件；**建议 YG 轮换该 key**。
 
+### 0.996 rc.56 正式发行（2026-11-24 01:3x，YG「推GIT，RC56正式版版本，改指针，确认为已向玩家发行」）
+
+- **版本**：`2.0.0-rc.55` → **`2.0.0-rc.56`**（`package.json` / `project.json`），`releaseNotes` 已改写为本版内容。
+- **卡面换新**：YG 提供 480×720 卡面图 → 存入 `assets/card-face-rc56.png`（入库），两版整卡均以它为底图。
+- **提交**：`e5c00bf`（源码 + `safe-crypto.js` + 卡面 + 报告，17 文件）→ `a716b42`（`dist/2.0.0-rc.56` 产物，13 文件）；均已在 origin/release。
+- **指针**：`cj_shenghao_terminal_v2_ref = e5c00bf6f0d6fc52677ecbf3b22d1fdc81dd78f9`，写入后回读一致；紧急开关仍为 `""`。**回滚点 `528c6ae` / rc.55。**
+- **链路全绿**：`npm test` 529/529 → `--core-only` → 推送 → CDN 核对（`testingcf` 第 1 次未就绪，自动重试后通过）→ `npm run build` BUILD_OK → `npm run check` CHECK_OK → 切指针 + 回读。
+- **双版本产出**：电脑版 `dist/2.0.0-rc.56/神豪终端-rc56-电脑版.png`（3.16 MB，`supabase-commit-loader`）｜手机版 `dist/2.0.0-rc.56-checkpoint/神豪终端-rc56-手机版.png`（9.19 MB，`embedded-checkpoint`）。
+- **发行状态变更**：**未发行 → 已发行**（依据 YG 2026-11-24 明确陈述，符合 `AGENTS.md` §2.1 的「明确陈述」条件）。**自此修改字段须按 §2.3 考虑旧存档与旧字段的兼容或迁移**，不再按未发行期「可直接删改」处理。
 ### 0.995 手机端适配（2026-11-24 01:0x，YG 实测驱动）
 
 - **现象**：YG 用内联版整卡在手机上打开，开局表单能渲染，但四个开局按钮全不可用，提交报「操作未能完成（TypeError）」。
@@ -228,5 +237,4 @@
 - **未验证**：`workspace-write` 档、`exec resume` 的 `-s/-C` 继承、登录失效行为、`codex doctor --json` 结构、`logs_2.sqlite` 表结构。
 - **规则已大改**：`~/.dsh/AGENTS.md` 210 → 81 行（§2 闸门扩到 codex 与 `subagent_antigravity`；§3 探针只剩 4A；§10 放额度与硬排除）；项目 `AGENTS.md` 选型表同步。条文不在此复述，直接读两份 AGENTS。
 - **模型分工修正依据**：`E:\AGY_ARCHIVE\MODEL_TEST\rc46-双模型能力对照测试报告-20261119.md`——4N 在技术文档语境直接写器官词，只有创作输出语境才收紧成代称。
-
 
