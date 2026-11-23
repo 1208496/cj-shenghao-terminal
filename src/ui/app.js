@@ -1,9 +1,11 @@
 import {uuid} from '../runtime/safe-crypto.js';
 import {cashOptions,openingPresets,applyOpeningPreset} from './opening-presets.js';
-import {contactPresets,contactPresetValues,installFieldOptions} from './setup-options.js';
+import {contactPresets,contactPresetValues,installFieldOptions,fieldOptions} from './setup-options.js';
 import {createScreens} from './screens.js';
 import {setupDraftStore} from './setup-draft.js';
-import {missingInStep} from './setup-required.js';
+import {SETUP_FIELD_HINTS,validateField,validateStep,STEP_FIELDS,SETUP_FIELD_RULES,normalizeNumericInput,normalizeTextInput,clampInteger,parseDecimal,validateAssetDraft,validateContactDraft,validateDraftAsset,validateDraftContact,findFirstDraftIssue,sanitizeLoadedDraft,errorTextFor} from './setup-required.js';
+import {BEAUTY_HINT,PROWESS_HINT,DRAFT_WARN_TEXT,DRAFT_WARN_BTN,BODY_EMPTY_TEXT,BODY_MISSING_TPL} from './opening-copy.generated.js';
+import {RENAME as RENAME_COPY} from './rc56b-copy.generated.js';
 import {WHEEL_POOL_BY_ID} from '../core/wheel-pool.js';
 import {CASINO_UI,ABILITY_BY_ID,SURREAL_ITEM_BY_ID,ABILITIES,SURREAL_ITEMS} from '../core/casino-catalog.js';
 import {CARD_CODES} from './card-art.js';
@@ -23,7 +25,7 @@ const uid=()=>uuid();
 const setup=document.body.dataset.surface==='setup';
 const draftStore=setup?setupDraftStore(window.parent):null;
 let draftEdited=false,connectionExpired=false;
-const fieldOptionsUI=installFieldOptions({enabled:setup});
+const fieldOptionsUI=installFieldOptions({enabled:setup,options:key=>fieldOptions(key,{gender:$('f_gender')?.value??draft?.gender??''})});
 let mineExpanded=new Set();
 let editingContactId=null,editingAssetId=null,consumptionPage=0,withdrawalPreview=null;
 // rc.33 修复：熟人弹窗会话令牌。AI 补全回来时若弹窗已换人/已关闭，结果直接丢弃，避免幽灵回填。
@@ -82,6 +84,15 @@ function wsConfirm(title,body,attr,value,okLabel){
 }
 const defaultDraft=()=>({name:'',age:24,beautyScore:60,prowessScore:70,genitals:{length:'18cm',girth:'4.8cm',traits:'形态饱满挺拔，青筋分明，热度惊人'},gender:'',appearance:'',body:'',occupation:'',background:'',startDate:'2026-01-05',startTime:'09:00',weather:'晴',initialCashCents:1000000,city:'云澜市',currentLocation:'江城区·公寓',workLifeDescription:'',initialAssets:[],contacts:[]});
 function notify(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').style.display='none',3500);}
+// rc.56-formA：聚焦到出问题的字段——先切到它所属的那一步，再 focus + 平滑滚到视口中间（方案 §2.2 提交拦截行）。
+function focusSetupField(field){
+  if(!field)return;
+  const owner=[0,1,2].find(s=>(STEP_FIELDS[s]||[]).includes(field));
+  if(owner!==undefined&&(step!==owner||preview)){step=owner;preview=false;saveDraft();wizard();}
+  const byId={beautyScore:'beautyNumber',prowessScore:'prowessNumber'};
+  const el=byId[field]?$(byId[field]):document.getElementById('f_'+field);
+  if(!el)return;el.focus?.();el.scrollIntoView?.({block:'center',behavior:'smooth'});
+}
 function cardFxQualityOf(v=view){return ['high','medium','low'].includes(v?.prefs?.cardFxQuality)?v.prefs.cardFxQuality:'medium';}
 // rc.41：入口徽章的三档降级也吃同一份画质偏好。
 function wheelFxQualityOf(v=view){return ['high','medium','low'].includes(v?.prefs?.wheelFxQuality)?v.prefs.wheelFxQuality:'medium';}
@@ -95,16 +106,105 @@ function fallbackErrorText(e){
   const code=e?.name&&e.name!=='Error'?e.name:(typeof e?.message==='string'&&/^[A-Z0-9_]{3,40}$/.test(e.message)?e.message:'');
   return code?`操作未能完成（${code}），请稍后重试。`:'操作未能完成，请稍后重试。';
 }
-function field(label,key,value,{type='text',area=false,min,max,required=false,placeholder=''}={}){
-  // Setup dates share the editable suggestion dropdown; validation still uses the schema.
+// rc.56-formA（4N 方案 §2.6）：字段统一输出「标签 + 控件 + 常驻限制说明」，DOM 与类名照抄方案。
+// 数字框按方案改为 type=text + inputmode（弃用 type=number，避免移动端 e/+/- 键与吞值）。
+function field(label,key,value,{type='text',area=false,required=false,placeholder='',maxlength,hint,inputmode}={}){
+  const rule=SETUP_FIELD_RULES[key];
   if(setup&&['date','time'].includes(type))type='text';
+  if(type==='number'){inputmode=inputmode||(rule?.kind==='decimal'?'decimal':'numeric');type='text';}
+  if(!inputmode&&rule?.kind==='decimal')inputmode='decimal';
+  if(!inputmode&&rule?.kind==='int')inputmode='numeric';
+  if(!maxlength)maxlength=rule?.max??(area?1200:500);
+  const fid='f_'+key,msgId='f_'+key+'_msg';
+  const hintText=hint===undefined?(SETUP_FIELD_HINTS[key]||''):hint;
   const ph=placeholder?` placeholder="${esc(placeholder)}"`:'';
-  const fid='f_'+key;return `<div class="field"><label for="${fid}">${label}${required?' <span class="required">*</span>':''}</label>${area?`<textarea id="${fid}" data-field="${key}" maxlength="1200"${ph}>${esc(value)}</textarea>`:`<input id="${fid}" data-field="${key}" value="${esc(value)}" type="${type}" ${min===undefined?'':`min="${min}"`} ${max===undefined?'':`max="${max}"`} ${type==='number'?'step="1"':''} maxlength="500" ${required?'required':''}${ph}>`}</div>`;
+  const im=inputmode?` inputmode="${inputmode}"`:'';
+  const ctl=area
+    ?`<textarea id="${fid}" data-field="${key}" maxlength="${maxlength}"${ph} aria-describedby="${msgId}">${esc(value)}</textarea>`
+    :`<input id="${fid}" data-field="${key}" value="${esc(value)}" type="${type}"${im} autocomplete="off" maxlength="${maxlength}" ${required?'required':''}${ph} aria-describedby="${msgId}">`;
+  const msg=hintText?`<div id="${msgId}" class="field-msg field-hint" data-default-hint="${esc(hintText)}">${esc(hintText)}</div>`:'';
+  return `<div class="field" data-field-wrap="${key}"><label for="${fid}">${label}${required?' <span class="required">*</span>':''}</label>${ctl}${msg}</div>`;
 }
 // 想法池 07：开局表单必填校验，规则在 setup-required.js；拦截点统一放在「下一步」。
-// 想法池 07：可留空的身体数据在表单里是空数字框，collect() 不能把它们读成 0，
-// 否则 validateDraft 会按范围校验报错、模型补全机制也失效。
-const SETUP_NULLABLE_NUMBERS=new Set(['heightCm','weightKg','shoeSizeEu']);
+
+// ---- rc.56-formA：错误态 / 输入清洗 / 失焦钳位（方案 §2.2 §2.5） ----
+const isSetupTarget=el=>!!el?.dataset&&el.dataset.field!==undefined;
+function setFieldError(key,code){
+  if(!key)return;
+  const wrap=document.querySelector(`[data-field-wrap="${key}"]`);
+  if(!wrap)return;
+  const msg=document.getElementById('f_'+key+'_msg');
+  const ctl=wrap.querySelector('input,textarea,select');
+  if(code){
+    wrap.classList.add('is-invalid');
+    ctl?.setAttribute('aria-invalid','true');
+    if(msg){msg.className='field-msg field-error';msg.textContent=errorTextFor(code);}
+  }else{
+    wrap.classList.remove('is-invalid');
+    ctl?.removeAttribute('aria-invalid');
+    if(msg){msg.className='field-msg field-hint';msg.textContent=msg.dataset.defaultHint??SETUP_FIELD_HINTS[key]??'';}
+  }
+}
+function guardValue(el){
+  const rule=SETUP_FIELD_RULES[el.dataset.field];
+  if(!rule)return;
+  const before=el.value;let after=before;
+  if(rule.kind==='int')after=normalizeNumericInput(before);
+  else if(rule.kind==='decimal')after=normalizeNumericInput(before,{allowDecimal:true});
+  else if(rule.kind==='date'||rule.kind==='time'||rule.kind==='money')after=normalizeTextInput(before);
+  if(after===before)return;
+  const at=el.selectionStart??after.length;
+  el.value=after;
+  try{el.setSelectionRange(Math.min(at,after.length),Math.min(at,after.length));}catch{}
+}
+function onGuardInput(el){
+  if(el.dataset.composing==='1')return;
+  guardValue(el);
+  setFieldError(el.dataset.field,validateField(el.dataset.field,el.value));
+}
+function onGuardBlur(el){
+  const key=el.dataset.field,rule=SETUP_FIELD_RULES[key];
+  if(!rule)return;
+  guardValue(el);
+  if((rule.kind==='int'||rule.kind==='decimal')&&String(el.value).trim()!==''){
+    const fixed=rule.kind==='int'?clampInteger(el.value,rule.min,rule.max):parseDecimal(el.value,rule.min,rule.max);
+    if(fixed!==null)el.value=String(fixed);
+  }
+  setFieldError(key,validateField(key,el.value));
+  try{collect();saveDraft();}catch{}
+}
+let setupGuardsBound=false;
+function bindSetupGuards(){
+  if(setupGuardsBound||!setup)return;
+  setupGuardsBound=true;
+  document.addEventListener('input',e=>{if(isSetupTarget(e.target))onGuardInput(e.target);},true);
+  document.addEventListener('blur',e=>{if(isSetupTarget(e.target))onGuardBlur(e.target);},true);
+  document.addEventListener('compositionstart',e=>{if(isSetupTarget(e.target))e.target.dataset.composing='1';},true);
+  document.addEventListener('compositionend',e=>{if(!isSetupTarget(e.target))return;delete e.target.dataset.composing;onGuardInput(e.target);},true);
+}
+// 进入某一步时把草稿里「已填但越界」的旧值立即标红（方案 §6）；空字段不标红，等玩家失焦或提交再提示。
+function markStepIssues(){
+  if(!setup||!$('wizard'))return;
+  for(const key of STEP_FIELDS[step]||[]){
+    const raw=draft?.[key];
+    const empty=raw===null||raw===undefined||String(raw).trim()==='';
+    setFieldError(key,empty?'':validateField(key,raw));
+  }
+}
+// 把「首个问题」交给界面：切步 → 重绘 → 标红 → 聚焦（方案 §2.2 提交拦截行）
+function jumpToIssue(issue){
+  if(!issue)return false;
+  if(issue.scope==='field'&&(step!==issue.step||preview)){step=issue.step;preview=false;saveDraft();wizard();}
+  if(issue.scope==='field'){setFieldError(issue.key,issue.code);focusSetupField(issue.key);}
+  else if(issue.scope==='asset'||issue.scope==='contact'){step=issue.step;preview=false;saveDraft();wizard();notify(issue.message);}
+  return true;
+}
+// 带玩家文案的错误：catch 用 userMessage 精准点名，不再吞成通用提示
+function fieldIssue(issue,{stayInModal=false}={}){
+  const error=Error(issue?.code||'INVALID_TEXT');
+  error.field=issue?.key||'';error.codeKey=issue?.code||'';error.userMessage=issue?.message||'';
+  error.stayInModal=stayInModal;return error;
+}
 // rc.36：轮盘搬到顶层全屏 iframe，由 host 托管；手机这边只负责发起与结算后刷新。
 async function runWheelOp(op){
   const payload={...op,operationId:uid(),expectedRevision:view.state.meta.revision};
@@ -290,7 +390,31 @@ function promptForm(itemId){
   const draftText=buildItemInputDraft({category:'SURREAL_ITEM',name:def.name,summary:def.effect||'',targetName:''});
   showModal(`<h3>${esc(WHEEL_COPY.bag.surreal.promptTitle)}</h3><p class="muted">${esc(WHEEL_COPY.bag.surreal.promptSub)}</p><textarea class="story-draft" readonly>${esc(def.effect||'')}</textarea><textarea class="story-draft" id="ui_draft2">${esc(draftText)}</textarea><div class="row"><button class="btn secondary" data-act="cancel">关闭</button><button class="btn" data-fill-prompt="${esc(itemId)}">${esc(WHEEL_COPY.bag.surreal.useConfirmInput)}</button></div>`);
 }
-function collect(){draft.city='云澜市';if($('beautyNumber')){const value=Number($('beautyNumber').value);if(!$('beautyNumber').value||!Number.isInteger(value)||value<1||value>100)throw Error('INVALID_INTEGER');draft.beautyScore=value;}if($('prowessNumber')){const value=Number($('prowessNumber').value);if(!$('prowessNumber').value||!Number.isInteger(value)||value<1||value>100)throw Error('INVALID_INTEGER');draft.prowessScore=value;}if($('f__gen_length'))draft.genitals={length:$('f__gen_length').value.trim()||'18cm',girth:$('f__gen_girth').value.trim()||'4.8cm',traits:$('f__gen_traits').value.trim()};let changed=false;document.querySelectorAll('#wizard [data-field]').forEach(el=>{const k=el.dataset.field;if(k.startsWith('_'))return;const value=el.type==='number'?(el.value===''&&SETUP_NULLABLE_NUMBERS.has(k)?null:Number(el.value)):el.value;if(draft[k]!==value&&k!=='name'&&k!=='age')changed=true;draft[k]=value;});if(changed)delete draft.openingPresetId;}
+// rc.56-formA（方案 §5 L452）：collect 不再抛错中断草稿；数字串按规则归一到 number|null，非法字符串原样留给校验器标错。
+function collect(){
+  draft.city='云澜市';
+  let changed=false;
+  document.querySelectorAll('#wizard [data-field]').forEach(el=>{
+    const k=el.dataset.field;if(k.startsWith('_'))return;
+    const rule=SETUP_FIELD_RULES[k],raw=el.value;let value=raw;
+    if(rule?.kind==='int'){const digits=normalizeNumericInput(raw);value=digits===''?null:Number(digits);}
+    else if(rule?.kind==='decimal'){
+      const s=normalizeNumericInput(raw,{allowDecimal:true});
+      if(s===''||s==='.')value=null;
+      else{
+        const n=Number(s);
+        // 方案 §6：合法值才归一（一位小数）；越界值一律原样保留，让界面把它标红给玩家改
+        value=(Number.isFinite(n)&&n>=rule.min&&n<=rule.max)?Math.round(n*10)/10:raw;
+      }
+    }
+    if(draft[k]!==value&&k!=='name'&&k!=='age')changed=true;
+    draft[k]=value;
+  });
+  if($('f__gen_length'))draft.genitals={length:$('f__gen_length').value.trim()||'18cm',girth:$('f__gen_girth').value.trim()||'4.8cm',traits:$('f__gen_traits').value.trim()};
+  const beauty=$('beautyNumber');if(beauty){const v=clampInteger(beauty.value,1,100);if(v!==null)draft.beautyScore=v;}
+  const prowess=$('prowessNumber');if(prowess){const v=clampInteger(prowess.value,1,100);if(v!==null)draft.prowessScore=v;}
+  if(changed)delete draft.openingPresetId;
+}
 function wizard(){fieldOptionsUI.close();
   if(view?.state){$('app').innerHTML=`<section class="setup"><div class="narrative"><h2>你的人生已启程</h2><p>${esc(view.state.user.name)} · ${esc(view.state.scene.location)}</p><p>本次开局已保留，可从聊天继续。打开右下角终端，查看此刻、她们和我的。</p>${view.error?`<p class="error-note">${esc(view.error)}</p>`:''}</div></section>`;return;}
   const d=draft;
@@ -299,10 +423,30 @@ function wizard(){fieldOptionsUI.close();
   else if(step===0)body=`<div class="opening-presets" role="group" aria-label="开局预设">${openingPresets.map(p=>`<button type="button" class="mini-btn ${d.openingPresetId===p.id?'selected':''}" data-opening-preset="${p.id}" aria-pressed="${d.openingPresetId===p.id}"><b>${p.label}</b><small>${yuan(p.cashYuan*100)}</small></button>`).join('')}</div><p class="notice">一键填写其他设定、资产与熟人，姓名和年龄保留；填写后仍可修改。带下拉建议的输入框点击即可选用预设词条。</p><h2 class="sec-title">你是谁？</h2><p class="sub">从你的名字开始，定义自己的都市人生。</p><div class="form-row">${field('姓名','name',d.name,{required:true,placeholder:'输入你的名字（如：陆时行、陈默）'})}${field('年龄','age',d.age,{type:'number',min:18,max:80,required:true,placeholder:'18–80 整数（如：24）'})}</div><div class="form-row">${field('性别','gender',d.gender,{required:true,placeholder:'如：男（点击可选，或自由填写）'})}${field('职业','occupation',d.occupation,{required:true,placeholder:'当前身份或行业（如：独立建筑师、投行合伙人）'})}</div><div class="form-row">${field('身高（CM，选填）','heightCm',d.heightCm??'',{type:'number',min:140,max:230,placeholder:'可留空，由模型自动补全（如：183）'})}${field('体重（KG，选填）','weightKg',d.weightKg??'',{type:'number',min:35,max:200,placeholder:'可留空，由模型自动补全（如：75）'})}</div>${field('鞋码（欧码，选填）','shoeSizeEu',d.shoeSizeEu??'',{type:'number',min:34,max:52,placeholder:'可留空，由模型自动补全（如：43）'})}${beautyControl(d.beautyScore)}${prowessControl(d.prowessScore??70)}<div class="form-row">${field('性器长度','_gen_length',d.genitals?.length||'18cm',{placeholder:'带单位（如：18cm、20cm）'})}${field('性器粗度','_gen_girth',d.genitals?.girth||'4.8cm',{placeholder:'直径或周长（如：4.8cm、5.2cm）'})}</div>${genitalTraits(d.genitals?.traits||'')}${field('外貌与气质','appearance',d.appearance,{area:true,required:true,placeholder:'写发型五官、穿衣风格与给人的第一印象（如：黑色短发利落，鼻梁高挺，常戴金丝半框眼镜，眼神沉稳内敛）'})}${field('身材','body',d.body,{area:true,required:true,placeholder:'写体型骨架与锻炼痕迹（如：宽肩窄腰体型匀称，常年游泳保持着紧实流畅的胸腹肌理）'})}${field('背景经历','background',d.background,{area:true,required:true,placeholder:'写来云澜市的经历、目前的经济境遇与人生念想（如：在云澜市打拼三年的青年设计师，刚独立接手工作室，渴望在东岸站稳脚跟）'})}`;
   else if(step===1)body=`<h2 class="sec-title">选择生活的起点</h2><p class="sub">初始现金与你们未来的专属奖池分别计算。</p><div class="field"><label>初始现金（元）</label><div class="choice-row" role="group" aria-label="初始现金">${cashOptions.map(n=>`<button type="button" class="chip ${d.initialCashCents===n*100?'on':''}" data-cash="${n}" aria-pressed="${d.initialCashCents===n*100}">${yuan(n*100)}</button>`).join('')}</div></div><p class="notice">开局城市：云澜市</p>${field('当前地点','currentLocation',d.currentLocation,{required:true,placeholder:'格式：城区·具体场所（如：江城区·翠湖公寓客厅、东岸商业区·写字楼下咖啡座）'})}${field('工作与生活','workLifeDescription',d.workLifeDescription,{area:true,placeholder:'写日常作息、工作节奏与闲暇爱好（如：平时居家画图办公，周末喜欢逛独立书店、健身或约熟人小酌）'})}<div class="form-row">${field('起始日期','startDate',d.startDate,{type:'date',required:true,placeholder:'YYYY-MM-DD（如：2026-01-05）'})}${field('起始时间','startTime',d.startTime,{type:'time',required:true,placeholder:'HH:mm（如：09:00）'})}</div>${field('天气','weather',d.weather,{placeholder:'写天气与体感（如：晴，微风、雨后初霁，空气微凉）'})}<div class="section-head"><h3>已有资产</h3><button class="mini-btn" data-act="add-asset">＋ 登记资产</button></div>${d.initialAssets.map(a=>`<div class="person-preview"><b>${esc(a.name)}</b><span>${yuan(a.bookValueCents)} · ${esc(a.ownershipNote)}<br>${esc(assetDescription(a))}</span><div class="choice-row"><button class="mini-btn" data-edit-asset="${esc(a.assetId)}">编辑</button><button class="mini-btn" data-remove-asset="${esc(a.assetId)}">移除</button></div></div>`).join('')||'<p class="notice">开局资产按既有财产登记，不形成新的收入或支出。</p>'}`;
   else body=`<h2 class="sec-title">生活里熟悉的人</h2><p class="sub">可不添加。只有当下同场景的人才会显示在「此刻」。</p>${d.contacts.map(c=>`<div class="person-preview"><b>${esc(c.name)} · ${c.age}岁</b><span>${esc(c.relationshipLabel)} · 好感 ${c.affection} · ${c.present?'此刻在场':'暂不在场'}</span><div class="choice-row"><button class="mini-btn" data-edit-contact="${esc(c.id)}">编辑</button><button class="mini-btn" data-remove-contact="${esc(c.id)}">移除</button></div></div>`).join('')}<div class="field"><label for="setupContactPreset">预设熟人</label><select id="setupContactPreset" data-contact-preset-picker><option value="">选择人物后编辑资料…</option>${contactPresets.map(p=>`<option value="${esc(p.presetId)}">${esc(p.label)} · ${p.age}岁 · ${esc(p.occupation)}</option>`).join('')}</select></div><button class="btn secondary full" data-act="add-contact">＋ 添加初始熟人</button><p class="notice">每位正式熟人的奖池从零累积，实际消费与重要互动会形成待领奖励。最多20位，缺失的简易资料随开场正文补齐，九大档案按需手动建档。</p>`;
-  $('app').innerHTML=`<main class="setup"><section id="wizard" class="wizard"><div class="wizard-hero"><div class="eyebrow">神豪终端 / 自由人生</div><h1>你的故事，由你定义。</h1><p>身份、财富和熟悉的人，都由你书写。</p><div class="steps">${[0,1,2].map(i=>`<div class="${i<=step?'active':''}"></div>`).join('')}</div><div class="step-label">${preview?'最后一步 · 确认起点':['01 · 塑造身份','02 · 设定起点','03 · 已有关系'][step]}</div></div><div class="wizard-body">${body}${view.error?`<p class="error-note">${esc(view.error)}</p>`:''}<div class="wizard-actions"><button class="btn secondary" data-act="back" ${step===0&&!preview||view.busy?'disabled':''}>返回</button><button class="btn" data-act="next" ${view.busy||!view.nativeReady?'disabled':''}>${preview?'开始我的人生':step===2?'预览开局':'下一步'}</button></div></div></section></main>`;
-  for(const el of [$('beautySlider'),$('beautyNumber')].filter(Boolean))el.addEventListener('input',()=>{const score=Number(el.value);if(!Number.isInteger(score)||score<1||score>100){el.setCustomValidity('请输入1–100整数');return;}el.setCustomValidity('');draft.beautyScore=score;$('beautySlider').value=score;$('beautyNumber').value=score;const t=beautyTier(score);$('beautyHint').textContent=t.label+' · 好感加成 '+(t.modifier>0?'+':'')+t.modifier;saveDraft();});
-  for(const el of [$('prowessSlider'),$('prowessNumber')].filter(Boolean))el.addEventListener('input',()=>{const score=Number(el.value);if(!Number.isInteger(score)||score<1||score>100){el.setCustomValidity('请输入1–100整数');return;}el.setCustomValidity('');draft.prowessScore=score;$('prowessSlider').value=score;$('prowessNumber').value=score;const t=prowessTier(score);$('prowessHint').textContent=t.label+' · 堕落加成 '+(t.modifier>0?'+':'')+t.modifier;saveDraft();});
+  // rc.56-formA（方案 §4.4 / §6）：旧草稿在别的步骤存在非法项时，顶部给一条提醒 +「去修改」。
+  const firstIssue=findFirstDraftIssue(d);
+  const banner=firstIssue&&firstIssue.step!==step?`<div class="draft-warn-banner" role="alert"><span>${esc(DRAFT_WARN_TEXT)}</span><button type="button" class="mini-btn" data-act="jump-first-error">${esc(DRAFT_WARN_BTN)}</button></div>`:'';
+  $('app').innerHTML=`<main class="setup"><section id="wizard" class="wizard"><div class="wizard-hero"><div class="eyebrow">神豪终端 / 自由人生</div><h1>你的故事，由你定义。</h1><p>身份、财富和熟悉的人，都由你书写。</p><div class="steps">${[0,1,2].map(i=>`<div class="${i<=step?'active':''}"></div>`).join('')}</div><div class="step-label">${preview?'最后一步 · 确认起点':['01 · 塑造身份','02 · 设定起点','03 · 已有关系'][step]}</div></div><div class="wizard-body">${banner}${body}${view.error?`<p class="error-note">${esc(view.error)}</p>`:''}<div class="wizard-actions"><button class="btn secondary" data-act="back" ${step===0&&!preview||view.busy?'disabled':''}>返回</button><button class="btn" data-act="next" ${view.busy||!view.nativeReady?'disabled':''}>${preview?'开始我的人生':step===2?'预览开局':'下一步'}</button></div></div></section></main>`;
+  // rc.56-formA（方案 §2.2）：颜值/性能力数字框同样禁非数字、失焦钳位并同步滑块
+  const scorePair=(numId,sliderId,hintId,key,fallback,label)=>{
+    const num=$(numId),slider=$(sliderId),hint=$(hintId);
+    if(!num||!slider)return;
+    const paint=v=>{
+      slider.value=String(v);num.value=String(v);draft[key]=v;
+      const tier=key==='beautyScore'?beautyTier(v):prowessTier(v);
+      if(hint)hint.textContent=tier.label+' · '+(key==='beautyScore'?'好感':'堕落')+'加成 '+(tier.modifier>0?'+':'')+tier.modifier;
+      saveDraft();
+    };
+    num.addEventListener('input',()=>{const clean=normalizeNumericInput(num.value);if(num.value!==clean)num.value=clean;const v=Number(clean);if(Number.isInteger(v)&&v>=1&&v<=100)paint(v);});
+    num.addEventListener('blur',()=>paint(clampInteger(num.value,1,100)??fallback));
+    // 滑块 ↔ 数字框双向：拖滑块必须回写数字与草稿（上一版只写了数字框一侧，滑块被拖也不生效）
+    slider.addEventListener('input',()=>{const v=clampInteger(slider.value,1,100);if(v!==null)paint(v);});
+  };
+  scorePair('beautyNumber','beautySlider','beautyHint','beautyScore',60,'颜值');
+  scorePair('prowessNumber','prowessSlider','prowessHint','prowessScore',70,'性能力');
   document.querySelectorAll('[data-field]').forEach(el=>el.addEventListener('input',()=>{try{collect();saveDraft();}catch{}}));
+  bindSetupGuards();
+  markStepIssues();
   updateSetupConnection();
 }
 function updateSetupConnection(){
@@ -315,10 +459,13 @@ function updateSetupConnection(){
   document.querySelector('[data-act="next"]').disabled=!!view.busy||(preview&&(!api||!view.nativeReady||!!stopped));
   document.querySelector('[data-act="back"]').disabled=!!view.busy||(step===0&&!preview);
 }
-function prowessControl(score){const t=prowessTier(score);return `<div class="field beauty-control"><label for="prowessSlider">性能力 · 1–100</label><div class="beauty-inputs"><input id="prowessSlider" type="range" min="1" max="100" step="1" value="${score}" aria-describedby="prowessHint"><input id="prowessNumber" type="number" min="1" max="100" step="1" value="${score}" aria-label="性能力数值"></div><p id="prowessHint" class="notice">${t.label} · 堕落加成 ${t.modifier>0?'+':''}${t.modifier}</p><small class="muted">只在她亲身体会过的亲密互动里修正堕落度，不影响日常好感。</small></div>`;}
+// rc.56-formA（方案 §5 L454）：渲染前安全钳位，防旧草稿越界把 beautyTier/prowessTier 抛错导致白屏；
+// 数字框改 type=text + inputmode（方案 §2.5），小字说明用方案 §4.2 定稿文案。
+const safeScore=(score,fallback)=>{const n=Number(score);return Number.isFinite(n)?Math.min(100,Math.max(1,Math.round(n))):fallback;};
+function prowessControl(score){const safe=safeScore(score,70),t=prowessTier(safe);return `<div class="field beauty-control"><label for="prowessSlider">性能力 · 1–100</label><div class="beauty-inputs"><input id="prowessSlider" type="range" min="1" max="100" step="1" value="${safe}" aria-describedby="prowessHint"><input id="prowessNumber" type="text" inputmode="numeric" autocomplete="off" value="${safe}" aria-label="性能力数值"></div><p id="prowessHint" class="notice">${t.label} · 堕落加成 ${t.modifier>0?'+':''}${t.modifier}</p><small class="muted">${PROWESS_HINT}</small></div>`;}
 function genitalTraits(value){return `<div class="field"><label for="f__gen_traits">性器特征</label><textarea id="f__gen_traits" data-field="_gen_traits" rows="2" maxlength="300" placeholder="写形状、青筋脉络、温度或实战特质（点击可选预设，如：柱身粗壮笔直，青筋分明，充血后热度惊人）">${esc(value)}</textarea></div>`;}
-function beautyControl(score){const t=beautyTier(score);return `<div class="field beauty-control"><label for="beautySlider">颜值 · 1–100</label><div class="beauty-inputs"><input id="beautySlider" type="range" min="1" max="100" step="1" value="${score}" aria-describedby="beautyHint"><input id="beautyNumber" type="number" min="1" max="100" step="1" value="${score}" aria-label="颜值数值"></div><p id="beautyHint" class="notice">${t.label} · 好感加成 ${t.modifier>0?'+':''}${t.modifier}</p><small class="muted">仅影响好感未达70时的有效正面互动，不会逐轮自动加减。</small></div>`;}
-function setupSummary(d){const bodyNums=[d.heightCm?`身高${d.heightCm}CM`:'',d.weightKg?`体重${d.weightKg}KG`:'',d.shoeSizeEu?`鞋码${d.shoeSizeEu}码`:''].filter(Boolean).join(' / ')||'留空（开场由模型自动补全）';const tags=userProfileTags({user:{...d,cashCents:d.initialCashCents}}).map(t=>t.text).join(' · ');return `姓名：${d.name}\n年龄：${d.age}\n个人标签：${tags}\n身体数据：${bodyNums}\n颜值：${d.beautyScore}/100\n性能力：${d.prowessScore??70}/100（${d.genitals?.length||'18cm'} / ${d.genitals?.girth||'4.8cm'}）\n性别：${d.gender}\n外貌：${d.appearance}\n身材：${d.body}\n职业：${d.occupation}\n经历：${d.background}\n城市：${d.city}\n地点：${d.currentLocation}\n生活：${d.workLifeDescription}\n资产：${d.initialAssets.map(a=>a.name+' '+yuan(a.bookValueCents)+' · '+assetDescription(a)).join('、')||'无'}\n熟人：${d.contacts.map(c=>c.name+' '+c.relationshipLabel+' '+c.affection+'好感').join('、')||'无'}\n随机头像：${view?.prefs?.randomAvatar===false?'关闭（显示姓名首字或自行上传）':'开启（按颜值档抽卡随机配图）'}`;}
+function beautyControl(score){const safe=safeScore(score,60),t=beautyTier(safe);return `<div class="field beauty-control"><label for="beautySlider">颜值 · 1–100</label><div class="beauty-inputs"><input id="beautySlider" type="range" min="1" max="100" step="1" value="${safe}" aria-describedby="beautyHint"><input id="beautyNumber" type="text" inputmode="numeric" autocomplete="off" value="${safe}" aria-label="颜值数值"></div><p id="beautyHint" class="notice">${t.label} · 好感加成 ${t.modifier>0?'+':''}${t.modifier}</p><small class="muted">${BEAUTY_HINT}</small></div>`;}
+function setupSummary(d){const bodyParts=[],bodyMissing=[];if(d.heightCm)bodyParts.push(`身高${d.heightCm}CM`);else bodyMissing.push('身高');if(d.weightKg)bodyParts.push(`体重${d.weightKg}KG`);else bodyMissing.push('体重');if(d.shoeSizeEu)bodyParts.push(`鞋码${d.shoeSizeEu}码`);else bodyMissing.push('鞋码');const bodyNums=bodyParts.length?bodyParts.join(' / ')+(bodyMissing.length?fill(BODY_MISSING_TPL,{missingLabels:bodyMissing.join('、')}):''):BODY_EMPTY_TEXT;const tags=userProfileTags({user:{...d,cashCents:d.initialCashCents}}).map(t=>t.text).join(' · ');return `姓名：${d.name}\n年龄：${d.age}\n个人标签：${tags}\n身体数据：${bodyNums}\n颜值：${d.beautyScore}/100\n性能力：${d.prowessScore??70}/100（${d.genitals?.length||'18cm'} / ${d.genitals?.girth||'4.8cm'}）\n性别：${d.gender}\n外貌：${d.appearance}\n身材：${d.body}\n职业：${d.occupation}\n经历：${d.background}\n城市：${d.city}\n地点：${d.currentLocation}\n生活：${d.workLifeDescription}\n资产：${d.initialAssets.map(a=>a.name+' '+yuan(a.bookValueCents)+' · '+assetDescription(a)).join('、')||'无'}\n熟人：${d.contacts.map(c=>c.name+' '+c.relationshipLabel+' '+c.affection+'好感').join('、')||'无'}\n随机头像：${view?.prefs?.randomAvatar===false?'关闭（显示姓名首字或自行上传）':'开启（按颜值档抽卡随机配图）'}`;}
 function showModal(html){fieldOptionsUI.close();modalReturn=document.activeElement;const match=html.match(/^<h3>([\s\S]*?)<\/h3>/);$('modal').innerHTML='<div class="modal-head"><h3>'+(match?match[1]:'查看详情')+'</h3><button class="modal-close" data-act="cancel" aria-label="关闭弹窗"><span>×</span></button></div><div class="modal-body">'+(match?html.slice(match[0].length):html)+'</div>';$('modalOverlay').style.display='flex';$('modal').focus();syncBottomHeight();}
 function closeModal(){contactToken+=1;useFormCtx=null;api?.cancelExpandContact?.();fieldOptionsUI.close();$('modalOverlay').style.display='none';$('modal').innerHTML='';modalReturn?.focus?.();syncBottomHeight();}
 // rc.29：建档期间给读秒、可中止、失败在弹窗里说明原因，不再只留一个死按钮。
@@ -342,7 +489,11 @@ function failBuildUI(error){
   for(const el of modal?.querySelectorAll('[data-act="cancel-build"]')||[]){el.dataset.act='cancel';if(el.classList.contains('btn'))el.textContent='关闭';}
 }
 const rowButtons=(text,action)=>`<div class="row"><button class="btn secondary" data-act="cancel">取消</button><button class="btn" data-act="${action}">${text}</button></div>`;
-function assetForm(assetId=null){
+// rc.56b（方案 B §2.2）：改称呼弹窗。文案取自 rc56b-copy.generated.js（脚本从方案 §5.6 抠取）。
+function addressingForm(personRef){
+  const c=woman(personRef);if(!c)return;
+  showModal(`<h3>${esc(RENAME_COPY.title)}</h3><p class="muted">${esc(RENAME_COPY.note)}</p><div class="field"><label for="f_addressing">${esc(RENAME_COPY.title)}</label><input id="f_addressing" maxlength="20" autocomplete="off" value="${esc(c.addressing||'')}" placeholder="${esc(RENAME_COPY.placeholder)}"></div><div class="row"><button class="btn secondary" data-act="cancel">${esc(RENAME_COPY.cancel)}</button><button class="btn" data-confirm-addressing="${esc(personRef)}">${esc(RENAME_COPY.save)}</button></div>`);
+}function assetForm(assetId=null){
   editingAssetId=assetId;
   const existing=assetId?draft.initialAssets.find(x=>x.assetId===assetId):null;
   const kind=existing?.kind||'HOUSE';
@@ -629,7 +780,15 @@ async function actions(e){const b=e.target.closest('button,[data-preview-image]'
     b.dataset.oncePending='1';b.disabled=true;
     setTimeout(()=>{delete b.dataset.oncePending;b.disabled=false;},1200);
   }
-  if(d.setupRandomAvatar){const on=d.setupRandomAvatar==='on';const patch={randomAvatar:on};if(api&&api.read().chatKey===activeChat)api.preferences(patch);else{draftStore?.write(activeChat,patch);if(view)view={...view,prefs:{...(view.prefs||{}),...patch}};}lastSignature='';wizard();return;}
+  // rc.56b（方案 B）：玩家手动改称呼 + 调试观察开关
+  if(d.setAddressing){addressingForm(d.setAddressing);return;}
+  if(d.setDebugOverlay){api.preferences({debugOverlay:d.setDebugOverlay==='on'});phone();return;}
+  if(d.confirmAddressing){
+    const value=String($('f_addressing')?.value||'').trim();
+    if(value.length<1||value.length>20)throw Object.assign(Error('INVALID_TEXT'),{userMessage:RENAME_COPY.invalid});
+    const next=await api.action({operationId:uid(),type:'PLAYER_SET_ADDRESSING',personRef:d.confirmAddressing,addressing:value,expectedRevision:view.state.meta.revision},view.lineage);
+    view=next;closeModal();phone();notify(fill(RENAME_COPY.doneTpl,{value}));return;
+  }  if(d.setupRandomAvatar){const on=d.setupRandomAvatar==='on';const patch={randomAvatar:on};if(api&&api.read().chatKey===activeChat)api.preferences(patch);else{draftStore?.write(activeChat,patch);if(view)view={...view,prefs:{...(view.prefs||{}),...patch}};}lastSignature='';wizard();return;}
   if(d.cash){collect();draft.initialCashCents=cents(d.cash);delete draft.openingPresetId;saveDraft();wizard();}
   if(d.openingPreset){collect();draft=applyOpeningPreset(draft,d.openingPreset);preview=false;saveDraft();wizard();}
   if(d.removeAsset){draft.initialAssets=draft.initialAssets.filter(x=>x.assetId!==d.removeAsset);saveDraft();wizard();}
@@ -922,14 +1081,41 @@ async function actions(e){const b=e.target.closest('button,[data-preview-image]'
     case 'close-calendar':calendarOpen=false;tab='scene';phone();break;
     case 'add-appointment':showModal('<h3>添加约定</h3>'+field('事项','ap_title','')+'<div class="form-row">'+field('日期','ap_date',selectedDate||view.state.world.date,{type:'date'})+field('时间','ap_time',view.state.world.time,{type:'time'})+'</div>'+field('地点','ap_location',view.state.scene.location)+field('备注','ap_notes','',{area:true})+rowButtons('保存约定','save-appointment'));break;
     case 'save-appointment':await api.appointment({id:'appt_'+uid(),title:val('ap_title').trim(),date:val('ap_date'),time:val('ap_time'),location:val('ap_location'),notes:val('ap_notes'),participants:[],status:'PLANNED'},view.lineage);closeModal();phone();notify('约定已保存');break;
-    case 'next':collect();if(preview){if(!api||!view.nativeReady||view.busy)return;b.disabled=true;await api.submit(draft);wizard();}else{const missing=missingInStep(draft,step);if(missing.length){const el=document.querySelector(`#wizard [data-field="${missing[0]}"]`);el?.focus();el?.scrollIntoView?.({block:'center'});throw Error('INVALID_TEXT');}if(step===2){validateDraft(draft);preview=true;}else step++;saveDraft();wizard();}break;
+    case 'next':collect();if(preview){if(!api||!view.nativeReady||view.busy)return;b.disabled=true;await api.submit(draft);wizard();}else{
+      // rc.56-formA（方案 §2.4 / §5 L456）：本步字段逐项校验，本步有错本步当场拦，提示点名到字段。
+      const issue=validateStep(draft,step);
+      if(issue){setFieldError(issue.key,issue.code);focusSetupField(issue.key);throw fieldIssue(issue);}
+      if(step===2){
+        const early=validateStep(draft,0)||validateStep(draft,1);
+        if(early){throw fieldIssue(early);}
+        const badAsset=(draft.initialAssets||[]).map(a=>validateDraftAsset(a)).find(Boolean);
+        const badContact=(draft.contacts||[]).map(c=>validateDraftContact(c)).find(Boolean);
+        if(badAsset||badContact)throw fieldIssue({...badAsset||badContact,step:badAsset?1:2,scope:badAsset?'asset':'contact'});
+        validateDraft(draft);   // 极限兜底：结构层面仍由引擎把关
+        preview=true;
+      }else step++;
+      saveDraft();wizard();}break;
+    case 'jump-first-error':{jumpToIssue(findFirstDraftIssue(draft));break;}
     case 'back':collect();if(preview)preview=false;else step=Math.max(0,step-1);saveDraft();wizard();break;
     case 'add-asset':collect();assetForm(null);break;
-    case 'save-asset':{const name=val('a_name').trim();if(!name)throw Error('INVALID_TEXT');const kind=$('a_kind').value,bookValueCents=cents(val('a_value')),locationNote=val('a_note'),ownershipNote=val('a_owner').trim()||'本人全额所有，无债务';const item={assetId:editingAssetId||'asset_'+uid(),kind,name,bookValueCents,ownershipNote,locationNote,description:assetDescription({name,kind,bookValueCents,locationNote,description:val('a_description')})};const next={...draft,initialAssets:editingAssetId?draft.initialAssets.map(old=>old.assetId===editingAssetId?item:old):[...draft.initialAssets,item]};validateDraft(next);draft=next;editingAssetId=null;saveDraft();closeModal();wizard();break;}
+    // rc.56-formA（方案 §2.4 / §2.5）：只校验本次表单 + 数量上限，不再跑整份 validateDraft；
+    // 旧草稿第 01 步越界也绝不挡登记（修掉 rc.56 玩家实测那个坑）。
+    case 'save-asset':{
+      const kind=$('a_kind').value,name=val('a_name').trim(),rawValue=val('a_value'),locationNote=val('a_note'),rawDesc=val('a_description'),ownershipNote=val('a_owner').trim()||'本人全额所有，无债务';
+      const issue=validateAssetDraft({a_name:name,a_value:rawValue,a_note:locationNote,a_description:rawDesc,a_owner:ownershipNote},(draft.initialAssets||[]).length,!!editingAssetId);
+      if(issue){setFieldError(issue.key,issue.code);document.getElementById('f_'+issue.key)?.focus();throw fieldIssue(issue,{stayInModal:true});}
+      const bookValueCents=rawValue.trim()===''?0:cents(rawValue);
+      const item={assetId:editingAssetId||'asset_'+uid(),kind,name,bookValueCents,ownershipNote,locationNote,description:assetDescription({name,kind,bookValueCents,locationNote,description:rawDesc})};
+      const next={...draft,initialAssets:editingAssetId?draft.initialAssets.map(old=>old.assetId===editingAssetId?item:old):[...draft.initialAssets,item]};
+      draft=next;editingAssetId=null;saveDraft();closeModal();wizard();break;}
     case 'add-contact':contactForm();break;
     case 'toggle-contact-custom':{const box=$('contactCustomFields');if(box){box.hidden=!box.hidden;b.setAttribute('aria-expanded',String(!box.hidden));b.textContent=box.hidden?'自定义全部设定 ▾':'收起自定义设定 ▴';}break;}
     case 'ai-fill-contact':{await fillContactByAi(b);break;}
-    case 'save-contact':{const brief=val('c_brief').trim();const name=val('c_name').trim();if(!name){const box=$('contactCustomFields');if(box)box.hidden=false;const tb=document.querySelector('[data-act="toggle-contact-custom"]');if(tb){tb.setAttribute('aria-expanded','true');tb.textContent='收起自定义设定 ▴';}throw Error('CONTACT_NAME_REQUIRED');}const physiology={virgin:val('c_virgin')==='true'?true:val('c_virgin')==='false'?false:null,chestDetail:val('c_chestDetail'),vaginaLook:val('c_vaginaLook'),pubicHair:val('c_pubicHair'),bodyScent:val('c_bodyScent'),traits:val('c_traits')};const c={id:editingContactId||'char_'+uid(),name,age:Number(val('c_age')),beautyScore:val('c_beauty').trim()===''?undefined:Number(val('c_beauty')),affection:val('c_aff').trim()===''?40:Number(val('c_aff')),corruption:Number(val('c_corruption')||0),occupation:val('c_job'),cupSize:val('c_cupSize').trim(),addressing:val('c_addressing').trim(),relationshipLabel:val('c_relation'),personalityTags:val('c_personalityTags').split(/[、,，]/).map(x=>x.trim()).filter(Boolean),appearance:val('c_appearance'),body:val('c_body'),...Object.fromEntries(['heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu'].map(k=>[k,val('c_'+k).trim()?Number(val('c_'+k)):null])),notes:val('c_notes'),recentGoal:val('c_recentGoal').trim(),longTermDream:val('c_longTermDream').trim(),hiddenScar:pendingHiddenScar||(editingContactId?draft.contacts.find(x=>x.id===editingContactId)?.hiddenScar:contactPresets.find(p=>p.presetId===$('contactPreset')?.value)?.hiddenScar)||'',briefDescription:brief,physiology,intimacy:{attitude:val('c_attitude').trim(),fetishes:val('c_fetishes').trim()},present:$('c_present').checked};const next={...draft,contacts:editingContactId?draft.contacts.map(old=>old.id===editingContactId?c:old):[...draft.contacts,c]};validateDraft(next);draft=next;editingContactId=null;saveDraft();closeModal();wizard();break;}
+    case 'save-contact':{const brief=val('c_brief').trim();const name=val('c_name').trim();
+      const rawContact={c_brief:brief,c_name:name,c_age:val('c_age'),c_relation:val('c_relation'),c_aff:val('c_aff'),c_corruption:val('c_corruption'),c_beauty:val('c_beauty'),c_job:val('c_job'),c_cupSize:val('c_cupSize'),c_addressing:val('c_addressing'),c_personalityTags:val('c_personalityTags'),c_appearance:val('c_appearance'),c_body:val('c_body'),c_heightCm:val('c_heightCm'),c_weightKg:val('c_weightKg'),c_bustCm:val('c_bustCm'),c_waistCm:val('c_waistCm'),c_hipCm:val('c_hipCm'),c_shoeSizeEu:val('c_shoeSizeEu'),c_recentGoal:val('c_recentGoal'),c_longTermDream:val('c_longTermDream'),c_notes:val('c_notes'),c_chestDetail:val('c_chestDetail'),c_vaginaLook:val('c_vaginaLook'),c_pubicHair:val('c_pubicHair'),c_bodyScent:val('c_bodyScent'),c_traits:val('c_traits')};
+      const contactIssue=validateContactDraft(rawContact,(draft.contacts||[]).length,!!editingContactId);
+      if(contactIssue){const box=$('contactCustomFields');if(box&&contactIssue.key!=='c_brief'){box.hidden=false;const tb=document.querySelector('[data-act="toggle-contact-custom"]');if(tb){tb.setAttribute('aria-expanded','true');tb.textContent='收起自定义设定 ▴';}}setFieldError(contactIssue.key,contactIssue.code);document.getElementById('f_'+contactIssue.key)?.focus();throw fieldIssue(contactIssue,{stayInModal:true});}
+      const physiology={virgin:val('c_virgin')==='true'?true:val('c_virgin')==='false'?false:null,chestDetail:val('c_chestDetail'),vaginaLook:val('c_vaginaLook'),pubicHair:val('c_pubicHair'),bodyScent:val('c_bodyScent'),traits:val('c_traits')};const c={id:editingContactId||'char_'+uid(),name,age:Number(val('c_age')),beautyScore:val('c_beauty').trim()===''?undefined:Number(val('c_beauty')),affection:val('c_aff').trim()===''?40:Number(val('c_aff')),corruption:Number(val('c_corruption')||0),occupation:val('c_job'),cupSize:val('c_cupSize').trim(),addressing:val('c_addressing').trim(),relationshipLabel:val('c_relation'),personalityTags:val('c_personalityTags').split(/[、,，]/).map(x=>x.trim()).filter(Boolean),appearance:val('c_appearance'),body:val('c_body'),...Object.fromEntries(['heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu'].map(k=>[k,val('c_'+k).trim()?Number(val('c_'+k)):null])),notes:val('c_notes'),recentGoal:val('c_recentGoal').trim(),longTermDream:val('c_longTermDream').trim(),hiddenScar:pendingHiddenScar||(editingContactId?draft.contacts.find(x=>x.id===editingContactId)?.hiddenScar:contactPresets.find(p=>p.presetId===$('contactPreset')?.value)?.hiddenScar)||'',briefDescription:brief,physiology,intimacy:{attitude:val('c_attitude').trim(),fetishes:val('c_fetishes').trim()},present:$('c_present').checked};const next={...draft,contacts:editingContactId?draft.contacts.map(old=>old.id===editingContactId?c:old):[...draft.contacts,c]};draft=next;editingContactId=null;saveDraft();closeModal();wizard();break;}
     case 'cancel':closeModal();break;
     case 'cancel-build':{stopBuildTimer();buildingProfile=false;api.cancelBuildProfile?.();closeModal();notify('已取消本次人物建档。');break;}
     case 'fold':{folded=true;closeModal();if(view.prefs.displayDock==='bottom')api.preferences({dockExpanded:false});phone();break;}
@@ -944,7 +1130,7 @@ async function actions(e){const b=e.target.closest('button,[data-preview-image]'
     case 'save-url':{const url=new URL(val('image_url'));if(url.protocol!=='https:'||url.username||url.password)throw Error('BAD_IMAGE');await saveImage(url.href);closeModal();phone();break;}
     case 'clear-image':await saveImage(null);closeModal();phone();break;
   }
-}catch(error){console.warn('[神豪终端界面]',error.message);notify(errorText(error));b.disabled=false;if(setup)wizard();}}
+}catch(error){console.warn('[神豪终端界面]',error.message);const badField=setup?(error?.field||''):'';const stayInModal=!!error?.stayInModal;notify(error?.userMessage||errorText(error));b.disabled=false;if(setup){if(badField&&!stayInModal)closeModal();wizard();if(badField){setFieldError(badField,error?.codeKey||'');focusSetupField(badField);}}}}
 // rc.41：轮盘关闭后让对应入口徽章轻弹一下（host 在关闭动画结束时发消息）。
 window.addEventListener('message',e=>{
   const data=e?.data;
@@ -977,7 +1163,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches?.('details[data-mine-
 document.addEventListener('change',e=>{if(e.target.matches('[data-contact-preset-picker]')&&e.target.value){const id=e.target.value;e.target.value='';contactForm(id);}if(e.target.matches('[data-contact-preset-edit]')&&e.target.value)fillContactPreset(e.target.value);if(e.target.id==='pzn_who'||e.target.id==='ui_target')refreshUseDraft();});
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay')&&!buildingProfile)closeModal();});
 document.addEventListener('keydown',e=>{if(fieldOptionsUI.keydown(e))return;if(e.key==='Escape'){const modalOpen=$('modalOverlay').style.display==='flex';if(!buildingProfile)closeModal();closeFx();if(!modalOpen&&workshopOpen){closeWorkshop();}}if(e.key==='Tab'&&$('modalOverlay').style.display==='flex'){const nodes=[...$('modal').querySelectorAll('button,input,textarea,select,a')].filter(x=>!x.disabled);if(!nodes.length)return;const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});
-function receive(v){const keepForm=setup&&activeChat===v.chatKey&&!v.state&&!view?.state&&!!$('wizard');view=v;if(v.prefs?.displayDock==='bottom'&&typeof v.prefs.dockExpanded==='boolean')folded=!v.prefs.dockExpanded;if(activeChat!==v.chatKey||!draft){activeChat=v.chatKey;draftEdited=false;mineExpanded=new Set();draft={...defaultDraft(),...(v.prefs.setupDraft||{}),city:'云澜市'};consumptionPage=0;step=v.prefs.setupStep||0;preview=false;seen=new Set(v.prefs.seen||[]);if(workshopOpen==='toylink'||workshopOpen==='toylink-lite'){workshopOpen=null;}detail=null;settings=false;hidden=false;binderOpen=false;binderFilter='all';expandedStacks=new Set();sceneSection=new Map();calendarOpen=false;calendarMonth='';selectedDate='';lastSignature='';imageCache={};closeModal();$('fx').classList.remove('show');}
+function receive(v){const keepForm=setup&&activeChat===v.chatKey&&!v.state&&!view?.state&&!!$('wizard');view=v;if(v.prefs?.displayDock==='bottom'&&typeof v.prefs.dockExpanded==='boolean')folded=!v.prefs.dockExpanded;if(activeChat!==v.chatKey||!draft){activeChat=v.chatKey;draftEdited=false;mineExpanded=new Set();draft=sanitizeLoadedDraft({...defaultDraft(),...(v.prefs.setupDraft||{}),city:'云澜市'});consumptionPage=0;step=v.prefs.setupStep||0;preview=false;seen=new Set(v.prefs.seen||[]);if(workshopOpen==='toylink'||workshopOpen==='toylink-lite'){workshopOpen=null;}detail=null;settings=false;hidden=false;binderOpen=false;binderFilter='all';expandedStacks=new Set();sceneSection=new Map();calendarOpen=false;calendarMonth='';selectedDate='';lastSignature='';imageCache={};closeModal();$('fx').classList.remove('show');}
   theme();const signature=JSON.stringify([v.state?.meta.revision,v.state?.meta.sourceAnchor,v.lineage,v.busy,v.setupProgress,v.error,v.pending,v.nativeReady,v.prefs.theme,v.prefs.phoneSize,v.prefs.fontSize,v.prefs.displayDock,v.prefs.randomAvatar,v.prefs.wheelFxQuality,v.prefs.cardFxQuality,v.notice]);
   if(signature===lastSignature)return;lastSignature=signature;
   // rc.29：回退楼层导致提现被退回奖池时，host 会挂一条一次性提示。

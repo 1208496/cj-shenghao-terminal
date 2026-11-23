@@ -2,7 +2,23 @@ import catalog from './setup-presets.json' with {type:'json'};
 
 const numericAndDate={startDate:['2026-01-05','2026-06-01','2026-11-16','2026-02-14','2026-05-01','2026-10-01'],startTime:['08:00','10:00','14:00','19:00','07:00','09:00','12:00','21:00'],a_value:['10000','100000','1000000','5000','50000','500000'],c_aff:['20','40','50','60','25','30','35','45'],c_corruption:['0','10','20','30','40','50','60'],c_cupSize:['A','B','C','D','E'],c_heightCm:['158','163','168','173','155','160','165','170'],c_weightKg:['45','50','55','60','48','52','58','65'],c_bustCm:['80','84','88','92','78','82','86','90'],c_waistCm:['58','62','66','70','56','60','64','68'],c_hipCm:['84','88','92','96','82','86','90','94'],c_shoeSizeEu:['35','36','37','38','39','34','35.5','36.5','37.5','40'],_gen_length:['16cm','18cm','20cm','22cm','24cm'],_gen_girth:['4.2cm','4.8cm','5.2cm','5.6cm','6.0cm']};
 export const contactPresets=catalog.contacts;
-export function fieldOptions(key){if(['name','age','c_name','c_age','cashYuan'].includes(key))return [];return [...new Set(numericAndDate[key]||catalog.fields[key]||[])].map(String);}
+// rc.56-formA（4N 方案 §3.2）：玩家身高/体重/鞋码的下拉建议，按性别分三档。
+export const playerBodyOptions={
+  male:{heightCm:['172','175','178','180','183','185','188'],weightKg:['62','68','72','75','78','82','88'],shoeSizeEu:['40','41','42','42.5','43','44','45']},
+  female:{heightCm:['158','162','165','168','172','175'],weightKg:['45','48','52','55','58','62'],shoeSizeEu:['35','36','37','38','39','40']},
+  neutral:{heightCm:['162','168','172','175','178','182','185'],weightKg:['48','55','62','68','75','82'],shoeSizeEu:['36','38','40','42','43','44']},
+};
+export function resolveGenderBucket(gender){
+  const s=String(gender??'');
+  if(!s.trim()||s.includes('男'))return 'male';
+  if(s.includes('女'))return 'female';
+  return 'neutral';
+}
+export function fieldOptions(key,ctx={}){
+  if(['name','age','c_name','c_age','cashYuan'].includes(key))return [];
+  if(['heightCm','weightKg','shoeSizeEu'].includes(key))return [...playerBodyOptions[resolveGenderBucket(ctx?.gender)][key]];
+  return [...new Set(numericAndDate[key]||catalog.fields[key]||[])].map(String);
+}
 export function contactPresetValues(p){return {c_brief:[p.label,p.occupation,p.notes].filter(Boolean).join('，'),c_name:p.name,c_age:p.age,c_beauty:p.beautyScore??60,c_relation:p.relationshipLabel,c_aff:p.affection,c_corruption:p.corruption??0,c_job:p.occupation,c_cupSize:p.cupSize??'',c_addressing:p.addressing??'',c_personalityTags:p.personalityTags.join('、'),c_appearance:p.appearance,c_body:p.body,c_heightCm:p.heightCm,c_weightKg:p.weightKg,c_bustCm:p.bustCm,c_waistCm:p.waistCm,c_hipCm:p.hipCm,c_shoeSizeEu:p.shoeSizeEu,c_recentGoal:p.recentGoal??'',c_longTermDream:p.longTermDream??'',c_notes:p.notes,c_virgin:'',c_chestDetail:p.physiology?.chestDetail??'',c_vaginaLook:p.physiology?.vaginaLook??'',c_pubicHair:p.physiology?.pubicHair??'',c_bodyScent:p.physiology?.bodyScent??'',c_traits:p.physiology?.traits??''};}
 
 // One dropdown supports editable inputs and textareas, including numeric/date fields.

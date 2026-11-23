@@ -42,7 +42,7 @@ export function replayPlayerCommand(state,command,anchor,schemas){
   s.meta.revision++;
   s.operationHistory[command.operationId]={type:'PLAYER_APPOINTMENT',status:'COMMITTED',revision:s.meta.revision};return s;
 }
-export function settleNative(before,candidate,anchor,source,schemas){
+export function settleNative(before,candidate,anchor,source,schemas,auditInput){
   requireRule(before?.meta.initialized&&candidate,'INVALID_NATIVE_STATE');
   let s=clone(candidate);const diagnostics=[],body=withoutUpdates(source),queue=clone(s.pendingEvents||[]),affectionEvents=[];
   // Rounds that actually touched her body unlock the prowess bonus on corruption.
@@ -121,7 +121,31 @@ export function settleNative(before,candidate,anchor,source,schemas){
   sanitizeInventoryAndUnlocks(s);
   syncDevices(s);
   s=schemas.state.parse(s);refreshContext(s);
-  return {state:s,diagnostics};
+  // rc.56b（方案 B §1）：本轮字段覆盖审计 + 被丢弃补丁留痕（非阻断，不进玩家红字）。
+  const audit=buildRoundAudit(before,s,anchor,auditInput);
+  // 审计不进 diagnostics：existing 单测与玩家诊断都要求它保持干净；由 host 另行挂到自己的 diagnostics/inspect。
+  return {state:s,diagnostics,audit};
+}
+
+// rc.56b：给每位在场角色标注本轮 currentThought / addressing 的落库结果，用于证伪「模型漏写」还是「脚本丢弃」。
+function buildRoundAudit(before,s,anchor,auditInput){
+  const present=(s.scene?.presentCharacterIds||[]).filter((cid)=>s.characters?.[cid]);
+  if(!present.length)return null;
+  const received=new Set((auditInput?.receivedPaths||[]).map((p)=>String(p)));
+  const dropped=auditInput?.droppedCommands||[];
+  const touched=(cid,field)=>received.has(`characters.${cid}.${field}`)||received.has(`characters.${cid}`);
+  const droppedFor=(cid,field)=>dropped.some((d)=>{const p=String(d?.rawPath||'');return p.includes(cid)&&p.includes(field);});
+  const perChar={};
+  for(const cid of present){
+    const priorT=String(before.characters?.[cid]?.currentThought??'');
+    const nextT=String(s.characters?.[cid]?.currentThought??'');
+    const thoughtStatus=!touched(cid,'currentThought')?(droppedFor(cid,'currentThought')?'DROPPED':'MISSING'):(nextT!==priorT?'UPDATED':'SAME_VALUE');
+    const priorA=String(before.characters?.[cid]?.addressing??'');
+    const nextA=String(s.characters?.[cid]?.addressing??'');
+    const addressingStatus=!touched(cid,'addressing')?(droppedFor(cid,'addressing')?'DROPPED':'UNCHANGED'):(nextA!==priorA?'UPDATED':'UNCHANGED');
+    perChar[cid]={thoughtStatus,addressingStatus,prior:priorA,next:nextA};
+  }
+  return {code:'ROUND_FIELD_AUDIT',floor:anchor?.messageId??null,presentCount:present.length,perChar,droppedCount:dropped.length,droppedCommands:dropped.slice(0,20)};
 }
 // rc.46：项圈句与印记派生句每轮重算，保证「脚本只读字段」始终压过模型的手写。
 function syncDevices(s){
@@ -366,9 +390,22 @@ function fnv8Id(value){let h=0x811c9dc5;const s=String(value??'');for(let i=0;i<
 function asciiIdFor(raw,value,before){
   const candidate=String(raw??'').trim();
   if(ASCII_ID.test(candidate))return candidate;
-  const hint=String(value?.name||'').trim();
-  if(hint)for(const c of Object.values(before?.characters||{}))if(c&&String(c.name||'')===hint&&ASCII_ID.test(String(c.id||'')))return c.id;
-  return 'char_'+fnv8Id(hint||candidate);
+  // rc.56b（方案 B §3.2）：单字段 replace 时 value 是字段值（如心声字符串），没有 value.name，
+  // 原来只按 value?.name 反查，导致「characters.苏晚.currentThought」生成假 ID 后被静默丢弃。
+  const lookup=(needle)=>{
+    const n=String(needle||'').trim();if(!n)return '';
+    for(const c of Object.values(before?.characters||{})){
+      if(!c)continue;const id=String(c.id||'');
+      if(!ASCII_ID.test(id))continue;
+      if(String(c.name||'')===n)return id;
+      if(Array.isArray(c.aliases)&&c.aliases.map(x=>String(x??'')).includes(n))return id;
+    }
+    return '';
+  };
+  const byPath=lookup(candidate);if(byPath)return byPath;
+  const byValue=lookup(value?.name);if(byValue)return byValue;
+  if(Array.isArray(value?.aliases))for(const a of value.aliases){const hit=lookup(a);if(hit)return hit;}
+  return 'char_'+fnv8Id(value?.name||candidate);
 }
 // A new person needs an id and a name. Missing or malformed body details are
 // dropped field by field so the record still enters and pendingBasicProfiles

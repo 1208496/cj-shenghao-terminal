@@ -21,11 +21,14 @@ const names=['getChatMessages','createChatMessages','getVariables','generateRaw'
 const H=Object.fromEntries(names.map(n=>[n,globalThis[n]||win.TavernHelper?.[n]]));
 const st=()=>win.SillyTavern.getContext(),branch=()=>String(st().characterId)+':'+String(st().chatId||st().getCurrentChatId());
 // rc.50：轻量 TOY·LINK 桥。放在 branch/stateView/publish 之后，避免 const 的 TDZ。
+import {DYNAMIC_FIELDS_PATCH} from '../ui/rc56b-copy.generated.js';
 const toyLink=createToyLinkBridge(win,{getBranchKey:branch,getState:()=>stateView().state,onStateChange:()=>publish()});
 const textOf=m=>m?.swipes?.[m.swipe_id]??m?.message??'';
 const clean=s=>String(s).replace(/\s*<StatusPlaceHolderImpl\s*\/>/gi,'').trim();
 let current=null,prefs={},nativeMode='inline',modeOverride=null,disposed=false,generating=false,setupBusy=false,mvuBusy=false,phone=null,queue=Promise.resolve(),timer,readyTimer,epoch=0,dragCleanup=null;
 let layout={width:365,height:730,scale:.82},diagnostics=[],renderScale=.82,lastZoom=1;
+// rc.56b：最近一轮的字段覆盖审计（供 inspect() 与「调试观察」小标使用，不进玩家红字）。
+let roundAudit=null;
 const referenceDpr=win.devicePixelRatio||1;
 let observedBranch='',observedLength=-1,observedText=null,observedSwipe=-1;
 const listeners=new Set(),stops=[],contexts=new WeakMap(),boundMvu=new Set();
@@ -143,7 +146,7 @@ function native(){return win.Mvu;}
 function busy(){return generating||setupBusy||mvuBusy||native()?.isDuringExtraAnalysis?.()===true;}
 // Display only. Native MVU owns prompt selection, generation and message parsing.
 function configuredMode(){return modeOverride??(st().extensionSettings?.mvu_settings?.更新方式==='额外模型解析'?'extra':'inline');}
-function stateView(){return {state:current?.state?clone(current.state):null,lineage:current?.lineage||'',busy:busy(),setupProgress:setupProgress?clone(setupProgress):null,prefs:clone(prefs),mode:configuredMode(),version:config.version,error:api.error||diagnosticMessage(diagnostics),pending:!!diagnosticMessage(diagnostics),notice:pendingNotice||'',chatKey:branch(),nativeReady:!!(native()&&schemas()),storageWarn:storageWarn&&!api.error};}
+function stateView(){return {state:current?.state?clone(current.state):null,lineage:current?.lineage||'',busy:busy(),setupProgress:setupProgress?clone(setupProgress):null,prefs:clone(prefs),mode:configuredMode(),version:config.version,error:api.error||diagnosticMessage(diagnostics),pending:!!diagnosticMessage(diagnostics),notice:pendingNotice||'',chatKey:branch(),nativeReady:!!(native()&&schemas()),storageWarn:storageWarn&&!api.error,audit:roundAudit?clone(roundAudit):null};}
 function publish(){const view=stateView();const colors={sage:['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'],gold:['#fff8ed','#4d3823','#7e6a53','#e7d7c1','#99703b'],purple:['#231c34','#f6efff','#d3c3e8','#544464','#be9cf6']}[prefs.theme]||['#fffdf8','#24372a','#657769','#d9e3d8','#557a64'];['bg','ink','sub','line','accent'].forEach((k,i)=>win.document.documentElement.style.setProperty('--cj-fold-'+k,colors[i]));syncDockMount();if(phone)phone.style.display=view.state?'block':'none';try{syncToylinkState(view);}catch{}if(wheelOpen&&wheelReady)postToWheel({type:'WHEEL_STATE_SYNC',view:wheelSnapshot(view)});if(imprintOpen&&imprintReady)postToImprint({type:'IMPRINT_STATE_SYNC',view:imprintSnapshot(view)});for(const fn of listeners){try{fn(view);}catch(e){console.log('[神豪终端] 页面更新失败',e.message);}}}
 async function anchorOf(m){return {branchKey:branch(),messageId:m.message_id,swipeId:m.swipe_id??0,fingerprint:await digest(clean(textOf(m)))};}
 function messageList(){return H.getChatMessages('0-{{lastMessageId}}',{include_swipes:true});}
@@ -198,11 +201,28 @@ function bindMvu(){
   on(M.events.COMMAND_PARSED,async(vars,commands,source)=>{
     const context=await sourceContext(source);if(disposed)return;
     const before=clone(vars.stat_data?.shenghao??null),initial=trustedSetup(context.message,before);
+    // rc.56b（方案 B §1）：把「通过校验的路径」与「被拒的补丁」都留痕，事后可区分模型漏写与脚本丢弃。
+    const receivedPaths=[],droppedCommands=[];
+    const auditPath=(command)=>{
+      const raw=String(command?.args?.[0]??command?.path??'');
+      const parts=raw.split('.').filter(Boolean);
+      if(parts[0]==='stat_data')parts.shift();
+      if(parts[0]==='shenghao')parts.shift();
+      return parts.join('.');
+    };
     const safe=commands.filter(command=>{
-      if(!allowModelCommand(command,before,{trustedInitialization:!!initial}))return false;
-      if(!initial)return prepareModelCommand(command,before,schemas());
-      const value=command.args?.at(-1);try{return JSON.stringify(typeof value==='string'?JSON.parse(value):value)===JSON.stringify(initial);}catch{return false;}
-    });context.commandCount=safe.length;contexts.set(vars,{...context,before,initial});commands.splice(0,commands.length,...safe);
+      const path=auditPath(command);
+      if(!allowModelCommand(command,before,{trustedInitialization:!!initial})){droppedCommands.push({rawPath:path,reason:'DISALLOWED'});return false;}
+      if(!initial){
+        if(!prepareModelCommand(command,before,schemas())){droppedCommands.push({rawPath:path,reason:'PREPARE_REJECTED'});return false;}
+      }else{
+        const value=command.args?.at(-1);
+        try{if(JSON.stringify(typeof value==='string'?JSON.parse(value):value)!==JSON.stringify(initial)){droppedCommands.push({rawPath:path,reason:'INIT_MISMATCH'});return false;}}
+        catch{droppedCommands.push({rawPath:path,reason:'INIT_MISMATCH'});return false;}
+      }
+      receivedPaths.push(path);return true;
+    });
+    context.commandCount=safe.length;contexts.set(vars,{...context,before,initial,receivedPaths,droppedCommands});commands.splice(0,commands.length,...safe);
   });
   on(M.events.VARIABLE_UPDATE_ENDED,(vars,oldVars)=>{
     // Greeting initialization and parseMessage emit STARTED/ENDED without a
@@ -214,7 +234,7 @@ function bindMvu(){
       requireRule(context.anchor.branchKey===branch(),'STALE_CHAT');
       const candidate=vars.stat_data?.shenghao,prior=oldVars.stat_data?.shenghao;
       if(!prior&&context.initial){requireRule(JSON.stringify(candidate)===JSON.stringify(schemas().state.parse(context.initial)),'INITIALIZATION_MISMATCH');vars.stat_data.shenghao=schemas().state.parse(refreshContext(clone(candidate)));vars.cj_native_setup={initKey:context.initial.meta.initKey,payload:clone(context.initial)};diagnostics=[];}
-      else if(prior&&candidate){delete vars.cj_native_setup;const result=settleNative(prior,candidate,context.anchor,context.source,schemas());vars.stat_data.shenghao=result.state;diagnostics=result.diagnostics;if(context.message.role==='assistant'&&!context.commandCount)diagnostics.push({code:'NO_NATIVE_COMMANDS'});if(diagnostics.length)console.log('[神豪终端] 更新诊断',diagnostics);}
+      else if(prior&&candidate){delete vars.cj_native_setup;const result=settleNative(prior,candidate,context.anchor,context.source,schemas(),{receivedPaths:context.receivedPaths||[],droppedCommands:context.droppedCommands||[]});vars.stat_data.shenghao=result.state;diagnostics=result.diagnostics;roundAudit=result.audit||null;if(context.message.role==='assistant'&&!context.commandCount)diagnostics.push({code:'NO_NATIVE_COMMANDS'});if(diagnostics.length)console.log('[神豪终端] 更新诊断',diagnostics);}
       const journal=context.message.swipes_data?.[context.message.swipe_id]?.cj_native_operations;
       if(journal&&journal.branchKey===branch()&&journal.messageId===context.message.message_id&&journal.swipeId===(context.message.swipe_id??0)&&journal.bodyFingerprint===context.bodyFingerprint){
         for(const command of journal.items)vars.stat_data.shenghao=replayPlayerCommand(vars.stat_data.shenghao,command,context.anchor,schemas());
@@ -409,8 +429,8 @@ const api={buildProfile,expandContact,error:'',read:stateView,subscribe(fn){list
     const item=release.metadata;return {current:config.version,version:item.version,url:'https://github.com/'+config.repository+'/tree/'+release.ref+'/dist',ref:release.ref,sha256:item.sha256,newer:release.ref!==loaded.runningRef,rollback:compareVersion(item.version,config.version)<0,canApply:item.worldbookHash===__BOOK_HASH__,notes:item.notes||'重新打开角色卡即可自动使用发布版本。'};
   },
   async applyUpdate(reviewed){requireRule(!busy()&&reviewed?.newer&&reviewed.canApply,'UPDATE_REIMPORT_REQUIRED');const latest=await api.checkUpdate();requireRule(latest.ref===reviewed.ref&&latest.sha256===reviewed.sha256&&latest.canApply,'UPDATE_CHANGED');await win.__CJ_SHENGHAO_SCRIPT_LOADER__.reload();},
-  inspect(){return {native:!!native(),schema:!!schemas(),diagnostics:clone(diagnostics),floor:current?.message.message_id,mode:configuredMode(),busyReasons:{generation:generating,setup:setupBusy,mvu:mvuBusy,extra:native()?.isDuringExtraAnalysis?.()===true},setupProgress:setupProgress?clone(setupProgress):null};},versions(){return {tavern:H.getTavernVersion?.(),helper:H.getTavernHelperVersion?.()};},
-  destroy(){if(disposed)return;disposed=true;try{closeToylink('DESTROY');}catch{}epoch++;clearTimeout(timer);clearInterval(readyTimer);dragCleanup?.();try{toyLink.destroy();}catch{};stops.forEach(stop=>{try{stop();}catch{}});listeners.clear();phone?.remove();displayStyle.remove();if(win[SLOT]===api)delete win[SLOT];}
+  inspect(){return {native:!!native(),schema:!!schemas(),diagnostics:clone(diagnostics),floor:current?.message.message_id,mode:configuredMode(),busyReasons:{generation:generating,setup:setupBusy,mvu:mvuBusy,extra:native()?.isDuringExtraAnalysis?.()===true},setupProgress:setupProgress?clone(setupProgress):null,roundAudit:roundAudit?clone(roundAudit):null};},versions(){return {tavern:H.getTavernVersion?.(),helper:H.getTavernHelperVersion?.()};},
+  destroy(){if(disposed)return;disposed=true;try{clearDynamicFieldsPatch();}catch{};try{closeToylink('DESTROY');}catch{}epoch++;clearTimeout(timer);clearInterval(readyTimer);dragCleanup?.();try{toyLink.destroy();}catch{};stops.forEach(stop=>{try{stop();}catch{}});listeners.clear();phone?.remove();displayStyle.remove();if(win[SLOT]===api)delete win[SLOT];}
 };
 api.openWheel=openWheel;
 api.openImprint=openImprint;
@@ -515,7 +535,12 @@ stops.push(()=>{win.removeEventListener('message',onWheelMessage);win.removeEven
   // rc.55 / B-13：TOY 宽屏是 `win.document.body` 上的顶层 iframe，只 hide 不 remove 会留在
   // 页面里；脚本重载后新宿主会再造一个同 ID 的帧，越叠越多，按 ID 取的诊断也会拿到旧帧。
   toylinkFrame?.remove();toylinkFrame=null;toylinkReady=false;toylinkOpen=false;toylinkBuilt=false;});
-win[SLOT]=api;loadPrefs();
+// rc.56b（阶段 1 过渡）：世界书尚未重导入前，用 injectPrompts 把称呼/逐人心声的短补丁挂进主对话。
+const DYNAMIC_PATCH_ID='cj_shenghao_dynamic_fields_v1';
+let dynamicPatchApplied=false;
+function applyDynamicFieldsPatch(){if(dynamicPatchApplied)return;if(!H||typeof H.injectPrompts!=='function')return false;const payload={id:DYNAMIC_PATCH_ID,content:DYNAMIC_FIELDS_PATCH,position:'in_chat',depth:0,role:'system',should_scan:false};try{H.injectPrompts([payload]);H.injectPrompts([payload]);dynamicPatchApplied=true;return true;}catch{try{H.injectPrompts(payload);dynamicPatchApplied=true;return true;}catch(e){console.warn('[神豪终端] 动态字段补丁注入失败',e?.message||e);return false;}}}
+function clearDynamicFieldsPatch(){if(!H||typeof H.uninjectPrompts!=='function')return;try{H.uninjectPrompts([DYNAMIC_PATCH_ID]);}catch(e){console.warn('[神豪终端] 动态字段补丁清理失败',e?.message||e);}}
+win[SLOT]=api;loadPrefs();applyDynamicFieldsPatch();
 // rc.41：初始化后异步回收一次旧分支缓存（低开销，不阻塞首屏）。
 setTimeout(()=>{try{pruneStorage({keep:12});}catch{}},2000);
 const displayStyle=win.document.createElement('style');displayStyle.id='cj-mvu-display-style';displayStyle.textContent='details[data-cj-mvu]{margin:14px 0 6px;border:1px solid var(--cj-fold-line,#d9e3d8);border-radius:15px;background:var(--cj-fold-bg,#fffdf8);color:var(--cj-fold-ink,#24372a);overflow:hidden;font-size:12px}details[data-cj-mvu]>summary{cursor:pointer;padding:11px 14px;color:var(--cj-fold-accent,#557a64);font-weight:600;list-style-position:inside}details[data-cj-mvu]>summary>span{float:right;color:var(--cj-fold-sub,#657769);font-size:10px;font-weight:400}details[data-cj-mvu][open]>summary{border-bottom:1px solid var(--cj-fold-line,#d9e3d8)}details[data-cj-mvu]>pre{margin:0!important;padding:12px 14px!important;max-height:360px;overflow:auto;background:transparent!important;color:inherit!important;border:0!important;font:11px/1.75 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}details[data-cj-mvu]>pre>code{background:transparent!important;color:inherit!important;white-space:pre-wrap}';displayStyle.textContent+='details[data-cj-mvu][open]>summary>span{font-size:0}details[data-cj-mvu][open]>summary>span:after{content:"收起";font-size:10px}';win.document.head.append(displayStyle);
@@ -898,7 +923,7 @@ on(events.GENERATION_STARTED,(_type,_options,dryRun)=>{if(!dryRun){generating=tr
 const resize=()=>{const rect=phone.getBoundingClientRect(),zoom=referenceDpr/(win.devicePixelRatio||1)/(win.visualViewport?.scale||1),factor=zoom/lastZoom;if(prefs.displayDock==='bottom'){api.geometry({...layout});return;}const saved=layout.width<=100?prefs.miniPosition:prefs.phonePosition;api.geometry(saved?{...layout,left:rect.left*factor,top:rect.top*factor}:{...layout});};
 win.addEventListener('resize',resize);win.visualViewport?.addEventListener('resize',resize);stops.push(()=>{win.removeEventListener('resize',resize);win.visualViewport?.removeEventListener('resize',resize);});
 on(events.SETTINGS_UPDATED,()=>readMode().then(publish));
-readyTimer=setInterval(()=>{if(bindMvu())readMode().then(schedule);const mode=configuredMode();if(mode!==nativeMode){nativeMode=mode;publish();}
+readyTimer=setInterval(()=>{try{applyDynamicFieldsPatch();}catch{};if(bindMvu())readMode().then(schedule);const mode=configuredMode();if(mode!==nativeMode){nativeMode=mode;publish();}
   // Managed ChatSurface helper mutations can refresh DOM without native message events.
   // Observe only cheap structural/text identity; formal data is still read from native MVU.
   const messages=st().chat||[],last=messages.at(-1),key=branch();

@@ -15,7 +15,7 @@
 
 ---
 
-## 0. 当前状态（2026-11-24 01:3x 更新；**rc.56 已正式发行**，电脑版 + 手机版双形态产出）
+## 0. 当前状态（2026-11-24 03:1x 更新；**rc.56 已正式发行**，电脑版 + 手机版双形态产出）
 
 | 项 | 值 |
 |---|---|
@@ -27,6 +27,13 @@
 | 构建 | `npm run build` → **BUILD_OK** + `npm run check` → **CHECK_OK**（fallbackRef 已抬到 `34a4b48`） |
 | 整卡（双版本） | **电脑版**＝`dist/2.0.0-rc.56/神豪终端-rc56-电脑版.png`（3.16 MB，热更新，指针 `e5c00bf`）｜**手机版**＝`dist/2.0.0-rc.56-checkpoint/神豪终端-rc56-手机版.png`（9.19 MB，内联）。卡面源图 `assets/card-face-rc56.png`（480×720，已入库） |
 | 零 API | RC53+53b 四条 `rc53.*` ✔；**rc54 私域三装置 7/7 ✔（76 断言，`apiCalls: 0`，连跑两遍同结果）**（`.work/noapi/suite-result-1795439871427.json`）；rc50.toylink-stack-color / scroll-keep 仍待重校 |
+
+### 0.998 玩家实测：开局「登记资产」被整单校验挡住（2026-11-24 03:1x–03:4x；**YG 选 A，已修，未提交**）
+
+- 现象「登记资产显示请检查年龄、好感及金额，写什么都无效」→ **根因**：`app.js` 的 `save-asset` 用 `validateDraft(next)` 校验**整份开局草稿**，草稿里年龄 18–80 / 身高 140–230 / 体重 35–200 / 鞋码 34–52 任一项越界即必失败；`setup-required.js` 第 01 步只要求年龄 ≥1，故 17 / 90 能过闸，问题被推迟到第 02 步才爆，提示不点名不聚焦。
+- **已修（A：早拦 + 定位，文案零新增）**：`setup-required.js` 新增 `SETUP_INTEGER_RANGES` + `blameIntegerField(draft)`（口径同 engine）；`app.js` 在 `next` / `save-asset` / `save-contact` 校验前先点名、`collect()` 两处抛错带字段、`catch` 里关弹窗 + 跳回该字段所在步骤 + 聚焦滚动。颜值/性能力**不进**范围表（越界时 collect 当场拦，且渲染 `beautyTier` 会抛错，试过已回退，留单测锁住）。
+- 验证：`npm test` **534 / 534**（新增 `tests/rc56-setup-range.test.mjs` 5 条，含边界与 engine 的对照矩阵）；rc.56 产物上实测——旧草稿身高 1.75 点登记：修前弹窗不关、光标停弹窗，修后**弹窗关闭 + 跳回 01 步 + 光标 `f_heightCm`**；年龄 17/90、身高 1.75、体重 300、鞋码 60、颜值 150 五项在第 01 步当场点名；正路 01→02→登记→03→预览全通。diff `.work/diff-rc56-setup-range.patch`，脚本 `.work/repro/ego-round{1..8}.mjs`，报告 `reports/rc56-登记资产报错诊断-20261124.md`。
+- **rc56-formA（开局表单限制可见/越界输入/预设补齐）已按 4N 方案实施完毕**：新增 `opening-copy.generated.js`（脚本抠取的 50 条说明 + 42 条错误文案）、`setup-required.js` 规则与校验层、`setup-options.js` 性别分档下拉、四预设身体数据、`field()` 重写与 CSS 块；`npm test` **548/548**；**补：颜值/性能力数字框改 text 后 `.beauty-inputs input[type=number]` 宽度规则失效、滑块被挤成小点，已改成 `[type=number],[type=text]` 并复测；**同批还漏了滑块→数字框的 `input` 监听（拖滑块不回写），已补 `slider.addEventListener` 并验证双向（拖 80→数字 80、键入 95→滑块 95、草稿同步）**（滑轨 209px / 数字框 78px，截图 `.work/shots/rc56-formA/05-beauty-slider-fixed.jpg`）**；AC-01~AC-17 在 rc.56-checkpoint 产物上全过（截图 `.work/shots/rc56-formA/`）；3 处方案未覆盖的偏离已获 YG 批准（2026-11-24「可以啊，就按A保留吧」），清单 132 条全回填（MATCH 125 / APPROVED 7）、自检 9/9 PASS（`.work/selfcheck-rc56-formA.md`）；**rc56b 阶段 1（称呼动态化＋多人同场心声覆盖）已实施**：`PLAYER_SET_ADDRESSING`、`_context.presentThoughtIds`、`asciiIdFor` 中文名路径纠偏、`ROUND_FIELD_AUDIT` 审计、过渡 `injectPrompts` 补丁、详情页「改称呼」与「调试观察」开关（文案脚本抠取）；`npm test` **556/556**；清单 `.work/checklist-rc56b.md`（MATCH 28/APPROVED 13）、自检 9/9、报告 `reports/rc56b-交付-20261124.md`；**阶段 2 世界书定稿待发版**；R-1/R-2 结论改用 YG 真机存档复核（`神豪终端 - 2026-11-24@04h27m30s631ms.jsonl`）：三人同场 `currentThought` 三人齐全、`present=3`；玩家「以后叫我辰辰就可以」当轮落库 `addressing=辰辰`，另两人不变；`_context` 带 `presentThoughtIds` → **rc56b 阶段 1 在真机成立**；我自己那 3 份种子聊天零补丁是**种子占位开场**导致（非卡缺陷），后续真实生成取证一律用真机正常聊天，不再用占位种子。`npm run check` 因 dist 仍为发行态而红，发版构建后重跑。`- 交付：**内联测试卡** `dist/2.0.0-rc.56-checkpoint/神豪终端-rc56-内联-资产登记修复.png`（9.65 MB，chara 与本次构建 `神豪终端.json` 哈希一致，浏览器实测 A/B/C 三案通过，交 YG 自测）。未做：未提交 Git、未升版本号、未切指针、电脑版热更新卡未重出（它取线上指针代码，装它也测不到修复）。真机 8001 未复跑；旧发行 PNG 备份 `.backups/rc56-dist-png/`，`dist/` 根目录跟踪文件已还原。
 
 ### 0.7 RC53 / RC53b TOY·LINK 极简版（2026-11-23 18:46–20:03）
 
@@ -105,27 +112,20 @@
 - **三处修正**：① B-01「无证据扣款」是 `engine.js:1631` 注释明文的 rc.25「保证零漏单」有意兜底，属经济口径，**不派工，待 YG 选 A 保持/B 仅缺证据时兜底/C 删兜底**（我倾向 B）；② B-14 只有 `style.css:732`（.phone）与 `737`（类嵌自身）真失效，741/744 等「注释 + 后代选择器」是正常命中，不能当 bug 改；③ B-09 与已知「TOY 停止后注入不同步」同根因，应合并一次修。
 - **未验证**：codex 侧 `pwsh` 子进程被系统拒绝（`CreateProcessAsUserW failed: 5`），它靠 MCP `node_repl` 读码 + 内存探针，**`npm test` 未跑**，501/501 是旧值；探针复现我未重放，只核源码路径；需真机验证的 6 条全未跑。**本轮一行源码未改。**
 
-### 0.6 RC52 详情（2026-11-23 03:35–04:15，方案 4N）
+### 0.6 RC52 详情（2026-11-23 03:35–04:15，方案 4N，详见 `RC52总方案/`）
 
-- 承载：`toylink.template.html` + `toylink.css` + `toylink-frame.js` → `toylink.html`（153KB）→ `host.js` 内联；顶层 iframe `#cj-shenghao-toylink-frame`，通道 `CJ_SHENGHAO_TOYLINK_V1`（READY 300ms×20 / INIT 1s×6，**不校验 event.source**）。
-- 逻辑：「现场」`sceneId=null`、处境隐藏、失态倍率固定 1.0；别处处境 8 条（0.55 / 0.70 / 1.05 / 1.15 / 1.25 / 1.40 / 1.55 / 1.65）。佩戴链路：未佩戴 → 确认 → 落点(现场|别处) → 已佩戴，挂一次性注入 `cj_shenghao_toylink_wear`，摘下撤回并清引导。**世界书未新增，`worldbookHash` 未变。**
-- YG 三条默认（03:40）：佩戴后不自动关宽屏；摘下不弹确认不写正文；佩戴注入单 ID 覆盖。
-- 验证：490/490；零 API 7/7 PASS；真实生成一轮（`__NOAPI_TEST_rc47_gate`，10,800 字）——现场口径干净、运行态照口径落地；**「戴上要写进正文」未触发**（发送时输入框只有运行态引导词）。
-- 遗留：整卡 +0.53MB 未瘦身；`rc50.toylink-stack-color` 待重校；P1 双女同频 / P2 预设曲谱未做。
+- 承载：`toylink.template.html` + `toylink.css` + `toylink-frame.js` → `toylink.html`（153KB）→ `host.js` 内联；顶层 iframe，通道 `CJ_SHENGHAO_TOYLINK_V1`（**不校验 event.source**）。现场 / 别处两套口径 + 佩戴链路（一次性注入 `cj_shenghao_toylink_wear`，摘下撤回）；世界书与 `worldbookHash` 未变。YG 三条默认：佩戴后不自动关宽屏 / 摘下不弹确认 / 注入单 ID 覆盖。
+- 验证：490/490；零 API 7/7；真实生成一轮（10,800 字）现场口径干净，**「戴上要写进正文」未触发**。遗留：整卡 +0.53MB 未瘦身、`rc50.toylink-stack-color` 待重校、P1 双女同频 / P2 预设曲谱未做。
 
 ### 0.4 RC49 印记工坊独立宽屏（2026-11-22 22:2x–23:1x）
 
-- 产出 `imprint.template.html` + `imprint.css` + `imprint-frame.js`，构建后内联进 `runtime.js`（不动 `targets` / `worldbookHash`）；通道 `CJ_SHENGHAO_IMPRINT_V1`，`host.js` 加 `openImprint/closeImprint`。
-- 修 4H 交付三处：帧侧 `event.source` 校验在真酒馆必假 → 改认 channel + nonce；READY/ack 双向兜底重发；模板清掉原型演示值。
-- 验收：印记 4 条 4/4 PASS（`apiCalls: 0`）。**截图教训**：不要用 `page.screenshot()+CDP` 模拟视口，iframe 按旧宽排版会切掉右栏。
-- 备份 `.backups/src-backup-20261122-2209/`、`.backups/8001-card-神豪终端7-20261122-2256.png`。
+- 产出 `imprint.template.html` + `imprint.css` + `imprint-frame.js`，构建后内联进 `runtime.js`（不动 `targets` / `worldbookHash`）；通道 `CJ_SHENGHAO_IMPRINT_V1`，`host.js` 加 `openImprint/closeImprint`。修 4H 交付三处：帧侧 `event.source` 校验在真酒馆必假 → 改认 channel + nonce；READY/ack 双向兜底重发；模板清掉原型演示值。
+- 验收：印记 4 条 4/4 PASS（`apiCalls: 0`）。**截图教训**：不要用 `page.screenshot()+CDP` 模拟视口，iframe 按旧宽排版会切掉右栏。备份 `.backups/src-backup-20261122-2209/`、`.backups/8001-card-神豪终端7-20261122-2256.png`。
 
 ### 0.1 早前（2026-11-22 03:2x–05:2x）完成的四件事
 
-- **A. 截图工具**：实测推翻「宿主 0.34× 缩放」旧判（那其实是被裁的左上角）；栅格系数 `rasterK = PNG宽 ÷ 视口CSS宽` 每次必测（见过 1.25 / 1.5625）。已固化为用户级 `ego-pixel-shot` + 项目级 `ego-precise-screenshot`，报告 `reports/rc48-*.md`。
-- **B. 头像库 60 → 88 张**：`tools/avatars/build-avatars.py` 追加 28 张 192px WebP；图库仓 `0088bd0`（资源）→ `1e769db`（清单）；卡内 `avatar-manifest.generated.js` 随 `9686192` 提交。备份 `.work/avatars-backup-20261122-0452`。
-- **C. 工坊四处缺陷**：① `app.js` 缺 `data-ws-pattern` 分发分支致纹样点不动；② `composeImprint` 未传部位致换部位图案不变；③ `wsOpen` 硬写 `group:'all'` → 改按当前部位分组；④ 补 `.phone:has(.workshop-page.is-imprint)` 壳本体配色（`--ui-frame:#251a2b`，项圈 `#241920`）。
-- **D. 对照原型三处收敛**：工坊标题缩到 `13px × 字体缩放`；删手机头部英文副标；项圈舞台补颈部剪影 `NECK_SIL`（取自 `rc47-proto-choker.html:616`）。
+- **A 截图工具 / B 头像库**：栅格系数 `rasterK = PNG宽 ÷ 视口CSS宽` 每次必测（见过 1.25 / 1.5625），已固化为 `ego-pixel-shot` + 项目级 `ego-precise-screenshot`（报告 `reports/rc48-*.md`）；头像库 60 → 88 张（`0088bd0` → `1e769db`，卡内 `avatar-manifest.generated.js` 随 `9686192`），备份 `.work/avatars-backup-20261122-0452`。
+- **C 工坊四处缺陷 / D 对照原型三处收敛**：修 `data-ws-pattern` 分发、`composeImprint` 未传部位、`wsOpen` 硬写 `group:'all'`、补 `.phone:has(.workshop-page.is-imprint)` 壳色（`--ui-frame:#251a2b`）；标题缩到 `13px × 字体缩放`、删手机头部英文副标、项圈舞台补颈部剪影 `NECK_SIL`（取自 `rc47-proto-choker.html:616`）。
 
 ### 0.2 仍未验证 / 未做（2026-11-24 01:1x 重写）
 
@@ -187,7 +187,7 @@
 ## 4. 下一步（按优先级）
 
 0. **双版本产出**（YG 2026-11-24 定，长期）：每次继续做都要同时出**电脑版＝热更新**与**手机版＝内嵌 checkpoint 整卡**，手机版沿用现内嵌形态。
-1. **等 YG 决定**：① 工作区那批 crypto 修复要不要提交（现 14 处未提交、未 push）；② 内联版整卡要不要另存备份（现在只在本机 `dist/2.0.0-rc.55-checkpoint/`，不在 Git 里）。
+1. **待 YG 拍板**：① 开局「登记资产」整单校验缺陷已按 A 修好并验证（§0.998），**待提交/发版**；② 两份 4N 方案已到——`reports/rc56-开局表单方案-4N-20261124.md`（表单限制与预设补齐，不强制重导入，但开局表单本身是卡内正则，新表单须随新整卡送达）与 `reports/rc56-称呼与多人覆盖方案-4N-20261124.md`（称呼动态化＋多人 `currentThought` 漏写，含纯脚本热更的阶段 1 与必重导入的阶段 2），实施顺序等你定。其余无待决——crypto 修复已随 rc.56 提交并发行，两版整卡已产出到 `dist/2.0.0-rc.56*/`。**唯一需要 YG 自己做的**：整卡 PNG 不在 Git 里（`dist/**/*.png` 被忽略），请自行另存备份。
 2. **旧用例重校**：`rc50.toylink-stack-color`、`rc50.toylink-scroll-keep`、`rc47.workshop-choker-gate`（用例侧，非卡缺陷）。
 3. **瘦身**（可选）：`toylink.html` 153KB 内联了 `WHEEL_COPY` 全文，可改成随 `view` 下发。
 4. **P1/P2 与项圈宽屏**：双女同频 / 预设曲谱 / 项圈工坊改宽屏，方案里无可照抄细则，要做先派 agy。
@@ -197,15 +197,15 @@
 
 - rc.46：`RC46总方案/`（`00_施工总表.md` 是入口，`04_待办与缺陷.md` 记 D1–D10）
 - rc.47：`RC47总方案/`（`02_方案_4N.md` + `03_原型/rc47-proto-imprint.html` / `rc47-proto-choker.html`）
-- rc.48：`RC48截图方案/`（`PROMPT-通用精确截图-发给agy.md`、四份模型方案 `agy_out/`、`01_三方案对比与前提修正.md`、`02_四方案合议与施工路线.md`）
-- rc.49：`RC49总方案/`（`02_方案_4N.md` + `03_原型/rc49-proto-imprint-wide.html`；照抄清单 `.work/checklist-rc49-imprint.md`）
+- rc.48 / rc.49：`RC48截图方案/`（四份模型方案 + 合议路线）、`RC49总方案/`（`02_方案_4N.md` + `03_原型/rc49-proto-imprint-wide.html`）；清单 `.work/checklist-rc49-imprint.md`
 - rc.50：`RC50总方案/00_施工总表.md`（入口与留痕）+ `03_4N-跳蛋轻量前端与实现方案.md` + `04_原型/rc50-proto-toylink-lite.html`；清单 `.work/checklist-rc50-toylink.md`、自检 `.work/selfcheck-rc50.md`、施工前快照 `.backups/rc50-before-20261123/`（旧的 `02_方案_4N-三装置与TOY.md` 仍保留为第一轮原文）
 - rc.51：`RC51总方案/00_施工总表.md` + `02_方案_4A-跳蛋玩法.md`；清单 `.work/checklist-rc51-toylink.md`、自检 `.work/selfcheck-rc51.md`
 - rc.53：`RC53总方案/00_施工总表.md`（入口与留痕 §6）+ `02_方案_4N-极简版与实验版.md`（497 行）+ `03_方案_4N-模式锁与清空状态.md`（283 行，冲突以它为准）；清单 `.work/checklist-rc53-toylink-lite.md`、自检 `.work/selfcheck-rc53.md`、diff `.work/diff-rc53.patch``
 - rc.52：`RC52总方案/00_施工总表.md`（入口与留痕）+ `02_方案_4N-TOY宽屏与佩戴链路.md`（413 行）+ `03_原型/toy-wide-proto.html`；清单 `.work/checklist-rc52-toywide.md`、自检 `.work/selfcheck-rc52.md`、diff `.work/diff-rc52.patch`、比对 `.work/rc52-{copy-compare.txt,css-note.txt}`
+- rc.56：无总方案目录（缺陷修复 + 手机端适配 + 对外材料）。**对外三份材料** `reports/rc56-4A-帖子详细介绍教程-20261124.md`（4A **直读源码**出品，`conversation_id` `0b50b36b-5c04-4b79-92f6-e1e534599ff1`；帖子终稿实测全字符 2072，YG 接受）；审查与修复报告 `reports/rc54-codex审查最新整卡BUG-20261123.md`、`reports/rc55-审查缺陷修复-20261123.md`；发帖参考 `C:\Users\Administrator\Desktop\wen\wa.txt`；卡面源图 `assets/card-face-rc56.png`
 - 想法池：`想法池\未实施想法.md` —— **当前为空**。#40（GPT-6.2-SOL 查最新整卡 BUG）已于 2026-11-23 22:2x 执行完审查，迁入 `想法池\已完成想法.md`（**修复未开始**）；#39（项圈工坊改宽屏）已按 YG 2026-11-23 20:4x 指示删除；#38 跳蛋玩法单薄已实施（rc.51/rc.52）迁入同一文件，#37 / #36 也在其中（项圈工坊未独立，条目内如实标注）。收录门槛写在文件头：只收 YG 明确要记入的想法。
 - 规则：`AGENTS.md` 新增 **§8.10**（先怀疑脚本与用例）与 **§8.11**（新 UI 必须自拍对比原型），2026-11-23 YG 明确。
-- 报告：`reports/rc48-*.md`、`reports/rc46-工坊回抄-交付报告-20261122.md`、`reports/rc47-交付报告-20261122.md`、`reports/私域三装置测试清单-20261123.md`（40 条，零 API 与真实生成都已执行）、`reports/rc54-私域三装置零API-20261123.md`、`reports/rc54-真实生成-20261123.md`、`reports/rc54-补测四件-20261123.md`、`reports/rc54-codex审查最新整卡BUG-20261123.md`（14 条缺陷 + 逐条核实 + 派工顺序）
+- 报告：`reports/rc48-*.md`、`reports/rc46-工坊回抄-交付报告-20261122.md`、`reports/rc47-交付报告-20261122.md`、`reports/私域三装置测试清单-20261123.md`（40 条，零 API 与真实生成都已执行）、`reports/rc54-私域三装置零API-20261123.md`、`reports/rc54-真实生成-20261123.md`、`reports/rc54-补测四件-20261123.md`、`reports/rc54-codex审查最新整卡BUG-20261123.md`（14 条缺陷 + 逐条核实 + 派工顺序）、`reports/rc56-开局表单方案-4N-20261124.md`、`reports/rc56-称呼与多人覆盖方案-4N-20261124.md`（两份 4N 方案，留痕见各自文件头）；4N 留痕：A `bd29a195-96aa-4a70-ba1e-4d75547d8f2d`（log cli-20261124_033536）、B `ecaf6b76-4b6d-4bca-b212-6cef6ed6df07`（log cli-20261124_034017）
 
 ---
 

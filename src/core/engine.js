@@ -2149,6 +2149,13 @@ export function applyOperation(state,op,anchor) {
     id(op.tempId);requireRule(s.hiddenTemporary[op.tempId],'UNKNOWN_PERSON');delete s.hiddenTemporary[op.tempId];
   } else {
     const c=active(s,op.personRef);
+    // rc.56b（方案 B §2.2）：玩家手动改称呼。走 applyOperation，进 operationHistory，删楼/换 swipe 不丢。
+    if(op.type==='PLAYER_SET_ADDRESSING') {
+      const value=String(op.addressing??'').trim();
+      requireRule(value.length>=1&&value.length<=20,'INVALID_TEXT');
+      c.addressing=value;
+      result={personRef:c.id,addressing:value};
+    } else
     if(op.type==='PLAYER_WITHDRAW') {
       requireRule(canWithdraw(s,c.id),'WITHDRAWAL_LOCKED');const q=withdrawalQuote(s,c.id),allocations={},recoveryAllocations={};
       for(const r of Object.values(s.rewardEvents))if(r.characterId===c.id&&r.valid&&!r.withdrawalId&&r.cashbackCents>r.refundedCents){r.withdrawalId=op.operationId;r.claimedCents=r.cashbackCents-r.refundedCents;allocations[r.eventId]=r.claimedCents;}
@@ -2241,7 +2248,7 @@ export function projection(s) {
       :'说手上的事卡住了，想听你的意见，问你最近能不能见一面';
     return {characterId:who.id,name:who.name,type,hint};
   })();  const mustDepictUsedItems=Object.values(s.inventory||{}).filter(i=>i.pendingUndo===true).slice(0,6).map(i=>{const def=i.category==='SURREAL_ITEM'?SURREAL_ITEM_BY_ID[i.refId]:WHEEL_POOL_BY_ID[i.refId];const names=(i.targetCharacterIds||[]).map(pid=>s.characters[pid]?.name).filter(Boolean);return {category:i.category==='SURREAL_ITEM'?'奇物':'玩法券',name:def?.name||i.refId,effectOrHint:def?.effect||def?.hint||def?.summary||'',...(names.length?{targetNames:names}:{})};});
-  return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,user:{...s.user,cashYuan:formatYuanReadable(s.user.cashCents),wealthTier:wealthTier(tierBasis(s)),pendingProfileFields:['heightCm','weightKg','shoeSizeEu'].filter(k=>s.user[k]==null)},scene:{...s.scene,...(intimateActive?{intimateStage:'INTIMATE_SCENE_ACTIVE'}:{})},characters,pendingBasicProfiles,
+  return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,...(presentChars.length>=2?{presentThoughtIds:presentChars.map(c=>c.id)}:{}),user:{...s.user,cashYuan:formatYuanReadable(s.user.cashCents),wealthTier:wealthTier(tierBasis(s)),pendingProfileFields:['heightCm','weightKg','shoeSizeEu'].filter(k=>s.user[k]==null)},scene:{...s.scene,...(intimateActive?{intimateStage:'INTIMATE_SCENE_ACTIVE'}:{})},characters,pendingBasicProfiles,
     ...(mustDepictUsedItems.length?{mustDepictUsedItems}:{}),...(pendingAbilityUses.length?{pendingAbilityUses}:{}),
     ...(incomingPing?{incomingPing}:{}),
     ...(userAbilities.length?{userAbilities}:{}),...(bagSurrealItems.length?{bagSurrealItems}:{}),

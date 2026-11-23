@@ -106,7 +106,15 @@ function buildPresetState(preset, initKey) {
       prize_1:     { itemId: 'prize_1',     source: 'WHEEL',       category: 'WHEEL_PRIZE', refId: 'w14',     rarity: 'red',  obtainedDate: '2026-11-20', status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
       surreal_1:   { itemId: 'surreal_1',   source: 'SHOP',        category: 'SURREAL_ITEM', refId: 'it_perfume', rarity: 'red', obtainedDate: '2026-11-20', status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null },
     };
-  } else if (preset === 'two_women') {
+  } else if (preset === 'three_women_live') {
+    // rc56b 真实生成用：三人同场（char_c 专门充当「只旁观」的第三人），char_a 开局称呼写死为「陆总」用于验改口。
+    s.user.cashCents = 50000000; s.user.initialCashCents = 50000000;
+    s.characters.char_a.addressing = '陆总'; s.characters.char_b.addressing = '你';
+    s.characters.char_a.affection = 68; s.characters.char_a.corruption = 30;
+    s.characters.char_b.affection = 55; s.characters.char_b.corruption = 20;
+    s.characters.char_c = { ...JSON.parse(JSON.stringify(s.characters.char_b)), id: 'char_c', name: '苏晚', aliases: ['小晚'], affection: 41, corruption: 12, relationshipLabel: '咖啡店主', occupation: '独立咖啡馆主理人', addressing: '你' };
+    s.scene.presentCharacterIds = ['char_a', 'char_b', 'char_c'];
+    s.wheel.starPoints = 300;  } else if (preset === 'two_women') {
     // rc.38 A4：两位已收录人物同时在场，用来验「此刻」多女渲染与后宫张力前提。
     s.user.cashCents = 50000000;
     s.user.initialCashCents = 50000000;

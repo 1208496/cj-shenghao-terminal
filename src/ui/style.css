@@ -162,7 +162,7 @@ button{cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var
 /* Cash-tier semantics stay constant across the three phone themes. */
 .wealth-tier{display:inline-block;padding:3px 7px;border-radius:7px;font-size:calc(10px * var(--cj-font-scale,1));font-weight:700;line-height:1.45;white-space:nowrap;vertical-align:middle;border:1px solid transparent;margin:3px 0}
 .tier-trainee{background:#f5f5f5;color:#30343a;border-color:#8d939b}.tier-junior{background:#17613b;color:#fff}.tier-middle{background:#19589b;color:#fff}.tier-senior{background:#66339a;color:#fff}.tier-max{background:#edca73;color:#33250b;border-color:#a67b22}
-.beauty-inputs{display:flex;align-items:center;gap:16px}.beauty-inputs input[type=range]{flex:1;min-width:0;padding:0;accent-color:var(--accent)}.beauty-inputs input[type=number]{width:78px}.beauty-control small{display:block;line-height:1.7}
+.beauty-inputs{display:flex;align-items:center;gap:16px}.beauty-inputs input[type=range]{flex:1;min-width:0;padding:0;accent-color:var(--accent)}.beauty-inputs input[type=number],.beauty-inputs input[type=text]{width:78px;flex:0 0 78px}.beauty-control small{display:block;line-height:1.7}
 .consumption summary{cursor:pointer}.consumption-row{border-top:1px solid var(--line,rgba(128,128,128,.25));padding:12px 0}.consumption-row summary{display:flex;justify-content:space-between;align-items:start;gap:10px;cursor:pointer;overflow-wrap:anywhere}.consumption-row summary>span{min-width:0}.consumption-row summary>span:last-child{text-align:right;flex-shrink:0}.consumption-row small{display:block;font-size:calc(10px * var(--cj-font-scale,1));opacity:.8;line-height:1.6}.consumption-row>div,.consumption-row>p{margin-top:8px;line-height:1.8;overflow-wrap:anywhere}
 .roundbtn{display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:0}
 .consumption{margin-top:14px}
@@ -1115,3 +1115,73 @@ body.is-folded-bar #app{height:100%!important;overflow:hidden!important}
 /* rc.53b（YG 2026-11-23 20:03）：极简版底部「切换实验版」按钮改紫粉渐变；锁定态仍用虚线弱化盖过渐变 */
 .btn.tl-lite-lab-btn{background:linear-gradient(135deg,#8a5cf0 0%,#ff7aa8 100%);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(138,92,240,.28)}
 .btn.tl-lite-lab-btn.is-locked-switch{background:var(--ui-soft);color:var(--ui-sub);border:1px dashed var(--ui-line);box-shadow:none;opacity:.72}
+
+/* rc.56-formA: opening form limits & error states (generated from 4N plan, do not hand-edit) */
+/* rc.57 开局表单限制可见与错误态（三套主题语义色） */
+:root{
+  --ui-err:#b8423d;--ui-err-bg:#fff5f4;--ui-err-border:#d97b76;--ui-err-ring:rgba(184,66,61,.18);
+}
+.theme-gold{
+  --ui-err:#b24336;--ui-err-bg:#fff5f0;--ui-err-border:#d98070;--ui-err-ring:rgba(178,67,54,.18);
+}
+.theme-purple{
+  --ui-err:#ff9aa8;--ui-err-bg:#3b2030;--ui-err-border:#c96378;--ui-err-ring:rgba(255,154,168,.22);
+}
+.field-msg{
+  margin-top:5px;
+  font-size:calc(11px * var(--cj-font-scale,1));
+  line-height:1.5;
+  min-height:16px;
+}
+.field-hint{color:var(--ui-faint);}
+.field-error{color:var(--ui-err);font-weight:600;}
+.field.is-invalid input,
+.field.is-invalid textarea,
+.field.is-invalid select{
+  border-color:var(--ui-err-border);
+  background:var(--ui-err-bg);
+}
+.field.is-invalid :is(input,textarea,select):focus{
+  border-color:var(--ui-err);
+  box-shadow:0 0 0 3px var(--ui-err-ring);
+}
+.draft-warn-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  margin-bottom:14px;
+  border-radius:12px;
+  border:1px solid var(--ui-err-border);
+  background:var(--ui-err-bg);
+  color:var(--ui-err);
+  font-size:calc(12px * var(--cj-font-scale,1));
+  line-height:1.5;
+}
+.draft-warn-banner .mini-btn{
+  flex-shrink:0;
+  border-color:var(--ui-err-border);
+  color:var(--ui-err);
+  background:var(--ui-card);
+  padding:6px 10px;
+  font-size:calc(11px * var(--cj-font-scale,1));
+  font-weight:700;
+}
+@media(max-width:450px){
+  .setup .field input,
+  .setup .field textarea,
+  .setup .field select,
+  .modal .field input,
+  .modal .field textarea,
+  .modal .field select{
+    font-size:16px;
+  }
+  .setup-field-options button{
+    min-height:44px;
+    padding:11px 12px;
+  }
+}
+
+/* rc.56b: 调试观察小标（方案 §5.6「单行 11px 紧凑灰底」，仅在 prefs.debugOverlay === true 时渲染） */
+.audit-badge{margin-top:4px;font-size:11px;line-height:1.4;color:var(--ui-sub);background:var(--ui-line,rgba(0,0,0,.06));border-radius:6px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
