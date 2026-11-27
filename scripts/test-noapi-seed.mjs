@@ -122,6 +122,24 @@ function buildPresetState(preset, initKey) {
     s.characters.char_a.affection = 78; s.characters.char_a.corruption = 45;
     s.characters.char_b.affection = 82; s.characters.char_b.corruption = 60;
     s.wheel.starPoints = 300;
+  } else if (preset === 'wish_ready') {
+    // rc.58 B：背包里放一张 NO.53「终端最终愿望」，用来验许愿台渲染与许愿落库。
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.scene.presentCharacterIds = ['char_a', 'char_b'];
+    s.characters.char_a.affection = 78; s.characters.char_a.corruption = 45;
+    s.characters.char_b.affection = 82; s.characters.char_b.corruption = 60;
+    s.wheel.starPoints = 300;
+    s.inventory = Object.assign({}, s.inventory, {prize_wish: {itemId: 'prize_wish', source: 'WHEEL', category: 'WHEEL_PRIZE', refId: 'w53', rarity: 'rainbow', obtainedDate: s.world.date, status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null, wishKind: null, wishText: null}});
+  } else if (preset === 'wish_romance') {
+    // rc.58 B：char_a 在场、char_b 不在场 + 一张 w53，用来验 ROMANCE 方向「把人拉进场 + 情欲 65」。
+    s.user.cashCents = 50000000;
+    s.user.initialCashCents = 50000000;
+    s.scene.presentCharacterIds = ['char_a'];
+    s.characters.char_a.affection = 78; s.characters.char_a.corruption = 45;
+    s.characters.char_b.affection = 62; s.characters.char_b.corruption = 30; s.characters.char_b.arousal = 10;
+    s.wheel.starPoints = 300;
+    s.inventory = Object.assign({}, s.inventory, {prize_wish: {itemId: 'prize_wish', source: 'WHEEL', category: 'WHEEL_PRIZE', refId: 'w53', rarity: 'rainbow', obtainedDate: s.world.date, status: 'READY', currentPoints: null, winStreak: 0, scheduledAppointmentId: null, targetCharacterIds: [], assetId: null, usedDate: null, wishKind: null, wishText: null}});
   } else if (preset === 'rc47_gate' || preset === 'rc47_gate_locked') {
     // rc.47：门槛用例 —— char_a 达标（好感 82）、char_b 未达标（48/25）；两人都已刻印/已佩戴，
     // 用来验「历史跌破门槛不自动摘除，但新增/覆盖被拦，抹除与摘下仍可」。

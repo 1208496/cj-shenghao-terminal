@@ -188,7 +188,10 @@ export async function importCard(page, cardPath) {
 export async function openCardByAvatar(page, avatar) {
   await openRightPanel(page);
   const ok = await page.evaluate((av) => {
-    const a = [...document.querySelectorAll("#rm_print_characters_block .character_select")].find((c) => c.querySelector(".avatar")?.getAttribute("title") === av)?.querySelector(".avatar");
+    // 新版酒馆把 .avatar 的 title 换成 "[Character] 名字\nFile: 文件.png"，精确等号匹配不到卡。
+    const rows = [...document.querySelectorAll("#rm_print_characters_block .character_select")];
+    const row = rows.find((c) => { const t = c.querySelector(".avatar")?.getAttribute("title") || ""; return t === av || t.includes(av); });
+    const a = row?.querySelector(".avatar");
     a?.click();
     return !!a;
   }, avatar);

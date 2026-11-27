@@ -15,18 +15,27 @@
 
 ---
 
-## 0. 当前状态（2026-11-24 03:1x 更新；**rc.56 已正式发行**，电脑版 + 手机版双形态产出）
+## 0. 当前状态（2026-11-27 更新；rc.57 已正式发行，工作树含 rc.58 玩家反馈修复）
 
 | 项 | 值 |
 |---|---|
 | 源码版本 | **`2.0.0-rc.57`（正式发行版）** / `cardContractRevision 33` |
-| 工作树 | **干净**（除 YG 自己的想法池改动），HEAD=`1b4758b`，已在 origin/release |
+| 工作树 | **有未提交的 rc.58 修复**（4 处源码 + 2 个测试文件，版本号仍 rc.57），HEAD=`1b4758b`，已在 origin/release |
 | 线上更新指针 | **`1b4758b` / rc.57**（2026-11-24 04:5x 已切并回读一致）；回滚点 `e5c00bf` / rc.56 |
 | 玩家发行状态 | **已发行**（2026-11-24，YG 明确指示「确认为已向玩家发行、已为正式版本」）—— 自此改字段须考虑旧存档兼容，见 `AGENTS.md` §2.3 |
-| 单测 | `npm test` **556 / 556**（rc.56 范围校验 5 + formA 14 + rc56b 8） |
+| 单测 | `npm test` **563 / 563**（rc.58 新增 7 条：profile-persist-guards 5 + rc58-wish-prize-context 2） |
 | 构建 | `npm run build` → **BUILD_OK** + `npm run check` → **CHECK_OK**（fallbackRef 已抬到 `34a4b48`） |
 | 整卡（双版本） | **电脑版**＝`dist/2.0.0-rc.57/神豪终端-rc57-电脑版.png`（3.40 MB，热更新，指针 `1b4758b`）｜**手机版**＝`dist/2.0.0-rc.57-checkpoint/神豪终端-rc57-手机版.png`（9.84 MB，内联）。卡面源图 `assets/card-face-rc56.png` |
 | 零 API | RC53+53b 四条 `rc53.*` ✔；**rc54 私域三装置 7/7 ✔（76 断言，`apiCalls: 0`，连跑两遍同结果）**（`.work/noapi/suite-result-1795439871427.json`）；rc50.toylink-stack-color / scroll-keep 仍待重校 |
+
+### 0.9995 rc.58 玩家反馈四条（2026-11-27，**已修 2 条，2 条待方案**）
+
+- 报告：**`reports/rc58-玩家反馈四条诊断与修复-20261127.md`**（逐条文件:行）。**未提交 Git、未升版本号、未重建整卡。**
+- **已修**：① 女性档案被重置 —— `settleNative` 新增空串保护（`occupation/recentGoal/longTermDream/hiddenScar/knownFacts/relationshipNotes/addressing` 空串不覆盖非空旧值，新内容照采）；② 整对象提交把子对象兄弟姐妹清零 —— `acceptFields` 增 `mergeNested`，角色三处调用点开启；③ 「25 岁的高二学生」根因是 `newCharacter` 把非法 `age` 删成骨架默认 25，改为钳到 `[18,80]`；④ 玩法券注入改口径 —— `mustDepictUsedItems` 由 `hint`（悬念旁白，w53 就是「说吧，你想要什么」）改为 `summary`。
+- **方案已到**：`reports/rc58-A-B方案-4A-20261127.md`（4A `gemini-4-argon-medium`，`conversation_id 1371897d-94ca-4c7c-bdbb-466182b75181`，579.8 s，日志 `cli-20261127_192020.log`，提示词 `.work/agy-prompt-rc58-feedback-design-20261127.md`）。**A 批代码完成（2026-11-27 20:3x）**：清单 `.work/checklist-rc58-A.md`（25 条，24 MATCH + 3 处收窄经 YG「A」批准）、自检 `.work/selfcheck-rc58-A.md`（**9/9 PASS**，零 API 截图 `.work/shots/rc58-A/`）、diff `.work/diff-rc58-A.patch`。已落：`PLAYER_EDIT_CHARACTER` 编辑通道 + 九大档案联动、`profileEdit` 文案 58 键、人物详情两处入口、编辑弹窗、A 样式块、`protocol.txt` 第 3/7 行、`expandContact` 提示词与年龄收敛、旧档 25 岁学生自愈（带教职工闸）、`AGE_BAND_RULES` 8 档。**B 批代码完成**：清单 `.work/checklist-rc58-B.md`（16 条全 MATCH）、自检 `.work/selfcheck-rc58-B.md`（9/9 PASS）、diff `.work/diff-rc58-AB.patch`；已落 w53 许愿契约（`wishKind/wishText` 状态字段、ASSET 当场入账 TOP 档、ROMANCE 拉场抬情欲、撤销按快照回退、`activeTerminalWish` 注入、`ASSET_GRANT` 同名幂等、旧档空放 w53 退回 READY）、许愿台 UI、协议 16.1 与 state-context、四方向引导词。`npm test` **580/580**；`build --checkpoint` **BUILD_OK**；整卡重打装入 8001，A/B 零 API 截图各 3 张后清场。**真实生成 1 轮（2026-11-27 21:3x，`gpt-4-turbo`，只发一次）**：愿望进上下文、脚本当场入账 1 件 ¥2800 万房产、模型当轮兑现完毕（未停在「说吧你想要什么」）、现金未变、生成后撤销窗口关闭；模型照发了同名 `ASSET_GRANT` 被幂等护栏挡住（无第二件）。报告 `reports/rc58-真实生成-许愿兑现-20261127.md`。**追加两轮**（ROMANCE 拉场+情欲 65 成立；CUSTOM 当轮兑现成立；新人物 17 岁被收敛到 18，第 3 轮「没落库」实为模型 `"op":"op":` 坏 JSON 导致整块被弃，修语法后原 patch 回放全部落地）；POWER 方向成立（脚本零副作用、模型自发 1 件产业 `ASSET_GRANT`、现金与在场不变）；三主题渲染正常。四轮真实生成全部通过。`reports/rc58-真实生成-补充两轮与三主题-20261127.md`，证据 `.work/live-rc58/`。**未提交 Git、未升版本号、未发版**。
+- **不做**：18 岁下限不下探（可给 18 岁的高三/复读/大一写法）。
+
+### 0.999 agy 环境（2026-11-24）：4C 上线、额度并为两桶（Gemini / Claude+GPT）、agy 内不用 GPT（只走 codex）。细节见全局 `~/.dsh/AGENTS.md` §9–§10 与项目 `AGENTS.md` §9。
 
 ### 0.998 玩家实测：开局「登记资产」被整单校验挡住（2026-11-24 03:1x–03:4x；**YG 选 A，已修，未提交**）
 
@@ -35,14 +44,10 @@
 - 验证：`npm test` **534 / 534**（新增 `tests/rc56-setup-range.test.mjs` 5 条，含边界与 engine 的对照矩阵）；rc.56 产物上实测——旧草稿身高 1.75 点登记：修前弹窗不关、光标停弹窗，修后**弹窗关闭 + 跳回 01 步 + 光标 `f_heightCm`**；年龄 17/90、身高 1.75、体重 300、鞋码 60、颜值 150 五项在第 01 步当场点名；正路 01→02→登记→03→预览全通。diff `.work/diff-rc56-setup-range.patch`，脚本 `.work/repro/ego-round{1..8}.mjs`，报告 `reports/rc56-登记资产报错诊断-20261124.md`。
 - **rc56-formA（开局表单限制可见/越界输入/预设补齐）已按 4N 方案实施完毕**：新增 `opening-copy.generated.js`（脚本抠取的 50 条说明 + 42 条错误文案）、`setup-required.js` 规则与校验层、`setup-options.js` 性别分档下拉、四预设身体数据、`field()` 重写与 CSS 块；`npm test` **548/548**；**补：颜值/性能力数字框改 text 后 `.beauty-inputs input[type=number]` 宽度规则失效、滑块被挤成小点，已改成 `[type=number],[type=text]` 并复测；**同批还漏了滑块→数字框的 `input` 监听（拖滑块不回写），已补 `slider.addEventListener` 并验证双向（拖 80→数字 80、键入 95→滑块 95、草稿同步）**（滑轨 209px / 数字框 78px，截图 `.work/shots/rc56-formA/05-beauty-slider-fixed.jpg`）**；AC-01~AC-17 在 rc.56-checkpoint 产物上全过（截图 `.work/shots/rc56-formA/`）；3 处方案未覆盖的偏离已获 YG 批准（2026-11-24「可以啊，就按A保留吧」），清单 132 条全回填（MATCH 125 / APPROVED 7）、自检 9/9 PASS（`.work/selfcheck-rc56-formA.md`）；**rc56b 阶段 1（称呼动态化＋多人同场心声覆盖）已实施**：`PLAYER_SET_ADDRESSING`、`_context.presentThoughtIds`、`asciiIdFor` 中文名路径纠偏、`ROUND_FIELD_AUDIT` 审计、过渡 `injectPrompts` 补丁、详情页「改称呼」与「调试观察」开关（文案脚本抠取）；`npm test` **556/556**；清单 `.work/checklist-rc56b.md`（MATCH 28/APPROVED 13）、自检 9/9、报告 `reports/rc56b-交付-20261124.md`；**阶段 2 世界书定稿待发版**；R-1/R-2 结论改用 YG 真机存档复核（`神豪终端 - 2026-11-24@04h27m30s631ms.jsonl`）：三人同场 `currentThought` 三人齐全、`present=3`；玩家「以后叫我辰辰就可以」当轮落库 `addressing=辰辰`，另两人不变；`_context` 带 `presentThoughtIds` → **rc56b 阶段 1 在真机成立**；我自己那 3 份种子聊天零补丁是**种子占位开场**导致（非卡缺陷），后续真实生成取证一律用真机正常聊天，不再用占位种子。`npm run check` 因 dist 仍为发行态而红，发版构建后重跑。`- 交付：**内联测试卡** `dist/2.0.0-rc.56-checkpoint/神豪终端-rc56-内联-资产登记修复.png`（9.65 MB，chara 与本次构建 `神豪终端.json` 哈希一致，浏览器实测 A/B/C 三案通过，交 YG 自测）。未做：未提交 Git、未升版本号、未切指针、电脑版热更新卡未重出（它取线上指针代码，装它也测不到修复）。真机 8001 未复跑；旧发行 PNG 备份 `.backups/rc56-dist-png/`，`dist/` 根目录跟踪文件已还原。
 
-### 0.7 RC53 / RC53b TOY·LINK 极简版（2026-11-23 18:46–20:03）
+### 0.7 RC53 / RC53b TOY·LINK 极简版（2026-11-23，历史）
 
-- 方案 `RC53总方案/02_方案_4N-极简版与实验版.md`（497 行）+ `03_方案_4N-模式锁与清空状态.md`（283 行，**冲突以 03 为准**）；清单 `.work/checklist-rc53-toylink-lite.md`（34 条）、自检 `.work/selfcheck-rc53.md` 9/9。
-- 结论：**同一 bridge 两个视图**；档位 `TOY_LITE_GEARS=[30,60,90]` 落在现有 `pow`；极简版独立注入 ID `cj_shenghao_toylink_lite`（`in_chat/depth:1/system`），事件态→`GENERATION_ENDED` 降级为持续态；**模式锁** `activeMode: null|'lite'|'lab'` 随分支存进现有 key；被锁一侧写命令返回 `TOYLINK_MODE_LOCKED`；「清空状态」= 关宽屏 → 停 100ms 定时器 → 撤 3 个注入 → 清内存态 → 删当前分支 TOY key（不碰输入框）。
-- UI：手机内嵌面板（`workshopOpen='toylink-lite'`），**不加新 iframe**；我的页卡片与背包 `it_toylink` 唯一入口都进它，实验版只能从面板底部「切换实验版（宽屏）」进；实验版三件套零改动。rc53b 补：切换按钮改紫→粉渐变、项圈工坊隐藏手机头部 ⚙/×、商城补 `it_imprint`（3000✦，持久奇物）。
-- **YG 批准的两处偏离 03**（2026-11-23 18:46「可以，开工」）：① 摘光最后一人**不自动解锁**、刷新也不自愈清锁，只有「清空状态」解锁；② `buildToyLitePromptBlock` 区分 `ctx.gear`（1–3 序号）与 `ctx.pow`（30/60/90）。
-- 本批修掉：清空后 `run.selectedId` 丢失导致「为她佩戴」失败（`resetAll()` 补 `currentSelected()`）。
-- 验证：`npm test` 501/501；`BUILD_OK`；零 API 3/3 + 4/4 PASS（`apiCalls: 0`）；截图 `.work/shots/rc53*/shoot/`。**未验证**：未解锁态档位按钮无 `:disabled` 视觉（方案 CSS 未含，未自行补）、真实生成未跑、实验版原玩法未回归。
+- 方案 `RC53总方案/02_{方案}_4N-极简版与实验版.md`（497 行）+ `03_方案_4N-模式锁与清空状态.md`（283 行，冲突以 03 为准）；清单 `.work/checklist-rc53-toylink-lite.md`（34 条）、自检 `.work/selfcheck-rc53.md` 9/9。结论：同一 bridge 两个视图，档位 `[30,60,90]`，注入 ID `cj_shenghao_toylink_lite`，模式锁 `activeMode`，「清空状态」撤注入清内存；手机内嵌面板不加新 iframe。YG 批准的两处偏离 03 见原记录。
+- 验证：`npm test` 501/501；`BUILD_OK`；零 API 3/3 + 4/4 PASS。**未验证**：未解锁态档位无 `:disabled` 视觉、真实生成未跑。
 
 ### 0.9 私域三装置测试清单（2026-11-23 21:20，**零 API 部分已执行完**）
 
@@ -52,17 +57,15 @@
 - **三条发现**（详见报告 §四）：① 背包 `it_toylink` 入口是死代码（`engine.js:1195` 载入即删条目，`app.js:146` 按钮永不渲染），T-14 改为迁移取证用例，死分支是否删待 YG；② 我的页装置卡被 `nav.bottom` 覆盖属点击门误报（365×730 下卡 673–755、底栏 662–724，绕过门能进工坊），用例改先滚 260px，既有 `rc47.workshop-choker-gate` 同因失败待重校；③ `host.js:95-102` 的操作日志在 `initKey` 为空时跳过校验、会重放上一局操作，测试侧用 `--unique` 规避，是否算缺陷待 YG。
 - 8001 测试聊天用 `--unique` 生成，全部登记在 `.work/test-noapi-backups/manifest.json`，可 `node scripts/test-noapi-seed.mjs --restore` 一键回收。
 
-### 0.95 私域三装置真实生成（2026-11-23 21:3x–21:5x，4 轮已跑完）
+### 0.95 私域三装置真实生成（2026-11-23，历史，详见 `reports/rc54-真实生成-20261123.md`）
 
-- 报告 `reports/rc54-真实生成-20261123.md`；驱动 `scripts/noapi/live-rc54-devices.mjs`；原文 `.work/live-rc54/round-{1,2,3}.md`（剥思考块 `-clean.md`、剥补丁 `-narrative.md`）、结构化结果 `live-result.json`。前置：`__NOAPI_TEST_device_ready__mwtb1axy`，项圈玫瑰金+Eternal、印记下腹+魅魔心翼+陆氏私有、TOY 戴上未开启；模型保持 8001 现状 `pg-gemini-4-hydrogen`（未动任何 API 设置）。**注入确实进了 prompt**：模型思考块逐字复述 `wheel-ui-copy.js:978` worn 态模板（「已佩戴·未开启，严禁写震动」）。
 - 结果（**4 轮**，各 1 轮不重试、共约 19.3k 字）：**R-01 / R-02 / R-03 / R-04 / R-05 达成**（第 1 轮「玫瑰金色的细颈链…小巧的铭牌」；第 4 轮把镜头推到下腹后印记写足「魅魔心翼 + 陆氏私有」；未开启不写震动；2 档中等失态；2→3 有落差且不重写置入）；**R-06 部分**（三件同场缺项圈痕迹；「TOY 关闭后仍写震动」实测**未达成**）。**教训**：初版把 R-01 判成未达成是只数关键词（正文用「细颈链/铭牌」，不含「项圈」二字），判「没写」必须读上下文；叙事正文已抽成 `round-{1..4}-narrative.md`。
 - **发现 A**：项圈字段第 1 轮即被取用；印记前 3 轮零引用、第 4 轮镜头到下腹立刻写足 → **字段通道有效，生效条件是镜头可见；注入只提供「必须写」的强制性，不提供可见性**。
 - **发现 B（YG 21:5x 点破，已按代码核实）**：TOY 停止后正文仍写「三档运行中」。① MVU 的 `currentItems/currentAction/vaginaState` 仍是第 3 轮模型写的「开启3档强烈震动」，脚本不回改；② 刷新把运行态静默复位成「未开启」，但**没有任何路径把这条事实通知注入**——`toylink-bridge.js:795-796` 初始化恢复「佩戴中+模式锁 lite」却不调 `syncLiteInjection()`，注入只在 `onBranchChange()`（只认 `CHAT_CHANGED`）与用户点 `wear/unwear/start/stop/gear` 时挂。修法 T1/T2/T3 见报告 §五，**YG 21:5x 定为小瑕疵、暂不修**。
 - **发现 C（真实数据损失）**：模型把 `accessories` 写成用「、」连接的串时，`engine.js:1174` 的 `【誓约项圈】[^；;]*` 吃到串尾，派生后只剩项圈段——第 3 轮实测丢了珍珠耳坠/细金链手表/木质发簪；本地复现 `.work/live-rc54/accessory-regex-proof.txt`。修法 C1/C2/C3 待 YG。环境注意：ST 的「API 已连接」是页面级状态，新开页面一律回落成未连接、发送会被静默拦掉；驱动里必须先点一次「连接」按钮（只点按钮，不改设置）。
 
-### 0.96 补测四件（2026-11-23 21:5x–22:1x，**四件全跑完**）
+### 0.96 补测四件（2026-11-23，历史，详见 `reports/rc54-补测四件-20261123.md`）
 
-- 报告 `reports/rc54-补测四件-20261123.md`。**①商城全量**：11 件消耗奇物（✦6270）+ 14 项异能（✦21050）逐件购买、已拥有态、背包落库、使用通道抽样 —— `rc54.shop-consumables-all` / `-abilities-all` / `-consumable-use-sampling` 全 PASS（`apiCalls: 0`）；新 preset `device_shop_bulk`（30000 分）。坑：商城弹窗第 5 项起被底部「关闭」遮挡且每次重渲染复位，用例改为逐项 `scrollTo .shop-list`（只设 scrollTop，不注入样式）。
 - **②实验版回归**：**rc52 那 6 条宽屏用例从 rc.53 起就是坏的**（入口改成「极简版 → 切实验版」，旧用例仍点 `[data-toylink]` 直等宽屏，单跑即 F1）——HANDOFF 之前一直标它们「已覆盖」，属误记。已补入口四步修好，7/7 PASS；新增 `rc54.toywide-nine-modes`（九模逐个切换 + pill 与 `.tl-mode-btn.on` 断言）。
 - **③RC52 佩戴引导词**：1 轮真实生成（9328 字 / 54 s）**达成** —— 正文写全「看见跳蛋僵住 → 掀裙 → 推入触感 → 收线整理衣物 → 双腿微颤」，且 `震动/震颤/嗡` 全 0（未开启）。`clearPendingWear` **已补第 2 句验**（4897 字 / 33 s，同聊天）：思考块无 worn 注入措辞、正文 `跳蛋/戴上/置入/震动` 全 0 → 判为「注入已撤」（强旁证，非直读注入本体）。
 - **④extra 解析模式**（YG 自行切模式）：1 轮通过 —— 正文 6831 字 / 52 s，`revision` 1→3、好感 82→83、时间 10:00→10:02、39 个 op 全落；正文自带 patch 全是 `replace` 绝对值，与额外解析结果一致、**不叠加**。8001 已由 YG 切回「随AI输出」；extra 下设备注入与解析失败降级**不验**（YG 22:2x 决定）。
@@ -215,13 +218,7 @@
 |---|---|
 | rc.47 | 两座工坊高定 + 三装置门槛（好感≥70 或 堕落≥60）+ 删自戴 |
 | rc.46 | 数据地基与四项修复 + TOY·LINK 内嵌 + 两座工坊首批 |
-| rc.45 | WB-3 常驻合并 + WB-4 关键词收敛 + 3 条 UI 用例 |
-| rc.43 | 5 P0 + 6 P1 + 可撤销使用 + 世界书递归放开 |
-| rc.41 | 内测三问题修复 + 玩法纯化 + 三重盘台入口特效 |
-| rc.40 | 统一卡面 / 卡册独立页 / 叠卡 / 背包可删 / 圣典红阶 |
-| rc.38 | 引擎与契约消缺 + 内容层瘦身 + 情欲双联开关 |
-| rc.37 | 星愿卡包；三页重做；背包使用通道；四个实机缺陷修复 |
-| rc.36 | 三独立盘 + 顶层全屏 iframe；五页导航；零 API 通道落地 |
+| rc.45–rc.36 | rc.45 WB-3 常驻合并 + WB-4 关键词收敛 + 3 条 UI 用例｜rc.43 5 P0 + 6 P1 + 可撤销使用 + 世界书递归放开｜rc.41 内测三问题修复 + 玩法纯化 + 三重盘台入口特效｜rc.40 统一卡面 / 卡册独立页 / 叠卡 / 背包可删 / 圣典红阶｜rc.38 引擎与契约消缺 + 内容层瘦身 + 情欲双联开关｜rc.37 星愿卡包、三页重做、背包使用通道、四个实机缺陷修复｜rc.36 三独立盘 + 顶层全屏 iframe、五页导航、零 API 通道落地 |
 
 > 归档：`E:\AGY_ARCHIVE\SHZD_HISTORY\HANDOFF_rc24_to_rc37_archive.md`（1,347 行）。
 
@@ -237,4 +234,7 @@
 - **未验证**：`workspace-write` 档、`exec resume` 的 `-s/-C` 继承、登录失效行为、`codex doctor --json` 结构、`logs_2.sqlite` 表结构。
 - **规则已大改**：`~/.dsh/AGENTS.md` 210 → 81 行（§2 闸门扩到 codex 与 `subagent_antigravity`；§3 探针只剩 4A；§10 放额度与硬排除）；项目 `AGENTS.md` 选型表同步。条文不在此复述，直接读两份 AGENTS。
 - **模型分工修正依据**：`E:\AGY_ARCHIVE\MODEL_TEST\rc46-双模型能力对照测试报告-20261119.md`——4N 在技术文档语境直接写器官词，只有创作输出语境才收紧成代称。
+
+
+
 

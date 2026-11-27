@@ -148,7 +148,9 @@ export function createSchema(z) {
     usedSwipeId:z.number().int().nonnegative().nullable().default(null),
     pendingUndo:z.boolean().default(false),
     undoSnapshot:z.record(z.string(),z.any()).nullable().default(null),
-    usedDraftText:z.string().max(2000).nullable().default(null)
+    usedDraftText:z.string().max(2000).nullable().default(null),
+    wishKind:z.enum(['ASSET','ROMANCE','POWER','CUSTOM']).nullable().default(null),
+    wishText:z.string().max(300).nullable().default(null)
   });
   // rc.42：异能不再升级 —— 一次性解锁、效果恒定，没有 level。
   const userAbility=z.object({abilityId:short,obtainedDate:date});

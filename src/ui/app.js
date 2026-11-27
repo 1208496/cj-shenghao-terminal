@@ -15,7 +15,7 @@ import {CACHE_COPY} from '../core/cache-copy.js';
 import {setupStatus} from './setup-status.js';
 import {assignAll,findItem} from './avatar-pool.js';
 import {loadManifest,avatarUrl} from '../runtime/avatar-manifest.js';
-import {cents,validateDraft,userProfileTags,PROFILE_KEYS,PROFILE_LABELS,poolParts,totals,stage,canWithdraw,wealthTier,beautyTier,prowessTier,withdrawalQuote,assetDescription} from '../core/engine.js';
+import {cents,validateDraft,userProfileTags,PROFILE_KEYS,PROFILE_LABELS,poolParts,totals,stage,canWithdraw,wealthTier,beautyTier,prowessTier,withdrawalQuote,assetDescription,ASSET_TIER_TABLE,resolveCustomAssetKind,formatYuanReadable} from '../core/engine.js';
 import {CHOKER_STYLE_BY_ID} from '../core/device-catalog.js';
 import {composeChoker} from './imprint-art.js';
 const $=id=>document.getElementById(id);
@@ -229,13 +229,17 @@ function bagModal() {
   const renderPrizeItem = (it) => {
     const prize = WHEEL_POOL_BY_ID[it.refId] || { name: it.refId, summary: '' };
     const st = it.status === 'USED' ? WHEEL_COPY.bag.prizes.statusUsed : it.status === 'SCHEDULED' ? WHEEL_COPY.bag.prizes.statusScheduled : WHEEL_COPY.bag.prizes.statusReady;
+    const isFinalWish = it.refId === 'w53';
     const acts = it.status === 'READY'
-      ? `<button class="cj-act primary" data-use-now="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.prizes.btnUseNow)}</button><button class="cj-act" data-use-prize="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.prizes.btnSchedule)}</button>`
+      ? (isFinalWish
+          ? `<button class="cj-act primary is-wish-cta" data-use-now="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.prizes.btnWishNow)}</button>`
+          : `<button class="cj-act primary" data-use-now="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.prizes.btnUseNow)}</button><button class="cj-act" data-use-prize="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.prizes.btnSchedule)}</button>`)
       : it.status === 'SCHEDULED'
         ? `<button class="cj-act" data-view-schedule="${esc(it.scheduledAppointmentId || '')}">${esc(WHEEL_COPY.bag.prizes.btnViewCal)}</button><button class="cj-act" data-cancel-schedule="${esc(it.scheduledAppointmentId || '')}">${esc(WHEEL_COPY.bag.prizes.btnCancelSchedule)}</button>`
         : '';
     const delBtn = `<button class="cj-act danger" data-delete-item="${esc(it.itemId)}" ${view.busy ? 'disabled' : ''}>${esc(WHEEL_COPY.bag.common.btnDelete)}</button>`;
-    return `<div class="bag-item" data-item-id="${esc(it.itemId)}" data-status="${esc(it.status)}" data-rarity="${esc(it.rarity)}"><div class="bag-main"><div class="bag-title"><b>NO.${esc(prize.no || '')} ${esc(prize.name)}</b><span class="bag-chip">${esc(st)}</span>${it.usedDate ? `<small class="muted">${esc(it.usedDate)}</small>` : ''}</div><div class="bag-text">${esc(prize.summary || '')}</div><div class="bag-actions">${it.pendingUndo?`<button class="cj-act primary" data-undo-use="${esc(it.itemId)}">${esc(WHEEL_COPY.bag.common.btnUndoUse)}</button>`:''}${acts}${delBtn}</div></div></div>`;
+    const wishNote = it.wishText ? `<div class="bag-wish-note">✦ 许愿：「${esc(it.wishText)}」</div>` : '';
+    return `<div class="bag-item" data-item-id="${esc(it.itemId)}" data-status="${esc(it.status)}" data-rarity="${esc(it.rarity)}"><div class="bag-main"><div class="bag-title"><b>NO.${esc(prize.no || '')} ${esc(prize.name)}</b><span class="bag-chip">${esc(st)}</span>${it.usedDate ? `<small class="muted">${esc(it.usedDate)}</small>` : ''}</div><div class="bag-text">${esc(prize.summary || '')}</div>${wishNote}<div class="bag-actions">${it.pendingUndo?`<button class="cj-act primary" data-undo-use="${esc(it.itemId)}">${esc(WHEEL_COPY.bag.common.btnUndoUse)}</button>`:''}${acts}${delBtn}</div></div></div>`;
   };
 
   const renderSurrealItem = (it) => {
@@ -339,11 +343,96 @@ function refreshUseDraft(){
   const it=view?.state?.inventory?.[useFormCtx.itemId];
   if(useFormCtx.kind==='prize'){
     const prize=WHEEL_POOL_BY_ID[it?.refId]||{},box=$('pzn_draft');
-    if(box)box.value=buildItemInputDraft({category:'WHEEL_PRIZE',name:prize.name||'',summary:prize.summary||'',hint:prize.hint||'',targetName});
+    const extra=String($('pzn_wish')?.value||'').trim();
+    if(box)box.value=buildItemInputDraft({category:'WHEEL_PRIZE',name:prize.name||'',summary:prize.summary||'',hint:prize.hint||'',targetName})+(extra?`（我补充的细节：${extra}）`:'');
     return;
   }
   const def=SURREAL_ITEM_BY_ID[it?.refId]||{},box=$('ui_draft');
   if(box)box.value=buildItemInputDraft({category:'SURREAL_ITEM',name:def.name||'',summary:def.effect||'',targetName});
+}
+// rc.58（4A 方案 A §6.2 + 原型 第四部分 §1.2）：人物资料纠错弹窗。DOM、类名与文案逐字照抄方案。
+function profileEditForm(personRef){
+  const c=view?.state?.characters?.[personRef];
+  if(!c)return;
+  const P=WHEEL_COPY.profileEdit;
+  showModal(`<h3>${esc(fill(P.modalTitle, { name: c.name }))}</h3>
+<p class="notice">${esc(P.modalNotice)}</p>
+<div class="profile-edit-form" data-profile-edit-root="${esc(c.id)}">
+  <div class="pe-section-title">${esc(P.secBasic)}</div>
+  <div class="form-row">
+    <div class="field" data-pe-wrap="age">
+      <label for="pe_age">${esc(P.lblAge)} <span class="required">*</span></label>
+      <input id="pe_age" data-pe-field="age" type="text" inputmode="numeric" autocomplete="off" maxlength="2" value="${esc(c.age)}" placeholder="${esc(P.phAge)}">
+      <div class="field-msg field-hint" id="pe_age_msg">${esc(P.hintAge)}</div>
+    </div>
+    <div class="field" data-pe-wrap="beautyScore">
+      <label for="pe_beautyScore">${esc(P.lblBeauty)} <span class="required">*</span></label>
+      <input id="pe_beautyScore" data-pe-field="beautyScore" type="text" inputmode="numeric" autocomplete="off" maxlength="3" value="${esc(c.beautyScore ?? 70)}" placeholder="${esc(P.phBeauty)}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field" data-pe-wrap="occupation">
+      <label for="pe_occupation">${esc(P.lblOccupation)}</label>
+      <input id="pe_occupation" data-pe-field="occupation" type="text" autocomplete="off" maxlength="100" value="${esc(c.occupation || '')}" placeholder="${esc(P.phOccupation)}">
+    </div>
+    <div class="field" data-pe-wrap="relationshipLabel">
+      <label for="pe_relationshipLabel">${esc(P.lblRelation)} <span class="required">*</span></label>
+      <input id="pe_relationshipLabel" data-pe-field="relationshipLabel" type="text" autocomplete="off" maxlength="12" value="${esc(c.relationshipLabel || '熟人')}" placeholder="${esc(P.phRelation)}">
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="field" data-pe-wrap="addressing">
+      <label for="pe_addressing">${esc(P.lblAddressing)}</label>
+      <input id="pe_addressing" data-pe-field="addressing" type="text" autocomplete="off" maxlength="20" value="${esc(c.addressing || '')}" placeholder="${esc(P.phAddressing)}">
+    </div>
+    <div class="field" data-pe-wrap="cupSize">
+      <label for="pe_cupSize">${esc(P.lblCup)}</label>
+      <select id="pe_cupSize" data-pe-field="cupSize">
+        <option value="" ${!c.cupSize ? 'selected' : ''}>${esc(P.cupAuto)}</option>
+        ${['A','B','C','D','E','F','G'].map(cup => `<option value="${cup}" ${c.cupSize === cup ? 'selected' : ''}>${cup} 罩杯</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div class="field" data-pe-wrap="personalityTags">
+    <label for="pe_personalityTags">${esc(P.lblTags)}</label>
+    <input id="pe_personalityTags" data-pe-field="personalityTags" type="text" autocomplete="off" maxlength="90" value="${esc((c.personalityTags || []).join('、'))}" placeholder="${esc(P.phTags)}">
+  </div>
+  <div class="field" data-pe-wrap="recentGoal">
+    <label for="pe_recentGoal">${esc(P.lblRecentGoal)}</label>
+    <textarea id="pe_recentGoal" data-pe-field="recentGoal" rows="2" maxlength="200" placeholder="${esc(P.phRecentGoal)}">${esc(c.recentGoal || '')}</textarea>
+  </div>
+  <div class="field" data-pe-wrap="longTermDream">
+    <label for="pe_longTermDream">${esc(P.lblLongTermDream)}</label>
+    <textarea id="pe_longTermDream" data-pe-field="longTermDream" rows="2" maxlength="200" placeholder="${esc(P.phLongTermDream)}">${esc(c.longTermDream || '')}</textarea>
+  </div>
+
+  <button type="button" class="pe-fold-btn" data-toggle-edit-body="1" aria-expanded="false">${esc(P.secBodyToggleClosed)}</button>
+  <div id="peBodyDrawer" class="pe-body-drawer" hidden>
+    <div class="pe-grid-3">
+      <div class="field" data-pe-wrap="heightCm"><label for="pe_heightCm">${esc(P.lblHeight)}</label><input id="pe_heightCm" data-pe-field="heightCm" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${esc(c.heightCm ?? '')}" placeholder="${esc(P.phHeight)}"></div>
+      <div class="field" data-pe-wrap="weightKg"><label for="pe_weightKg">${esc(P.lblWeight)}</label><input id="pe_weightKg" data-pe-field="weightKg" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${esc(c.weightKg ?? '')}" placeholder="${esc(P.phWeight)}"></div>
+      <div class="field" data-pe-wrap="shoeSizeEu"><label for="pe_shoeSizeEu">${esc(P.lblShoe)}</label><input id="pe_shoeSizeEu" data-pe-field="shoeSizeEu" type="text" inputmode="decimal" autocomplete="off" maxlength="4" value="${esc(c.shoeSizeEu ?? '')}" placeholder="${esc(P.phShoe)}"></div>
+    </div>
+    <div class="pe-grid-3">
+      <div class="field" data-pe-wrap="bustCm"><label for="pe_bustCm">${esc(P.lblBust)}</label><input id="pe_bustCm" data-pe-field="bustCm" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${esc(c.bustCm ?? '')}" placeholder="${esc(P.phBust)}"></div>
+      <div class="field" data-pe-wrap="waistCm"><label for="pe_waistCm">${esc(P.lblWaist)}</label><input id="pe_waistCm" data-pe-field="waistCm" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${esc(c.waistCm ?? '')}" placeholder="${esc(P.phWaist)}"></div>
+      <div class="field" data-pe-wrap="hipCm"><label for="pe_hipCm">${esc(P.lblHip)}</label><input id="pe_hipCm" data-pe-field="hipCm" type="text" inputmode="decimal" autocomplete="off" maxlength="5" value="${esc(c.hipCm ?? '')}" placeholder="${esc(P.phHip)}"></div>
+    </div>
+    <div class="field" data-pe-wrap="appearance">
+      <label for="pe_appearance">${esc(P.lblAppearance)}</label>
+      <textarea id="pe_appearance" data-pe-field="appearance" rows="2" maxlength="500" placeholder="${esc(P.phAppearance)}">${esc(c.appearance || '')}</textarea>
+    </div>
+    <div class="field" data-pe-wrap="body">
+      <label for="pe_body">${esc(P.lblBody)}</label>
+      <textarea id="pe_body" data-pe-field="body" rows="2" maxlength="500" placeholder="${esc(P.phBody)}">${esc(c.body || '')}</textarea>
+    </div>
+  </div>
+  <p class="error-note" id="peErrorNote" hidden></p>
+</div>
+<div class="row">
+  <button type="button" class="btn secondary" data-act="cancel">${esc(P.btnCancel)}</button>
+  <button type="button" class="btn" data-confirm-edit-profile="${esc(c.id)}">${esc(P.btnSave)}</button>
+</div>`);
 }
 function prizeUseNowForm(itemId) {
   const it = view.state.inventory?.[itemId];
@@ -355,12 +444,100 @@ function prizeUseNowForm(itemId) {
     <p><b>NO.${esc(prize.no || '')} ${esc(prize.name)}</b></p>
     <p class="muted">${esc(prize.summary || '')}</p>
     <div class="field"><label for="pzn_who">${esc(WHEEL_COPY.bag.prizes.useTargetLabel)}</label><select id="pzn_who"><option value="">不指定（当前在场或独享）</option>${people.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}</select></div>
+    <div class="field"><label for="pzn_wish">${esc(WHEEL_COPY.bag.prizes.optWishLabel)}</label><input id="pzn_wish" type="text" maxlength="120" placeholder="${esc(WHEEL_COPY.bag.prizes.optWishPlaceholder)}"></div>
     <p class="notice">${esc(WHEEL_COPY.bag.prizes.useNowNotice)}</p>
     <textarea class="story-draft" id="pzn_draft">${esc(draftText)}</textarea>
     <div class="row">
       <button class="btn secondary" data-act="cancel">取消</button>
       <button class="btn" data-confirm-use-prize="${esc(itemId)}">${esc(WHEEL_COPY.bag.prizes.useNowConfirm)}</button>
     </div>`);
+}
+// rc.58（4A 方案 B 第四部分 §2.2）：NO.53「终端最终愿望 · 许愿台」。DOM、类名与文案逐字照抄方案。
+const ASSET_KIND_CN = {HOUSE: '房产', CAR: '座驾', BUSINESS: '产业', YACHT_JET: '游艇专机', LUXURY: '奢品', COLLECTIBLE: '藏品', OTHER: '其他'};
+function wishAssetPreview(assetName, wishText) {
+  if (!String(assetName || '').trim()) return '';
+  const kind = resolveCustomAssetKind(assetName, `${wishText || ''} ${assetName}`);
+  const value = ASSET_TIER_TABLE[kind].TOP;
+  return fill(WHEEL_COPY.bag.prizes.wishModal.assetPreviewTpl, {kindLabel: ASSET_KIND_CN[kind] || '资产', value: formatYuanReadable(value)});
+}
+function buildWishInputDraft({kind, wishText, assetName, targetName}) {
+  const W = WHEEL_COPY.bag.prizes.wishModal;
+  const tpl = W['draftTpl' + (kind || 'CUSTOM')] || W.draftTplCUSTOM;
+  const kindGuess = resolveCustomAssetKind(assetName || '资产', `${wishText || ''} ${assetName || ''}`);
+  return fill(tpl, {
+    who: targetName ? `（作用对象／同行：${targetName}）` : '',
+    wishText: wishText || '',
+    assetName: assetName || '',
+    kindLabel: ASSET_KIND_CN[kindGuess] || '资产',
+    value: formatYuanReadable(ASSET_TIER_TABLE[kindGuess].TOP),
+  });
+}
+let wishCtx = null;
+function refreshWishDraft() {
+  if (!wishCtx) return;
+  const box = $('pzn_draft'), wishText = $('w53_wish_text')?.value || '', assetName = $('w53_asset_name')?.value || '';
+  const whoId = $('pzn_who')?.value || '', targetName = whoId ? (view?.state?.characters?.[whoId]?.name || '') : '';
+  if (box) box.value = buildWishInputDraft({kind: wishCtx.kind, wishText, assetName, targetName});
+  const preview = $('w53_asset_preview');
+  if (preview) preview.textContent = wishAssetPreview(assetName, wishText);
+}
+function wishPrizeUseForm(itemId, kind = 'CUSTOM', wishText = '', assetName = '') {
+  const W = WHEEL_COPY.bag.prizes.wishModal;
+  const people = Object.values(view.state.characters).filter((c) => c.trackingState === 'RECORDED');
+  wishCtx = {kind, itemId};
+  const draftText = buildWishInputDraft({kind, wishText, assetName, targetName: ''});
+  showModal(`<h3>${esc(W.title)}</h3>
+<div class="wish-modal-root" data-wish-modal="${esc(itemId)}" data-wish-kind="${esc(kind)}">
+  <div class="wish-hero-card">
+    <div class="wish-hero-kicker">${esc(W.kicker)}</div>
+    <p class="wish-hero-sub">${esc(W.sub)}</p>
+  </div>
+
+  <div class="pe-section-title">${esc(W.secKind)}</div>
+  <div class="wish-kind-grid" role="radiogroup" aria-label="${esc(W.secKind)}">
+    ${['ASSET', 'ROMANCE', 'POWER', 'CUSTOM'].map(k => {
+      const kd = W.kinds[k];
+      const on = kind === k;
+      return `<button type="button" class="wish-kind-btn ${on ? 'on' : ''}" role="radio" aria-checked="${on}" data-wish-kind-pick="${k}">
+        <span class="wk-top"><b>${esc(kd.title)}</b><span class="wk-badge">${esc(kd.badge)}</span></span>
+        <small class="wk-desc">${esc(kd.desc)}</small>
+      </button>`;
+    }).join('')}
+  </div>
+
+  <div id="wishAssetBox" class="wish-asset-box" ${kind === 'ASSET' ? '' : 'hidden'}>
+    <div class="field" data-wish-wrap="assetName">
+      <label for="w53_asset_name">${esc(W.lblAssetName)} <span class="required">*</span></label>
+      <input id="w53_asset_name" type="text" autocomplete="off" maxlength="40" value="${esc(assetName)}" placeholder="${esc(W.phAssetName)}">
+    </div>
+    <div class="wish-asset-preview" id="w53_asset_preview">${esc(wishAssetPreview(assetName, wishText))}</div>
+  </div>
+
+  <div class="field">
+    <label for="pzn_who">${esc(W.lblTarget)}</label>
+    <select id="pzn_who">
+      <option value="">${esc(W.optTargetNone)}</option>
+      ${people.map(c => `<option value="${esc(c.id)}">${esc(c.name)}（${esc(c.relationshipLabel)} · ♥${c.affection}）</option>`).join('')}
+    </select>
+  </div>
+
+  <div class="field" data-wish-wrap="wishText">
+    <label for="w53_wish_text">${esc(W.lblWishText)} <span class="required">*</span></label>
+    <textarea id="w53_wish_text" rows="3" maxlength="120" placeholder="${esc(W['phWish' + kind] || W.phWishCUSTOM)}">${esc(wishText)}</textarea>
+  </div>
+
+  <div class="field">
+    <label for="pzn_draft">${esc(W.lblDraftPreview)}</label>
+    <textarea class="story-draft" id="pzn_draft" rows="4">${esc(draftText)}</textarea>
+  </div>
+
+  <p class="notice">${esc(W.notice)}</p>
+  <p class="error-note" id="w53_error" hidden></p>
+</div>
+<div class="row">
+  <button type="button" class="btn secondary" data-act="cancel">${esc(W.btnCancel)}</button>
+  <button type="button" class="btn gold" data-confirm-use-prize="${esc(itemId)}">${esc(W.btnConfirm)}</button>
+</div>`);
 }
 // rc.37 使用通道：玩法券排进日程 / 奇物使用 / 奇物叙事引导。
 function prizeScheduleForm(itemId){
@@ -789,6 +966,59 @@ async function actions(e){const b=e.target.closest('button,[data-preview-image]'
     const next=await api.action({operationId:uid(),type:'PLAYER_SET_ADDRESSING',personRef:d.confirmAddressing,addressing:value,expectedRevision:view.state.meta.revision},view.lineage);
     view=next;closeModal();phone();notify(fill(RENAME_COPY.doneTpl,{value}));return;
   }  if(d.setupRandomAvatar){const on=d.setupRandomAvatar==='on';const patch={randomAvatar:on};if(api&&api.read().chatKey===activeChat)api.preferences(patch);else{draftStore?.write(activeChat,patch);if(view)view={...view,prefs:{...(view.prefs||{}),...patch}};}lastSignature='';wizard();return;}
+  // rc.58（4A 方案 A §6.2 / §7）：人物资料纠错三件——打开弹窗、折叠身材区、提交落库。
+  if(d.editProfile){profileEditForm(d.editProfile);return;}
+  if(d.toggleEditBody){
+    const P=WHEEL_COPY.profileEdit,drawer=$('peBodyDrawer');
+    if(!drawer)return;
+    const open=drawer.hidden;
+    drawer.hidden=!open;
+    b.setAttribute('aria-expanded',String(open));
+    b.textContent=open?P.secBodyToggleOpen:P.secBodyToggleClosed;
+    return;
+  }
+  if(d.confirmEditProfile){
+    const P=WHEEL_COPY.profileEdit;
+    const personRef=d.confirmEditProfile,person=view?.state?.characters?.[personRef];
+    if(!person)return;
+    const val=k=>{const el=document.querySelector(`[data-pe-field="${k}"]`);return el?String(el.value||'').trim():'';};
+    const numOf=(k,min,max)=>{const raw=normalizeNumericInput(val(k),{allowDecimal:true});if(!raw)return null;const n=Number(raw);return {n,ok:Number.isFinite(n)&&n>=min&&n<=max};};
+    const fail=(key,msg)=>{
+      const wrap=document.querySelector(`[data-pe-wrap="${key}"]`),note=$('peErrorNote');
+      if(note){note.hidden=false;note.textContent=msg;}
+      notify(msg);
+      wrap?.scrollIntoView?.({block:'center',behavior:'smooth'});
+      wrap?.querySelector('input,textarea,select')?.focus?.();
+      return false;
+    };
+    const age=numOf('age',18,80);
+    if(!age||!age.ok)return fail('age',P.errAge);
+    const beauty=numOf('beautyScore',1,100);
+    if(beauty&&!beauty.ok)return fail('beautyScore',P.errBeauty);
+    const rel=val('relationshipLabel');
+    if(rel.length<1||rel.length>12)return fail('relationshipLabel',P.errRelation);
+    const occ=val('occupation');
+    if(occ.length>100)return fail('occupation',P.errOccupation);
+    const addr=val('addressing');
+    if(addr.length>20)return fail('addressing',P.errAddressing);
+    const tags=val('personalityTags').split(/[、,，]/).map(x=>x.trim()).filter(Boolean);
+    if(tags.length>6)return fail('personalityTags',P.errTagsCount);
+    if(tags.some(t=>t.length>12))return fail('personalityTags',P.errTagsLen);
+    const nums={};
+    for(const [k,min,max,msgKey] of [['heightCm',100,230,'errHeight'],['weightKg',25,250,'errWeight'],['shoeSizeEu',25,55,'errShoe'],['bustCm',40,200,'errBust'],['waistCm',30,200,'errWaist'],['hipCm',40,200,'errHip']]){
+      const r=numOf(k,min,max);
+      if(r&&!r.ok)return fail(k,P[msgKey]);
+      nums[k]=r?r.n:null;
+    }
+    const patch={age:age.n,occupation:occ,relationshipLabel:rel,addressing:addr,beautyScore:beauty?beauty.n:null,cupSize:val('cupSize'),
+      personalityTags:tags,appearance:val('appearance'),body:val('body'),recentGoal:val('recentGoal'),longTermDream:val('longTermDream'),...nums};
+    try{
+      const next=await api.action({operationId:uid(),type:'PLAYER_EDIT_CHARACTER',personRef,patch,expectedRevision:view.state.meta.revision},view.lineage);
+      view=next;closeModal();phone();
+      notify(fill(P.savedToast,{name:person.name,age:patch.age,occupation:patch.occupation||'—'}));
+    }catch(err){notify(errorText(err));}
+    return;
+  }
   if(d.cash){collect();draft.initialCashCents=cents(d.cash);delete draft.openingPresetId;saveDraft();wizard();}
   if(d.openingPreset){collect();draft=applyOpeningPreset(draft,d.openingPreset);preview=false;saveDraft();wizard();}
   if(d.removeAsset){draft.initialAssets=draft.initialAssets.filter(x=>x.assetId!==d.removeAsset);saveDraft();wizard();}
@@ -907,11 +1137,55 @@ async function actions(e){const b=e.target.closest('button,[data-preview-image]'
   if(d.bagTab){bagTab=d.bagTab;bagModal();return;}
   if(d.shopTab){shopTab=d.shopTab;shopModal();return;}
   if(d.lockCard){try{const next=await runWheelOp({type:'PLAYER_CARD_LOCK',cardId:d.lockCard,locked:!d.locked});view=next.view;if(binderOpen)phone();else bagModal();notify(d.locked?WHEEL_COPY.bag.binder.unlockedToast:WHEEL_COPY.bag.binder.lockedToast);}catch(e){notify(errorText(e));}return;}
-  if(d.useNow){prizeUseNowForm(d.useNow);return;}
+  if(d.useNow){const it=view.state.inventory?.[d.useNow];if(it?.refId==='w53'){wishPrizeUseForm(d.useNow);return;}prizeUseNowForm(d.useNow);return;}
+  // rc.58（4A 方案 B）：许愿方向切换 —— 换方向就刷新占位、资产框与预览引导词。
+  if(d.wishKindPick){
+    if(!wishCtx)return;
+    wishCtx.kind=d.wishKindPick;
+    const root=document.querySelector('[data-wish-modal]');
+    if(root)root.dataset.wishKind=d.wishKindPick;
+    document.querySelectorAll('[data-wish-kind-pick]').forEach(el=>{
+      const on=el.dataset.wishKindPick===d.wishKindPick;
+      el.classList.toggle('on',on);el.setAttribute('aria-checked',String(on));
+    });
+    const box=$('wishAssetBox');
+    if(box)box.hidden=d.wishKindPick!=='ASSET';
+    const wish=$('w53_wish_text');
+    if(wish)wish.placeholder=WHEEL_COPY.bag.prizes.wishModal['phWish'+d.wishKindPick]||WHEEL_COPY.bag.prizes.wishModal.phWishCUSTOM;
+    refreshWishDraft();
+    return;
+  }
   if(d.confirmUsePrize){
     const who=$('pzn_who')?.value||'',text=$('pzn_draft')?.value||'';
+    const wishRoot=document.querySelector('[data-wish-modal]');
+    if(wishRoot){
+      const W=WHEEL_COPY.bag.prizes.wishModal;
+      const wishKind=wishRoot.dataset.wishKind||'CUSTOM';
+      const wishText=String($('w53_wish_text')?.value||'').trim();
+      const wishAssetName=String($('w53_asset_name')?.value||'').trim();
+      const note=$('w53_error');
+      const failWish=(msg,sel)=>{
+        if(note){note.hidden=false;note.textContent=msg;}
+        notify(msg);
+        const el=sel?document.querySelector(sel):null;
+        el?.scrollIntoView?.({block:'center',behavior:'smooth'});el?.focus?.();
+        return;
+      };
+      if(wishText.length<2||wishText.length>120)return failWish(WHEEL_COPY.errors.WISH_TEXT_REQUIRED,'#w53_wish_text');
+      if(wishKind==='ASSET'&&(wishAssetName.length<2||wishAssetName.length>40))return failWish(WHEEL_COPY.errors.WISH_ASSET_NAME_REQUIRED,'#w53_asset_name');
+      try{
+        const next=await runWheelOp({type:'PLAYER_USE_WHEEL_PRIZE',itemId:d.confirmUsePrize,immediate:true,participants:who?[who]:[],usedDraftText:text,wishKind,wishText,wishAssetName: wishKind==='ASSET'?wishAssetName:''});
+        view=next.view;const res=next.result||{};closeModal();bagModal();
+        try{await api.fillChatInput(text,{autoSend:false,append:true});}catch(err){console.warn('[神豪终端] 填入聊天输入框失败',err);}
+        notify(res.grantedAsset
+          ? fill(WHEEL_COPY.bag.prizes.wishModal.toastAssetOk,{assetName:res.grantedAsset.name,value:formatYuanReadable(res.grantedAsset.bookValueCents)})
+          : WHEEL_COPY.bag.prizes.wishModal.toastNormalOk);
+      }catch(err){notify(errorText(err));}
+      return;
+    }
+    const extra=String($('pzn_wish')?.value||'').trim();
     try{
-      const next=await runWheelOp({type:'PLAYER_USE_WHEEL_PRIZE',itemId:d.confirmUsePrize,immediate:true,participants:who?[who]:[],usedDraftText:text});
+      const next=await runWheelOp({type:'PLAYER_USE_WHEEL_PRIZE',itemId:d.confirmUsePrize,immediate:true,participants:who?[who]:[],usedDraftText:text,...(extra?{wishText:extra}:{})});
       view=next.view;const res=next.result||{};closeModal();bagModal();
       try{await api.fillChatInput(text,{autoSend:false,append:true});}catch(err){console.warn('[神豪终端] 填入聊天输入框失败',err);}
       notify(fill(WHEEL_COPY.bag.prizes.useNowToast,{name:res.title||''}));

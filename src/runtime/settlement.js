@@ -1,4 +1,4 @@
-import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy,seedOutfit,abilityBonus,effectiveProwess,evolvePrivateState,ASSET_VALUATION_BOUNDS,sanitizeInventoryAndUnlocks,syncChokerAccessory,syncImprintText} from '../core/engine.js';
+import {clone,settleEvents,applyOperation,poolParts,withdrawalQuote,projection,requireRule,computeCycle,seedAnatomy,seedOutfit,abilityBonus,effectiveProwess,evolvePrivateState,ASSET_VALUATION_BOUNDS,sanitizeInventoryAndUnlocks,syncChokerAccessory,syncImprintText,reconcileCharacterAge} from '../core/engine.js';
 
 export function withoutUpdates(source){return String(source).replace(/<(think_nya|think|analysis)>[\s\S]*?<\/\1>/gi,'').replace(/<UpdateVariable>[\s\S]*?<\/UpdateVariable>/gi,'').replace(/<StatusPlaceHolderImpl\s*\/>/gi,'').trim();}
 export function refreshContext(s){s._context=JSON.stringify({...projection(s),world:s.world,calendar:s.calendar});return s;}
@@ -73,6 +73,13 @@ export function settleNative(before,candidate,anchor,source,schemas,auditInput){
     for(const k of ['beautyScore','personalityTags','appearance','body','heightCm','weightKg','bustCm','waistCm','hipCm','shoeSizeEu']){
       const known=prior[k];if(known!==null&&known!==undefined&&known!==''&&(!Array.isArray(known)||known.length))proposed[k]=clone(known);
     }
+    // rc.58（玩家反馈）：模型整对象提交时会把没写到的档案字段写成空串，本轮 seedAnatomy
+    // 随后就把它换成池子里的默认值——玩家在开局写好的长期梦想/近期目标/暗伤/职业凭空消失。
+    // 空串不覆盖非空旧值；模型真写了新内容照旧采纳（不锁死）。
+    for(const k of ['occupation','recentGoal','longTermDream','hiddenScar','knownFacts','relationshipNotes','addressing']){
+      const known=prior[k],next=proposed[k];
+      if(typeof known==='string'&&known.trim()&&!(typeof next==='string'&&next.trim()))proposed[k]=known;
+    }
     const want=typeof proposed.affection==='number'||typeof proposed.affection==='string'&&proposed.affection.trim()?Number(proposed.affection):NaN;
     let affectionDelta=Number.isSafeInteger(want)?want-prior.affection:0;
     if(affectionDelta<0&&positiveRounds.has(cid))affectionDelta=0;
@@ -86,7 +93,7 @@ export function settleNative(before,candidate,anchor,source,schemas,auditInput){
       affectionEvents.push({type:'CORRUPTION_CHANGE',personRef:cid,delta:wantCorruption-(prior.corruption??0),auto:true,prowessBonus:intimateRound});
     }
     proposed.corruption=prior.corruption??0;
-    s.characters[cid]=acceptFields(proposed,prior,schemas.character,'characters.'+cid,diagnostics);
+    s.characters[cid]=acceptFields(proposed,prior,schemas.character,'characters.'+cid,diagnostics,true);
   }
   for(const [cid,value] of Object.entries(s.characters)){
     if(before.characters[cid])continue;
@@ -180,14 +187,19 @@ function syncWheelInventory(s){  if(!s.inventory)return;
   }
 }
 
-function acceptFields(proposal,prior,schema,path,diagnostics){
+function acceptFields(proposal,prior,schema,path,diagnostics,mergeNested=false){
   const out={};
   for(const [field,rule] of Object.entries(schema.shape)){
     // A field the model never mentions keeps its stored value. Defaults only
     // apply to genuinely new records, otherwise an omitted nested record
     // (physiology / intimacy) would be reset to empty every round.
     if(proposal?.[field]===undefined){out[field]=clone(prior[field]);continue;}
-    const parsed=rule.safeParse(proposal[field]);
+    // rc.58（玩家反馈）：整对象提交只该改它写到的子项。旧行为下 Zod 的默认值会把没写的
+    // 子键清零，于是模型提交整个 physiology / outfit / intimacy / limits 时，未列出的子项
+    // 被 seedAnatomy / seedOutfit 重新播成脚本默认值，玩家改过的私密档案看起来「被重置」。
+    const raw=proposal[field],base=prior?.[field];
+    const value=mergeNested&&raw&&typeof raw==='object'&&!Array.isArray(raw)&&base&&typeof base==='object'&&!Array.isArray(base)?{...clone(base),...raw}:raw;
+    const parsed=rule.safeParse(value);
     if(parsed.success)out[field]=parsed.data;
     else {out[field]=clone(prior[field]);diagnostics.push({field:path+'.'+field,code:'INVALID_FIELD'});}
   }
@@ -417,6 +429,11 @@ function newCharacter(cid,value,schemas){
   const id=ASCII_ID.test(String(cid??''))?String(cid):'char_'+fnv8Id(value?.name||cid);
   const base={id,age:25,beautyScore:null,affection:20,corruption:0,relationshipLabel:'熟人',occupation:''};
   const raw={...value,id,name:typeof value.name==='string'?value.name.trim().slice(0,50):''};
+  // rc.58（4A 方案 A §6.1）：年龄交给 reconcileCharacterAge —— 玩家显式岁数优先、职业/身份区间收敛、
+  // 骨架默认 25 岁纠偏。旧版「写坏就删字段落回 25」与「25 岁的高二学生」两条路径一并关掉。
+  const ageBefore=raw.age;
+  raw.age=reconcileCharacterAge(raw,{skeletonDefault:25});
+  if(raw.age!==ageBefore)console.log('[神豪终端] 人物年龄已按身份收敛',cid,String(ageBefore),'->',raw.age);
   let parsed=schemas.character.safeParse({...base,...raw});
   if(!parsed.success){
     for(const issue of parsed.error.issues){const k=issue.path[0];if(typeof k==='string'&&!['id','name'].includes(k))delete raw[k];}
@@ -446,7 +463,7 @@ export function prepareModelCommand(command,before,schemas){
     if(!rawCid||!value||typeof value!=='object'||Array.isArray(value))return false;
     const cid=asciiIdFor(rawCid,value,before);
     const merged=before?.characters?.[cid]
-      ?acceptFields(value,before.characters[cid],schemas.character,'characters.'+cid,[])
+      ?acceptFields(value,before.characters[cid],schemas.character,'characters.'+cid,[],true)
       :newCharacter(cid,value,schemas);
     if(!merged)return false;
     command.type='set';
@@ -479,7 +496,7 @@ export function prepareModelCommand(command,before,schemas){
   let parsed;
   if(parts.length===3){
     if(!value||typeof value!=='object'||Array.isArray(value))return false;
-    parsed=schemas.character.safeParse(acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[]));
+    parsed=schemas.character.safeParse(acceptFields(value,prior,schemas.character,parts.slice(1).join('.'),[],true));
   }
   // Writing a whole sub-object keeps the untouched siblings instead of wiping them.
   else if(parts.length===4)parsed=nested?.safeParse(value&&typeof value==='object'&&!Array.isArray(value)?{...(prior[parts[3]]||{}),...value}:value);

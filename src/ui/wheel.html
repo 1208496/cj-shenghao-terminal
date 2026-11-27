@@ -617,7 +617,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
 </div>
 <script>window.__CJ_WHEEL_ERR__=[];addEventListener('error',function(e){window.__CJ_WHEEL_ERR__.push(String(e.message)+' @'+String(e.filename)+':'+String(e.lineno));});</script><script>(() => {
   // src/runtime/safe-crypto.js
-  function ze() {
+  function Be() {
     let e = globalThis.crypto;
     if (e && typeof e.randomUUID == "function")
       try {
@@ -631,7 +631,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
     let a = Array.from(t, (o) => o.toString(16).padStart(2, "0")).join("");
     return a.slice(0, 8) + "-" + a.slice(8, 12) + "-" + a.slice(12, 16) + "-" + a.slice(16, 20) + "-" + a.slice(20);
   }
-  var qa = new Uint32Array([
+  var Ka = new Uint32Array([
     1116352408,
     1899447441,
     3049323471,
@@ -699,7 +699,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   ]);
 
   // src/ui/wheel-glyphs.js
-  var Be = {
+  var ze = {
     1: "M8 4h8l-4 6 4 6H8l4-6z M8 20h8",
     2: "M12 4c-4 0-6 3-6 7s3 6 6 6 6-2 6-6-2-7-6-7z M12 6v9 M8 9l3 2 M16 9l-3 2",
     3: "M12 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M12 10v10 M10 20h4 M15 8l3-3 M16 11l3 2",
@@ -756,7 +756,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   };
 
   // src/core/wheel-pool.js
-  var D = [
+  var F = [
     {
       prizeId: "w01",
       no: "01",
@@ -1179,13 +1179,13 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
       name: "\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B",
       rarity: "rainbow",
       summary: "\u83B7\u5F97\u4E00\u6B21\u7EC8\u7AEF\u8BB8\u613F\u6743\uFF0C\u5728\u4E91\u6F9C\u4E16\u754C\u8303\u56F4\u5185\u4EFB\u4F55\u4E00\u4E2A\u613F\u671B\u90FD\u4F1A\u5151\u73B0\u3002",
-      hint: "\u7EC8\u7AEF\u5C4F\u5E55\u6574\u4E2A\u9ED1\u4E86\uFF0C\u53EA\u5269\u4E00\u884C\u5B57\u5728\u95EA\uFF1A\u8BF4\u5427\uFF0C\u4F60\u60F3\u8981\u4EC0\u4E48\u3002"
+      hint: "\u7EC8\u7AEF\u5C4F\u5E55\u9AA4\u7136\u9ED1\u5C4F\uFF0C\u5E7D\u91D1\u6587\u5B57\u4E00\u95EA\u800C\u8FC7\uFF1A\u6307\u4EE4\u5DF2\u9501\u5B9A\uFF0C\u6574\u4E2A\u4E91\u6F9C\u7684\u56E0\u679C\u4E0E\u8D44\u6E90\u6B63\u4E3A\u4F60\u5F53\u573A\u91CD\u7EC4\u3002"
     }
-  ], ja = Object.fromEntries(D.map((e) => [e.prizeId, e])), Wt = {
-    gray: D.filter((e) => e.rarity === "gray"),
-    red: D.filter((e) => e.rarity === "red"),
-    gold: D.filter((e) => e.rarity === "gold"),
-    rainbow: D.filter((e) => e.rarity === "rainbow")
+  ], Qa = Object.fromEntries(F.map((e) => [e.prizeId, e])), Wt = {
+    gray: F.filter((e) => e.rarity === "gray"),
+    red: F.filter((e) => e.rarity === "red"),
+    gold: F.filter((e) => e.rarity === "gold"),
+    rainbow: F.filter((e) => e.rarity === "rainbow")
   };
 
   // src/core/casino-catalog.js
@@ -1210,7 +1210,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
       tierLabel: "\u8679\u9636 \xB7 IV",
       basePoints: 800
     }
-  }, Fe = {
+  }, De = {
     red: {
       name: "\u7EEF\u7EA2\u6846",
       multText: "\xD72",
@@ -1876,6 +1876,57 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
         undoOkNoInputToast: "\u5DF2\u64A4\u9500\u3010{name}\u3011\u7684\u7EC8\u7AEF\u72B6\u6001\uFF1B\u5F53\u524D\u754C\u9762\u672A\u68C0\u6D4B\u5230\u804A\u5929\u8F93\u5165\u6846\uFF0C\u8BF7\u624B\u52A8\u68C0\u67E5\u8F93\u5165\u533A\u3002"
       },
       prizes: {
+        btnWishNow: "\u2726 \u7ACB\u5373\u8BB8\u613F",
+        optWishLabel: "\u9644\u52A0\u5FC3\u613F\u7EC6\u8282\uFF08\u9009\u586B\uFF0C120\u5B57\u5185\uFF09",
+        optWishPlaceholder: "\u53EF\u8865\u5145\u4F60\u60F3\u5728\u8FD9\u573A\u4F53\u9A8C\u91CC\u53D1\u751F\u7684\u5177\u4F53\u7EC6\u8282\uFF08\u5982\uFF1A\u6307\u5B9A\u53BB\u54EA\u5BB6\u5E97\u3001\u60F3\u8BA9\u5979\u7A7F\u4EC0\u4E48\u3001\u60F3\u501F\u673A\u804A\u4EC0\u4E48\uFF09",
+        wishModal: {
+          title: "\u2726 \u7EC8\u7AEF\u6700\u7EC8\u613F\u671B \xB7 \u8BB8\u613F\u53F0",
+          kicker: "NO.53 \u8679\u9636\u7EC8\u6781\u7279\u6743 \xB7 \u56E0\u679C\u9501\u5B9A",
+          sub: "\u7EC8\u7AEF\u5C4F\u5E55\u5DF2\u5316\u4F5C\u5E7D\u9ED1\u6DF1\u6E0A\uFF0C\u91D1\u8292\u51DD\u805A\u5F85\u547D\u3002\u9009\u5B9A\u8BB8\u613F\u65B9\u5411\u5E76\u5199\u4E0B\u4F60\u7684\u5FC3\u613F\uFF0C\u786E\u8BA4\u540E\u7EC8\u7AEF\u5C06\u5F53\u573A\u9501\u5B9A\u56E0\u679C\u5E76\u5728\u672C\u8F6E\u6B63\u6587\u76F4\u63A5\u5151\u73B0\u3002",
+          secKind: "\u7B2C\u4E00\u6B65\uFF1A\u9009\u62E9\u613F\u671B\u5151\u73B0\u65B9\u5411",
+          kinds: {
+            ASSET: {
+              title: "\u{1F3F0} \u9876\u8C6A\u5B9E\u7269\u8D44\u4EA7",
+              badge: "\u811A\u672C\u5373\u523B\u5165\u8D26",
+              desc: "\u514D\u6B3E\u4EA4\u5272\u4E00\u5957\u9876\u5962\u65D7\u8230\u623F\u4EA7\u3001\u8D85\u8DD1\u3001\u4E13\u673A\u6E38\u8247\u3001\u6838\u5FC3\u4EA7\u4E1A\u6216\u4F20\u4E16\u85CF\u54C1\uFF0C\u786E\u8BA4\u540E\u7ACB\u5373\u8BB0\u5165\u540D\u4E0B\u8D22\u5BCC\u3002"
+            },
+            ROMANCE: {
+              title: "\u{1F339} \u5173\u7CFB\u4E0E\u8273\u9047\u5951\u673A",
+              badge: "\u5F53\u573A\u540C\u5904+\u5347\u6E29",
+              desc: "\u4EE4\u6307\u5B9A\u5973\u6027\u7ACB\u5373\u62B5\u8FBE\u73B0\u573A\u5E76\u5927\u5E45\u677E\u52A8\u9632\u7EBF\uFF08\u60C5\u6B32\u76F4\u5347 65+\uFF09\uFF0C\u6216\u5728\u5F53\u524D\u573A\u666F\u9082\u9005\u4E00\u4F4D\u7B26\u5408\u5FC3\u613F\u7684\u5168\u65B0\u6781\u54C1\u5973\u6027\u3002"
+            },
+            POWER: {
+              title: "\u{1F451} \u5546\u4E1A\u9738\u6743\u4E0E\u6392\u9762",
+              badge: "\u96F6\u6210\u672C\u7834\u5C40",
+              desc: "\u7531\u5E55\u540E\u8D22\u56E2\u4E00\u6B65\u5230\u4F4D\u5B8C\u6210\u6536\u8D2D\u63A7\u80A1\u3001\u514D\u6B3E\u5E73\u8D26\u3001\u5168\u57CE\u5730\u6807\u4EAE\u706F\u6216\u9876\u5C42\u540D\u6D41\u81E3\u670D\uFF0C\u4E0D\u6263\u4E2A\u4EBA\u73B0\u91D1\u3002"
+            },
+            CUSTOM: {
+              title: "\u2728 \u81EA\u7531\u5B9A\u5236\u5FC3\u613F",
+              badge: "\u4E07\u8C61\u5FC3\u613F\u76F4\u8FBE",
+              desc: "\u5728\u4E91\u6F9C\u90FD\u5E02\u8303\u56F4\u5185\u81EA\u7531\u6307\u5B9A\u4EFB\u4F55\u4E00\u573A\u5947\u9047\u3001\u8F6C\u6298\u6216\u5FC3\u613F\uFF0C\u672C\u8F6E\u6B63\u6587\u76F4\u63A5\u843D\u5730\u4E3A\u65E2\u6210\u4E8B\u5B9E\u3002"
+            }
+          },
+          lblAssetName: "\u671F\u671B\u83B7\u5F97\u7684\u9876\u5962\u8D44\u4EA7\u540D\u79F0\uFF08\u5FC5\u586B\uFF09",
+          phAssetName: "\u5982\uFF1A\u4E1C\u5CB8\u4E91\u73BA\u6E7E\u9876\u5C42\u5929\u9645\u590D\u5F0F\u3001\u6E7E\u6D41G700\u79C1\u4EBA\u4E13\u673A\u3001\u6F9C\u5149\u5929\u5730\u6838\u5FC3\u5546\u94FA\u80A1\u6743",
+          assetPreviewTpl: "\u2726 \u7EC8\u7AEF\u9884\u4EA4\u5272\u4F30\u503C\uFF1A{kindLabel} \xB7 \u9876\u5962\u65D7\u8230\u6863\uFF08{value}\uFF0C\u514D\u6B3E\u5165\u8D26\u4E14\u4E0D\u7A00\u91CA\u63D0\u73B0\u500D\u7387\uFF09",
+          lblTarget: "\u5173\u8054\u6216\u4F5C\u7528\u5973\u6027",
+          optTargetNone: "\u4E0D\u6307\u5B9A\uFF08\u72EC\u4EAB\u6216\u5728\u6B63\u6587\u4E2D\u9082\u9005\u5168\u65B0\u5973\u6027\uFF09",
+          lblWishText: "\u7B2C\u4E8C\u6B65\uFF1A\u5199\u4E0B\u4F60\u7684\u5177\u4F53\u613F\u671B\uFF08\u5FC5\u586B\uFF0C2\u2013120 \u5B57\uFF09",
+          phWishASSET: "\u5199\u51FA\u4F60\u60F3\u8981\u7684\u8D44\u4EA7\u7EC6\u8282\u4E0E\u4EA4\u63A5\u573A\u666F\uFF08\u5982\uFF1A\u7ACB\u523B\u62FF\u5230\u4E1C\u5CB8\u4E91\u73BA\u6E7E\u9876\u5C42\u5929\u9645\u590D\u5F0F\u7684\u4EA7\u6743\u4E0E\u94A5\u5319\uFF0C\u4ECA\u665A\u5E26\u5979\u76F4\u63A5\u62CE\u5305\u5165\u4F4F\u770B\u6C5F\u666F\uFF09",
+          phWishROMANCE: "\u5199\u51FA\u4F60\u60F3\u8981\u7684\u4E92\u52A8\u6216\u9082\u9005\uFF08\u5982\uFF1A\u8BA9\u5979\u4ECA\u665A\u4E3B\u52A8\u6765\u5230\u6211\u7684\u4F4F\u5904\u5378\u4E0B\u5168\u90E8\u9632\u5907\u7559\u5BBF\uFF0C\u6216\u9082\u9005\u4E00\u4F4D\u521A\u5F52\u56FD\u7684\u8C6A\u95E8\u5343\u91D1\u753B\u5BB6\uFF09",
+          phWishPOWER: "\u5199\u51FA\u4F60\u8981\u8FBE\u6210\u7684\u5546\u6218\u7834\u5C40\u6216\u6392\u9762\uFF08\u5982\uFF1A\u5F53\u573A\u5168\u8D44\u6536\u8D2D\u6253\u538B\u8FC7\u5979\u7684\u8BBE\u8BA1\u9662\uFF0C\u628A\u6536\u8D2D\u534F\u8BAE\u62CD\u5728\u684C\u4E0A\u4EFB\u547D\u5979\u5F53\u4E3B\u7406\u4EBA\uFF09",
+          phWishCUSTOM: "\u5199\u4E0B\u4F60\u60F3\u5728\u4E91\u6F9C\u4E16\u754C\u7ACB\u5373\u5151\u73B0\u7684\u5177\u4F53\u613F\u671B\uFF082\u2013120 \u5B57\uFF09",
+          lblDraftPreview: "\u5C06\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\u7684\u884C\u52A8\u6307\u4EE4\uFF08\u53D1\u9001\u524D\u53EF\u81EA\u7531\u5FAE\u8C03\uFF09",
+          notice: "\u786E\u8BA4\u540E\u5C06\u6838\u9500\u672C\u5F20\u300C\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B\u300D\uFF08\u5728\u4E0B\u4E00\u8F6E\u6B63\u6587\u751F\u6210\u524D\u53EF\u968F\u65F6\u70B9\u51FB\u64A4\u9500\uFF0C\u811A\u672C\u5165\u8D26\u7684\u8D44\u4EA7\u4E0E\u72B6\u6001\u4E5F\u4F1A\u4E00\u5E76\u65E0\u635F\u56DE\u9000\uFF09\u3002",
+          btnCancel: "\u518D\u60F3\u60F3",
+          btnConfirm: "\u2726 \u9501\u5B9A\u56E0\u679C\u5E76\u586B\u5165\u8F93\u5165\u6846",
+          toastAssetOk: "\u7EC8\u6781\u613F\u671B\u5DF2\u9501\u5B9A\uFF01\u3010{assetName}\u3011\uFF08\u4F30\u503C {value}\uFF09\u5DF2\u514D\u6B3E\u8BB0\u5165\u540D\u4E0B\uFF0C\u53D1\u9001\u6D88\u606F\u5373\u53EF\u5728\u6B63\u6587\u5C55\u5F00\u4EA4\u5272\u3002",
+          toastNormalOk: "\u7EC8\u6781\u613F\u671B\u5DF2\u9501\u5B9A\u5E76\u586B\u5165\u804A\u5929\u8F93\u5165\u6846\uFF0C\u53D1\u9001\u6D88\u606F\u5373\u53EF\u5728\u672C\u8F6E\u6B63\u6587\u76F4\u63A5\u5151\u73B0\uFF01",
+          draftTplASSET: "\u3010\u7EC8\u6781\u8BB8\u613F\uFF1A\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B \xB7 \u9876\u8C6A\u8D44\u4EA7\u4EA4\u5272\u3011{who}\u6211\u542F\u7528NO.53\u8679\u9636\u300C\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B\u300D\uFF0C\u5BF9\u7740\u5E7D\u9ED1\u7EC8\u7AEF\u5C4F\u5E55\u8BB8\u4E0B\u613F\u671B\uFF1A\u300C{wishText}\u300D\uFF08\u7EC8\u7AEF\u5DF2\u5F53\u573A\u5C06\u9876\u5962\u65D7\u8230{kindLabel}\u300C{assetName}\u300D\u4F30\u503C{value}\u514D\u6B3E\u8FC7\u6237\u81F3\u6211\u540D\u4E0B\uFF09\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u7528\u4E00\u53E5\u8BDD\u5199\u7EC8\u7AEF\u91D1\u5B57\u9501\u5B9A\u6307\u4EE4\u540E\uFF0C\u7ACB\u5373\u5728\u6B63\u6587\u4E2D\u6B63\u9762\u5C55\u5F00\u4EA7\u6743\u6587\u4EF6\u6216\u94A5\u5319\u5F53\u573A\u9001\u8FBE\u3001\u6211\u4E0E\u5728\u573A\u4EBA\u7269\u4EB2\u81EA\u9A8C\u6536\u6216\u5165\u9A7B\u4EAB\u53D7\u7684\u9707\u64BC\u5168\u8FC7\u7A0B\uFF0C\u5FC5\u987B\u5728\u672C\u8F6E\u76F4\u63A5\u5151\u73B0\u5B8C\u6BD5\uFF0C\u4E25\u7981\u505C\u7559\u5728\u7EC8\u7AEF\u53D1\u95EE\u9636\u6BB5\u3002",
+          draftTplROMANCE: "\u3010\u7EC8\u6781\u8BB8\u613F\uFF1A\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B \xB7 \u547D\u5B9A\u8273\u9047\u5951\u673A\u3011{who}\u6211\u542F\u7528NO.53\u8679\u9636\u300C\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B\u300D\uFF0C\u5BF9\u7740\u5E7D\u9ED1\u7EC8\u7AEF\u5C4F\u5E55\u8BB8\u4E0B\u613F\u671B\uFF1A\u300C{wishText}\u300D\u3002\u7EC8\u7AEF\u5DF2\u9501\u5B9A\u73B0\u5B9E\u56E0\u679C\uFF0C\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u7528\u4E00\u53E5\u8BDD\u5199\u7EC8\u7AEF\u91D1\u5B57\u9501\u5B9A\u6307\u4EE4\u540E\uFF0C\u7ACB\u5373\u5728\u6B63\u6587\u4E2D\u8BA9\u8BE5\u613F\u671B\u5F53\u573A\u6210\u771F\uFF08\u6307\u5B9A\u5973\u6027\u7ACB\u523B\u56E0\u4E0D\u53EF\u6297\u62D2\u7684\u5951\u673A\u62B5\u8FBE\u73B0\u573A\u5E76\u9632\u7EBF\u6E83\u5824\uFF0C\u6216\u5168\u65B0\u5973\u6027\u60CA\u8273\u767B\u573A\u7ED3\u8BC6\uFF09\uFF0C\u7EC6\u817B\u5C55\u5F00\u6781\u5177\u5F20\u529B\u7684\u91CD\u5934\u4E92\u52A8\u4E0E\u60C5\u611F/\u4EB2\u5BC6\u7A81\u7834\uFF0C\u5FC5\u987B\u5728\u672C\u8F6E\u76F4\u63A5\u5151\u73B0\u5B8C\u6BD5\uFF0C\u4E25\u7981\u505C\u7559\u5728\u7EC8\u7AEF\u53D1\u95EE\u9636\u6BB5\u3002",
+          draftTplPOWER: "\u3010\u7EC8\u6781\u8BB8\u613F\uFF1A\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B \xB7 \u5546\u4E1A\u9738\u6743\u964D\u4E34\u3011{who}\u6211\u542F\u7528NO.53\u8679\u9636\u300C\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B\u300D\uFF0C\u5BF9\u7740\u5E7D\u9ED1\u7EC8\u7AEF\u5C4F\u5E55\u8BB8\u4E0B\u613F\u671B\uFF1A\u300C{wishText}\u300D\u3002\u7EC8\u7AEF\u5DF2\u8C03\u52A8\u5E55\u540E\u9876\u7EA7\u8D22\u56E2\u4E0E\u5168\u57CE\u8D44\u6E90\u5B8C\u6210\u4EA4\u5272\uFF0C\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u7528\u4E00\u53E5\u8BDD\u5199\u7EC8\u7AEF\u91D1\u5B57\u9501\u5B9A\u6307\u4EE4\u540E\uFF0C\u7ACB\u5373\u5728\u6B63\u6587\u4E2D\u6B63\u9762\u5199\u51FA\u4EA4\u5272\u6587\u4EF6\u9001\u8FBE\u3001\u5BF9\u624B\u6298\u670D\u6216\u5168\u57CE\u8F70\u52A8\u6392\u9762\u5F53\u573A\u843D\u5730\u7684\u9163\u7545\u8FC7\u7A0B\u4E0E\u4EBA\u7269\u53CD\u5E94\uFF0C\u5FC5\u987B\u5728\u672C\u8F6E\u76F4\u63A5\u5151\u73B0\u5B8C\u6BD5\uFF0C\u4E25\u7981\u505C\u7559\u5728\u7EC8\u7AEF\u53D1\u95EE\u9636\u6BB5\u3002",
+          draftTplCUSTOM: "\u3010\u7EC8\u6781\u8BB8\u613F\uFF1A\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B \xB7 \u56E0\u679C\u5373\u523B\u5151\u73B0\u3011{who}\u6211\u542F\u7528NO.53\u8679\u9636\u300C\u7EC8\u7AEF\u6700\u7EC8\u613F\u671B\u300D\uFF0C\u5BF9\u7740\u5E7D\u9ED1\u7EC8\u7AEF\u5C4F\u5E55\u8BB8\u4E0B\u613F\u671B\uFF1A\u300C{wishText}\u300D\u3002\u7EC8\u7AEF\u5DF2\u9501\u5B9A\u73B0\u5B9E\u56E0\u679C\uFF0C\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u7528\u4E00\u53E5\u8BDD\u5199\u7EC8\u7AEF\u91D1\u5B57\u9501\u5B9A\u6307\u4EE4\u540E\uFF0C\u7ACB\u5373\u5728\u672C\u8F6E\u6B63\u6587\u4E2D\u5C06\u8BE5\u613F\u671B\u8F6C\u5316\u4E3A\u5DF2\u7ECF\u53D1\u751F\u3001\u5F7B\u5E95\u843D\u5730\u7684\u73B0\u5B9E\u7ED3\u679C\u4E0E\u5728\u573A\u4EBA\u7269\u53CD\u5E94\uFF0C\u4E25\u7981\u53EA\u5199\u5230\u201C\u7EC8\u7AEF\u95EE\u4F60\u60F3\u8981\u4EC0\u4E48\u201D\u5C31\u7ED3\u675F\u3002"
+        },
         usedFoldTitle: "\u5DF2\u6838\u9500\u73A9\u6CD5\u5238\uFF08{count}\uFF09",
         statusReady: "\u5F85\u4F7F\u7528",
         statusScheduled: "\u5DF2\u6392\u671F",
@@ -1994,6 +2045,9 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
       abilityInputDraft: "\u3010\u53D1\u52A8\u5F02\u80FD\uFF1A{name}\u3011{who}\u6211\u73B0\u5728\u4E3B\u52A8\u53D1\u52A8\u5DF2\u89C9\u9192\u5F02\u80FD\u300C{name}\u300D\uFF08{effect}\uFF09\u3002\u8BF7\u7D27\u63A5\u5F53\u524D\u573A\u666F\uFF0C\u5728\u6B63\u6587\u4E2D\u81EA\u7136\u6F14\u7ECE\u8BE5\u5F02\u80FD\u751F\u6548\u65F6\u7684\u7EC6\u8282\u4E0E\u4EBA\u7269\u53CD\u5E94\uFF0C\u65C1\u4EBA\u4E0D\u5F97\u5BDF\u89C9\u5F02\u80FD\u672C\u8EAB\u3002"
     },
     errors: {
+      INVALID_PROFILE_EDIT: "\u4EBA\u7269\u8D44\u6599\u683C\u5F0F\u6709\u8BEF\uFF0C\u8BF7\u68C0\u67E5\u5E74\u9F84\uFF0818\u201380\uFF09\u4E0E\u8EAB\u4F53\u6570\u636E\u8303\u56F4\u3002",
+      WISH_TEXT_REQUIRED: "\u8BF7\u5148\u5199\u4E0B\u4F60\u8981\u5151\u73B0\u7684\u5177\u4F53\u613F\u671B\uFF082\u2013120 \u5B57\uFF09\u3002",
+      WISH_ASSET_NAME_REQUIRED: "\u8BF7\u586B\u5199\u4F60\u671F\u671B\u83B7\u5F97\u7684\u9876\u5962\u8D44\u4EA7\u540D\u79F0\uFF082\u201340 \u5B57\uFF09\u3002",
       DEVICE_THRESHOLD_NOT_MET: "\u8BE5\u4EBA\u7269\u5C1A\u672A\u8FBE\u5230\u88C5\u7F6E\u4F7F\u7528\u95E8\u69DB\uFF08\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF09\u3002",
       TOYLINK_NO_ELIGIBLE_WOMAN: "\u5F53\u524D\u5C1A\u65E0\u6EE1\u8DB3\u6761\u4EF6\u7684\u4EBA\u7269\uFF08\u9700\u597D\u611F \u2265 70 \u6216\u5815\u843D \u2265 60\uFF09\uFF0C\u6682\u65F6\u65E0\u6CD5\u542F\u52A8 TOY\xB7LINK\u3002",
       WHEEL_FREE_USED: "\u4ECA\u65E5\u514D\u8D39\u6B21\u6570\u5DF2\u7528\u5B8C\u3002",
@@ -2618,6 +2672,66 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
       tierHigh: "\u9AD8\u7AEF\u81FB\u54C1",
       tierTop: "\u9876\u5962\u65D7\u8230",
       tierHint: "\u6309\u7269\u54C1\u7684\u73B0\u5B9E\u5B9A\u4F4D\u9009\u4E00\u6863\uFF0C\u7CFB\u7EDF\u636E\u6B64\u6838\u5B9A\u4F30\u503C\uFF08\u4E0D\u63A5\u53D7\u624B\u586B\u91D1\u989D\uFF09\u3002"
+    },
+    profileEdit: {
+      btnOpen: "\u7F16\u8F91\u8D44\u6599",
+      btnOpenInline: "\u270E \u4FEE\u6B63\u8D44\u6599",
+      modalTitle: "\u7F16\u8F91\u4EBA\u7269\u8D44\u6599 \xB7 {name}",
+      modalNotice: "\u4FEE\u6539\u540E\u7ACB\u5373\u5199\u5165\u7EC8\u7AEF\u6863\u6848\u5E76\u9501\u5B9A\uFF0C\u540E\u7EED\u6A21\u578B\u751F\u6210\u4E0D\u4F1A\u8986\u76D6\u4F60\u7684\u4FEE\u6B63\uFF1B\u82E5\u5DF2\u5EFA\u7ACB\u4E5D\u5927\u6863\u6848\uFF0C\u8EAB\u4EFD\u6BB5\u7684\u5E74\u9F84\u4E0E\u804C\u4E1A\u4E5F\u4F1A\u81EA\u52A8\u540C\u6B65\u3002",
+      secBasic: "\u57FA\u7840\u8EAB\u4EFD\u4E0E\u76EE\u6807",
+      secBodyToggleClosed: "\u5C55\u5F00\u8EAB\u6750\u4E09\u56F4\u4E0E\u5916\u8C8C\u8BBE\u5B9A \u25BE",
+      secBodyToggleOpen: "\u6536\u8D77\u8EAB\u6750\u4E09\u56F4\u4E0E\u5916\u8C8C\u8BBE\u5B9A \u25B4",
+      lblAge: "\u5E74\u9F84\uFF0818\u201380 \u5C81\uFF09",
+      phAge: "18\u201380 \u6574\u6570",
+      hintAge: "\u5FC5\u586B \xB7 \u6210\u4EBA\u5411\u6863\u6848\u4E0B\u9650\u4E3A 18 \u5C81",
+      lblBeauty: "\u989C\u503C\u8BC4\u5206\uFF081\u2013100\uFF09",
+      phBeauty: "1\u2013100 \u6574\u6570",
+      lblOccupation: "\u804C\u4E1A\uFF0F\u5F53\u524D\u8EAB\u4EFD",
+      phOccupation: "\u5982\uFF1A\u9AD8\u4E09\u827A\u8003\u751F\u3001\u5927\u4E00\u65B0\u751F\u3001\u82B1\u827A\u4E3B\u7406\u4EBA",
+      lblRelation: "\u4E0E\u4F60\u7684\u5173\u7CFB",
+      phRelation: "1\u201312 \u5B57\uFF0C\u5982\uFF1A\u90BB\u5BB6\u59B9\u59B9\u3001\u5408\u79DF\u5BA4\u53CB",
+      lblAddressing: "\u5979\u5BF9\u4F60\u7684\u79F0\u547C",
+      phAddressing: "1\u201320 \u5B57\uFF0C\u5982\uFF1A\u54E5\u54E5\u3001\u9646\u603B\u3001\u8001\u516C",
+      lblCup: "\u7F69\u676F",
+      cupAuto: "\u81EA\u52A8\u63A8\u7B97\uFF08\u6309\u4E09\u56F4\uFF09",
+      lblTags: "\u6027\u683C\u6807\u7B7E\uFF08\u987F\u53F7\u6216\u9017\u53F7\u5206\u9694\uFF09",
+      phTags: "\u6700\u591A 6 \u4E2A\uFF0C\u6BCF\u8BCD 1\u201312 \u5B57\uFF08\u5982\uFF1A\u4E56\u5DE7\u3001\u6162\u70ED\u3001\u62A4\u77ED\uFF09",
+      lblRecentGoal: "\u{1F3AF} \u8FD1\u671F\u76EE\u6807",
+      phRecentGoal: "\u5979\u773C\u4E0B\u6B63\u5728\u5954\u5FD9\u7684\u5177\u4F53\u4E8B\u52A1\uFF08200\u5B57\u5185\uFF09",
+      lblLongTermDream: "\u2728 \u957F\u671F\u68A6\u60F3",
+      phLongTermDream: "\u5979\u5185\u5FC3\u771F\u6B63\u5411\u5F80\u7684\u957F\u671F\u613F\u666F\uFF08200\u5B57\u5185\uFF09",
+      lblHeight: "\u8EAB\u9AD8\uFF08CM\uFF09",
+      phHeight: "100\u2013230",
+      lblWeight: "\u4F53\u91CD\uFF08KG\uFF09",
+      phWeight: "25\u2013250",
+      lblShoe: "\u978B\u7801\uFF08\u6B27\u7801\uFF09",
+      phShoe: "25\u201355",
+      lblBust: "\u80F8\u56F4\uFF08CM\uFF09",
+      phBust: "40\u2013200",
+      lblWaist: "\u8170\u56F4\uFF08CM\uFF09",
+      phWaist: "30\u2013200",
+      lblHip: "\u81C0\u56F4\uFF08CM\uFF09",
+      phHip: "40\u2013200",
+      lblAppearance: "\u5916\u8C8C\u4E0E\u6C14\u8D28",
+      phAppearance: "\u53D1\u578B\u4E94\u5B98\u3001\u5986\u5BB9\u4E0E\u65E5\u5E38\u7A7F\u642D\u5370\u8C61\uFF08500\u5B57\u5185\uFF09",
+      lblBody: "\u8EAB\u6750\u4E0E\u4F53\u6001",
+      phBody: "\u8EAB\u5F62\u6BD4\u4F8B\u3001\u66F2\u7EBF\u4E0E\u4F53\u6001\u7279\u70B9\uFF08500\u5B57\u5185\uFF09",
+      btnCancel: "\u53D6\u6D88",
+      btnSave: "\u4FDD\u5B58\u8D44\u6599",
+      savedToast: "\u5DF2\u66F4\u65B0\u3010{name}\u3011\u7684\u4EBA\u7269\u6863\u6848\uFF08{age}\u5C81 \xB7 {occupation}\uFF09\u3002",
+      errAge: "\u5E74\u9F84\u9700\u586B\u5199 18\u201380 \u4E4B\u95F4\u7684\u6574\u6570\u3002",
+      errBeauty: "\u989C\u503C\u9700\u586B\u5199 1\u2013100 \u4E4B\u95F4\u7684\u6574\u6570\u3002",
+      errRelation: "\u4E0E\u4F60\u7684\u5173\u7CFB\u8BF7\u586B\u5199 1\u201312 \u4E2A\u5B57\u3002",
+      errOccupation: "\u804C\u4E1A\uFF0F\u8EAB\u4EFD\u6700\u591A\u586B\u5199 100 \u4E2A\u5B57\u3002",
+      errAddressing: "\u79F0\u547C\u6700\u591A\u586B\u5199 20 \u4E2A\u5B57\u3002",
+      errTagsCount: "\u6027\u683C\u6807\u7B7E\u6700\u591A\u586B\u5199 6 \u4E2A\u3002",
+      errTagsLen: "\u5355\u4E2A\u6027\u683C\u6807\u7B7E\u4E0D\u80FD\u8D85\u8FC7 12 \u4E2A\u5B57\u3002",
+      errHeight: "\u8EAB\u9AD8\u9700\u5728 100\u2013230 CM \u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002",
+      errWeight: "\u4F53\u91CD\u9700\u5728 25\u2013250 KG \u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002",
+      errShoe: "\u978B\u7801\u9700\u5728 25\u201355 \u6B27\u7801\u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002",
+      errBust: "\u80F8\u56F4\u9700\u5728 40\u2013200 CM \u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002",
+      errWaist: "\u8170\u56F4\u9700\u5728 30\u2013200 CM \u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002",
+      errHip: "\u81C0\u56F4\u9700\u5728 40\u2013200 CM \u4E4B\u95F4\uFF08\u53EF\u7559\u7A7A\uFF09\u3002"
     }
   };
   function b(e, t = {}) {
@@ -2625,17 +2739,17 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   }
 
   // src/core/wheel.js
-  var qt = 120, nt = 8, rt = [1e-3, 2e-3, 3e-3, 5e-3, 8e-3, 0.01, 0.012, 0.015], Kt = 5e4, Vt = 5e6;
-  var jt = (e) => Math.round(Number(e || 0) / 100) * 100;
+  var Kt = 120, nt = 8, rt = [1e-3, 2e-3, 3e-3, 5e-3, 8e-3, 0.01, 0.012, 0.015], qt = 5e4, Vt = 5e6;
+  var Qt = (e) => Math.round(Number(e || 0) / 100) * 100;
   function st(e, t, a) {
-    let o = e || {}, n = o.lastFreeDate !== t, r = o.todayPaidDate === t && Number(o.todayPaidSpins) || 0, c = r < nt, p = rt[Math.min(r, rt.length - 1)], s = Math.min(Vt, Math.max(Kt, jt((Number(a) || 0) * p)));
+    let o = e || {}, n = o.lastFreeDate !== t, r = o.todayPaidDate === t && Number(o.todayPaidSpins) || 0, c = r < nt, p = rt[Math.min(r, rt.length - 1)], s = Math.min(Vt, Math.max(qt, Qt((Number(a) || 0) * p)));
     return {
       freeAvailable: n,
       cashAvailable: c,
       defaultMode: n ? "free" : c ? "cash" : "points",
       costCents: s,
       rate: p,
-      costPoints: qt,
+      costPoints: Kt,
       paidToday: r,
       paidLimit: nt
     };
@@ -2650,11 +2764,11 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   }
 
   // src/core/casino.js
-  var lt = 2, Qt = [2e5, 5e5];
+  var lt = 2, jt = [2e5, 5e5];
   var Zt = 1e8, ct = 2, dt = 5, Xt = [0.02, 0.04, 0.08, 0.12, 0.18], Jt = 2e7;
   function pt(e, t) {
     let a = e || {}, o = a.lowPackTodayDate === t, n = o ? !!a.lowPackTodayFreeUsed : !1, r = o && Number(a.lowPackTodayPaid) || 0, p = { poolTier: "low", unlocked: !0, todayPacks: (n ? 1 : 0) + r, dailyLimit: 3, paidToday: r, paidLimit: lt };
-    return n ? r >= lt ? { ...p, canSpin: !1, reason: "LOW_PACK_DAILY_LIMIT" } : { ...p, canSpin: !0, mode: "cash", costCents: Qt[r] } : { ...p, canSpin: !0, mode: "free", costCents: 0 };
+    return n ? r >= lt ? { ...p, canSpin: !1, reason: "LOW_PACK_DAILY_LIMIT" } : { ...p, canSpin: !0, mode: "cash", costCents: jt[r] } : { ...p, canSpin: !0, mode: "free", costCents: 0 };
   }
   function ut(e, t, a, o) {
     let n = e || {}, r = (Number(a) || 0) >= Zt || !!o, c = it(t), p = n.wishWeekKey === c, s = p ? !!n.wishWeekFreeUsed : !1, d = p && Number(n.wishWeekPaidSpins) || 0, m = n.wishTodayDate === t && Number(n.wishTodaySpins) || 0, h = { weekKey: c, todaySpins: m, weekPaid: d, weekFreeUsed: s, dailyLimit: ct, weeklyLimit: dt };
@@ -2667,7 +2781,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   }
 
   // src/ui/card-art.js
-  var De = {
+  var Fe = {
     gray_1: "M12 2.6l2.1 5.5 5.9.4-4.6 3.7 1.5 5.7-4.9-3.2-4.9 3.2 1.5-5.7-4.6-3.7 5.9-.4z",
     gray_2: "M12 3.2l7.2 4.1v9.4L12 20.8 4.8 16.7V7.3zM12 7.4l-3.4 2v5l3.4 1.9 3.4-1.9v-5z",
     gray_3: "M6.4 3.6h8.4l2.8 3.4v13.4H6.4zM8.8 8.4h6M8.8 11.6h6M8.8 14.8h3.8",
@@ -2680,9 +2794,9 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
     rainbow_1: "M12 2.4l2.6 6.4 6.8.5-5.2 4.4 1.7 6.6L12 16.9 6.1 20.3l1.7-6.6L2.6 9.3l6.8-.5zM12 7.4l1 2.4 2.6.2-2 1.7.7 2.5-2.3-1.4-2.3 1.4.7-2.5-2-1.7 2.6-.2z",
     rainbow_2: "M4.4 4.4h15.2v4.4H4.4zM6.8 8.8v10.4M17.2 8.8v10.4M4.4 19.2h15.2M9.4 4.4v4.4M14.6 4.4v4.4",
     rainbow_3: "M12 2.8l8.2 4.7v9L12 21.2 3.8 16.5v-9zM12 8.2l3.8 2.2v4.4L12 17l-3.8-2.2v-4.4zM12 2.8v5.4M3.8 7.5l4.4 2.9M20.2 7.5l-4.4 2.9"
-  }, He = Object.keys(De);
+  }, He = Object.keys(Fe);
   function ea(e) {
-    return De[e] || De.gray_1;
+    return Fe[e] || Fe.gray_1;
   }
   function mt(e, t = "currentColor") {
     return `<svg class="wish-glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="${ea(e)}" fill="none" stroke="${t}" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -2719,16 +2833,16 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
   }
 
   // src/ui/wheel-frame.js
-  var Xe = "CJ_SHENGHAO_WHEEL_V1", na = 12e3, u = 320, _e = 37, i = U, xe = i.wheels.names, Ge = 0.72, Je = [
+  var Xe = "CJ_SHENGHAO_WHEEL_V1", na = 12e3, u = 320, Ee = 37, i = U, xe = i.wheels.names, Ge = 0.72, Je = [
     { from: 0, to: 30, r1: 212, r2: 298, symR: 256, size: 21 },
     { from: 30, to: 46, r1: 136, r2: 200, symR: 168, size: 24 },
     { from: 46, to: 52, r1: 74, r2: 124, symR: 99, size: 27 }
-  ], ra = { r1: 56, r2: 70 }, sa = { gray: "#cfd5e3", red: "#ffd1d8", gold: "#fff0be", rainbow: "#f0e6ff" }, T = (e, t) => {
+  ], ra = { r1: 56, r2: 70 }, sa = { gray: "#cfd5e3", red: "#ffd1d8", gold: "#fff0be", rainbow: "#f0e6ff" }, v = (e, t) => {
     let a = (t - 90) * Math.PI / 180;
     return [u + e * Math.cos(a), u + e * Math.sin(a)];
   };
-  function ve(e, t, a, o) {
-    let [n, r] = T(t, a), [c, p] = T(t, o), [s, d] = T(e, o), [m, h] = T(e, a), y = o - a > 180 ? 1 : 0;
+  function Te(e, t, a, o) {
+    let [n, r] = v(t, a), [c, p] = v(t, o), [s, d] = v(e, o), [m, h] = v(e, a), y = o - a > 180 ? 1 : 0;
     return `M${n.toFixed(1)} ${r.toFixed(1)}A${t} ${t} 0 ${y} 1 ${c.toFixed(1)} ${p.toFixed(1)}L${s.toFixed(1)} ${d.toFixed(1)}A${e} ${e} 0 ${y} 0 ${m.toFixed(1)} ${h.toFixed(1)}Z`;
   }
   var l = (e) => String(e ?? "").replace(/[&<>"']/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[t]), x = (e) => "\xA5" + new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Math.round(Number(e || 0) / 100)), xo = `<defs>
@@ -2736,9 +2850,9 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent
 <radialGradient id="vig" cx="50%" cy="50%" r="50%"><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.55)"/></radialGradient>
 <radialGradient id="sheen" cx="30%" cy="22%" r="72%"><stop offset="0%" stop-color="rgba(255,255,255,.16)"/><stop offset="55%" stop-color="rgba(255,255,255,.03)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
 <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="rgba(255,246,216,.95)"/><stop offset="45%" stop-color="rgba(224,179,255,.55)"/><stop offset="100%" stop-color="rgba(224,179,255,0)"/></radialGradient>
-${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e.no)] || ""}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>`).join("")}
+${F.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${ze[Number(e.no)] || ""}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>`).join("")}
 </defs>`;
-  var vt = (e) => `<path class="hit-wedge" d="" fill="${e}" stroke="#f6e3b0" stroke-width="1.2"/>`;
+  var Tt = (e) => `<path class="hit-wedge" d="" fill="${e}" stroke="#f6e3b0" stroke-width="1.2"/>`;
   function ia() {
     return `<defs>
   <radialGradient id="gOuterA" cx="${u}" cy="${u}" r="310" gradientUnits="userSpaceOnUse"><stop offset="62%" stop-color="#1f232c"/><stop offset="76%" stop-color="#303542"/><stop offset="89%" stop-color="#252934"/><stop offset="98%" stop-color="#171a22"/></radialGradient>
@@ -2751,19 +2865,19 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   <radialGradient id="gVignette" cx="50%" cy="50%" r="50%"><stop offset="52%" stop-color="#000" stop-opacity="0"/><stop offset="84%" stop-color="#000" stop-opacity=".22"/><stop offset="100%" stop-color="#000" stop-opacity=".56"/></radialGradient>
   <radialGradient id="gSheen" cx="30%" cy="24%" r="58%"><stop offset="0%" stop-color="#fff6d6" stop-opacity=".22"/><stop offset="42%" stop-color="#fff2c2" stop-opacity=".06"/><stop offset="100%" stop-color="#fff2c2" stop-opacity="0"/></radialGradient>
   <linearGradient id="gRainbow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#9c6bff"/><stop offset="24%" stop-color="#3ad8e8"/><stop offset="50%" stop-color="#fff0b8"/><stop offset="76%" stop-color="#ff89c4"/><stop offset="100%" stop-color="#9c6bff"/></linearGradient>
-  ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e.no)] || ""}" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/></symbol>`).join("")}
+  ${F.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${ze[Number(e.no)] || ""}" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/></symbol>`).join("")}
 </defs>`;
   }
   function la(e = 314) {
     let t = "", a = "";
     for (let o = 0; o < 72; o++) {
-      let n = o * 5, r = (n - 90) * Math.PI / 180, [c, p] = T(e, n), s = Math.cos(r + Math.PI / 2), d = Math.sin(r + Math.PI / 2), m = (h, y) => [c + h * s - y * d, p + h * d + y * s];
+      let n = o * 5, r = (n - 90) * Math.PI / 180, [c, p] = v(e, n), s = Math.cos(r + Math.PI / 2), d = Math.sin(r + Math.PI / 2), m = (h, y) => [c + h * s - y * d, p + h * d + y * s];
       if (o % 6 === 0) {
         let h = [[0, -3.4], [2.4, 0], [0, 3.4], [-2.4, 0]].map(([y, k]) => m(y, k));
         a += `M${h[0][0].toFixed(1)} ${h[0][1].toFixed(1)}L${h[1][0].toFixed(1)} ${h[1][1].toFixed(1)}L${h[2][0].toFixed(1)} ${h[2][1].toFixed(1)}L${h[3][0].toFixed(1)} ${h[3][1].toFixed(1)}Z`;
       } else {
-        let [h, y] = m(0, -3.2), [k, R] = m(0, 3.2), [O, j] = m(-1.8, o % 2 ? -1.4 : 1.4), [S, A] = m(1.8, o % 2 ? -1.4 : 1.4);
-        t += `M${h.toFixed(1)} ${y.toFixed(1)}L${k.toFixed(1)} ${R.toFixed(1)}M${O.toFixed(1)} ${j.toFixed(1)}L${S.toFixed(1)} ${A.toFixed(1)}`;
+        let [h, y] = m(0, -3.2), [k, R] = m(0, 3.2), [O, Q] = m(-1.8, o % 2 ? -1.4 : 1.4), [C, A] = m(1.8, o % 2 ? -1.4 : 1.4);
+        t += `M${h.toFixed(1)} ${y.toFixed(1)}L${k.toFixed(1)} ${R.toFixed(1)}M${O.toFixed(1)} ${Q.toFixed(1)}L${C.toFixed(1)} ${A.toFixed(1)}`;
       }
     }
     return `<g class="rune-orbit" data-gothic-deco>
@@ -2776,21 +2890,21 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   function ca() {
     let e = "", t = "";
     for (let s = 0; s < 30; s++) {
-      let d = s * 12, m = d + 6, h = d + 12, [y, k] = T(201.5, d), [R, O] = T(210.5, m), [j, S] = T(201.5, h), [A, z] = T(207, d + 2), [Q, ae] = T(207, h - 2);
-      e += `M${y.toFixed(1)} ${k.toFixed(1)}Q${A.toFixed(1)} ${z.toFixed(1)} ${R.toFixed(1)} ${O.toFixed(1)}Q${Q.toFixed(1)} ${ae.toFixed(1)} ${j.toFixed(1)} ${S.toFixed(1)}`;
-      let [oe, C] = T(205.5, m);
-      t += `M${oe.toFixed(1)} ${C.toFixed(1)}h.01`;
+      let d = s * 12, m = d + 6, h = d + 12, [y, k] = v(201.5, d), [R, O] = v(210.5, m), [Q, C] = v(201.5, h), [A, B] = v(207, d + 2), [j, ae] = v(207, h - 2);
+      e += `M${y.toFixed(1)} ${k.toFixed(1)}Q${A.toFixed(1)} ${B.toFixed(1)} ${R.toFixed(1)} ${O.toFixed(1)}Q${j.toFixed(1)} ${ae.toFixed(1)} ${Q.toFixed(1)} ${C.toFixed(1)}`;
+      let [oe, S] = v(205.5, m);
+      t += `M${oe.toFixed(1)} ${S.toFixed(1)}h.01`;
     }
     let a = "", o = "", n = "", r = (s) => `M${s.map(([d, m]) => `${d.toFixed(1)} ${m.toFixed(1)}`).join("L")}Z`;
     for (let s = 0; s < 16; s++) {
-      let d = s * 22.5 + 11.25, m = (d - 90) * Math.PI / 180, [h, y] = T(130, d), k = Math.cos(m + Math.PI / 2), R = Math.sin(m + Math.PI / 2), O = (A, z) => [h + A * k - z * R, y + A * R + z * k];
-      a += r([[-6.2, 0], [0, -4.2], [6.2, 0], [0, 4.2]].map(([A, z]) => O(A, z))), o += r([[-2.2, 0], [0, -1.6], [2.2, 0], [0, 1.6]].map(([A, z]) => O(A, z)));
-      let [j, S] = T(130, s * 22.5);
-      n += `M${j.toFixed(1)} ${S.toFixed(1)}h.01`;
+      let d = s * 22.5 + 11.25, m = (d - 90) * Math.PI / 180, [h, y] = v(130, d), k = Math.cos(m + Math.PI / 2), R = Math.sin(m + Math.PI / 2), O = (A, B) => [h + A * k - B * R, y + A * R + B * k];
+      a += r([[-6.2, 0], [0, -4.2], [6.2, 0], [0, 4.2]].map(([A, B]) => O(A, B))), o += r([[-2.2, 0], [0, -1.6], [2.2, 0], [0, 1.6]].map(([A, B]) => O(A, B)));
+      let [Q, C] = v(130, s * 22.5);
+      n += `M${Q.toFixed(1)} ${C.toFixed(1)}h.01`;
     }
     let c = "", p = "";
     for (let s = 0; s < 24; s++) {
-      let [d, m] = T(67, s * 15), [h, y] = T(73, s * 15), k = `M${d.toFixed(1)} ${m.toFixed(1)}L${h.toFixed(1)} ${y.toFixed(1)}`;
+      let [d, m] = v(67, s * 15), [h, y] = v(73, s * 15), k = `M${d.toFixed(1)} ${m.toFixed(1)}L${h.toFixed(1)} ${y.toFixed(1)}`;
       s % 2 ? p += k : c += k;
     }
     return `<g data-gothic-deco>
@@ -2816,12 +2930,12 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     return Je.forEach((a, o) => {
       let n = a.to - a.from, r = 360 / n, c = "", p = "", s = "", d = "", m = "";
       for (let h = 0; h < n; h++) {
-        let y = h * r, k = y + r, R = y + r / 2, O = ve(a.r1, a.r2, y, k);
+        let y = h * r, k = y + r, R = y + r / 2, O = Te(a.r1, a.r2, y, k);
         h % 2 === 0 ? c += O : p += O;
-        let [j, S] = T(a.r1, y), [A, z] = T(a.r2, y);
-        s += `M${j.toFixed(1)} ${S.toFixed(1)}L${A.toFixed(1)} ${z.toFixed(1)}`;
-        let Q = D[a.from + h], [ae, oe] = T(a.symR, R), C = (a.size * 0.62).toFixed(1);
-        m += `M${(ae - C).toFixed(1)} ${oe.toFixed(1)}a${C} ${C} 0 1 0 ${(C * 2).toFixed(1)} 0a${C} ${C} 0 1 0 ${(-C * 2).toFixed(1)} 0`, d += `<g transform="translate(${ae.toFixed(1)} ${oe.toFixed(1)}) rotate(${R.toFixed(1)})" style="color:${sa[Q.rarity]}"><use href="#g${Q.no}" width="24" height="24" x="-12" y="-12" transform="scale(${(a.size / 24).toFixed(3)})"/></g>`;
+        let [Q, C] = v(a.r1, y), [A, B] = v(a.r2, y);
+        s += `M${Q.toFixed(1)} ${C.toFixed(1)}L${A.toFixed(1)} ${B.toFixed(1)}`;
+        let j = F[a.from + h], [ae, oe] = v(a.symR, R), S = (a.size * 0.62).toFixed(1);
+        m += `M${(ae - S).toFixed(1)} ${oe.toFixed(1)}a${S} ${S} 0 1 0 ${(S * 2).toFixed(1)} 0a${S} ${S} 0 1 0 ${(-S * 2).toFixed(1)} 0`, d += `<g transform="translate(${ae.toFixed(1)} ${oe.toFixed(1)}) rotate(${R.toFixed(1)})" style="color:${sa[j.rarity]}"><use href="#g${j.no}" width="24" height="24" x="-12" y="-12" transform="scale(${(a.size / 24).toFixed(3)})"/></g>`;
       }
       t += `<g class="ring" data-ring="${o}">
       <path d="${c}" fill="${e[o][0]}"/>
@@ -2830,7 +2944,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       <path d="${s}" fill="none" stroke="rgba(232,199,130,.46)" stroke-width=".7"/>
       <path d="${m}" fill="none" stroke="rgba(246,215,134,.2)" stroke-width=".65" stroke-dasharray="2 2.4"/>
       ${d}
-      ${vt("rgba(246,227,176,.3)")}
+      ${Tt("rgba(246,227,176,.3)")}
     </g>`;
     }), ia() + `
   <circle cx="${u}" cy="${u}" r="332" fill="url(#gBezel)" stroke="rgba(246,215,134,.55)" stroke-width="1.5"/>
@@ -2862,30 +2976,30 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   }
   var ua = (e, t, a) => `M${(e - a).toFixed(1)} ${t.toFixed(1)}a${a} ${a} 0 1 0 ${(a * 2).toFixed(1)} 0a${a} ${a} 0 1 0 ${(-a * 2).toFixed(1)} 0`;
   function ma() {
-    let a = 360 / _e, o = pa();
+    let a = 360 / Ee, o = pa();
     o += `<circle cx="${u}" cy="${u}" r="326" fill="url(#casWood)" stroke="rgba(246,215,134,.55)" stroke-width="5"/>
     <circle cx="${u}" cy="${u}" r="312" fill="none" stroke="rgba(246,215,134,.3)" stroke-width="1.2" stroke-dasharray="3 5"/>
     <circle cx="${u}" cy="${u}" r="298" fill="url(#casTrack)" stroke="#6d501d" stroke-width="2"/>
     <circle cx="${u}" cy="${u}" r="260" fill="none" stroke="rgba(246,215,134,.42)" stroke-width="1.5"/>`;
     let n = "";
     for (let c = 0; c < 8; c++) {
-      let [p, s] = T(288, c * 45), d = p.toFixed(1), m = s.toFixed(1);
+      let [p, s] = v(288, c * 45), d = p.toFixed(1), m = s.toFixed(1);
       n += `<path d="M${d} ${(s - 7).toFixed(1)}L${(p + 4).toFixed(1)} ${m}L${d} ${(s + 7).toFixed(1)}L${(p - 4).toFixed(1)} ${m}Z" fill="url(#casGold)" stroke="#241708" stroke-width=".8" transform="rotate(${(c * 45).toFixed(1)} ${d} ${m})"/>`;
     }
     o += `<g data-gothic-deco>${n}</g>`, o += '<g class="ring" data-ring="0">';
     let r = [];
     for (let [c, p, s] of [["green", "url(#casGreen)", "#82f5be"], ["red", "url(#casRed)", "#e89aa8"], ["black", "url(#casBlack)", "#7c8498"]]) {
       let d = "", m = "", h = "";
-      for (let y = 0; y < _e; y++) {
+      for (let y = 0; y < Ee; y++) {
         if ((y === 0 ? "green" : y % 2 === 1 ? "red" : "black") !== c) continue;
-        d += ve(158, 250, y * a, (y + 1) * a), m += ve(158, 174, y * a, (y + 1) * a);
-        let [R, O] = T(214, y * a + a / 2);
+        d += Te(158, 250, y * a, (y + 1) * a), m += Te(158, 174, y * a, (y + 1) * a);
+        let [R, O] = v(214, y * a + a / 2);
         h += ua(R, O, 3.2);
       }
       o += `<path d="${d}" fill="${p}" stroke="#d9b878" stroke-width=".9"/>
       <path d="${m}" fill="rgba(0,0,0,.38)" stroke="rgba(217,184,120,.38)" stroke-width=".6"/>`, r.push(`<path class="cas-dots" d="${h}" fill="none" stroke="${s}" stroke-width="1.3"/>`);
     }
-    return o += `${vt("rgba(246,227,176,.26)")}${r.join("")}</g>`, o += `<circle cx="${u}" cy="${u}" r="158" fill="#17121b" stroke="url(#casGold)" stroke-width="2.6"/>
+    return o += `${Tt("rgba(246,227,176,.26)")}${r.join("")}</g>`, o += `<circle cx="${u}" cy="${u}" r="158" fill="#17121b" stroke="url(#casGold)" stroke-width="2.6"/>
     <circle cx="${u}" cy="${u}" r="128" fill="none" stroke="rgba(246,215,134,.3)" stroke-width="1" stroke-dasharray="4 4"/>
     <path d="M${u - 152} ${u}h304M${u} ${u - 152}v304" stroke="url(#casGold)" stroke-width="3" opacity=".82" fill="none"/>
     <circle cx="${u}" cy="${u}" r="88" fill="#1b1420" stroke="url(#casGold)" stroke-width="2"/>`, o += '<g id="casinoTrail" pointer-events="none"></g>', o += `<g class="bead" id="casinoBead" transform="translate(${u},${u - 274})" data-r="274" data-deg="0">
@@ -2894,12 +3008,12 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     <circle r="2.6" cx="-3" cy="-3.2" fill="#fff" opacity=".9"/>
   </g>`, o += `<circle cx="${u}" cy="${u}" r="300" fill="url(#sheen)" pointer-events="none"/>`, o;
   }
-  var ne = 0, re = [], Ee = /* @__PURE__ */ new Set();
-  function Tt(e, t) {
+  var ne = 0, re = [], _e = /* @__PURE__ */ new Set();
+  function vt(e, t) {
     let a = setTimeout(() => {
-      Ee.delete(a), e();
+      _e.delete(a), e();
     }, t);
-    return Ee.add(a), a;
+    return _e.add(a), a;
   }
   function fa() {
     ne && (cancelAnimationFrame(ne), ne = 0), re.length = 0;
@@ -2932,7 +3046,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     ];
   }
   function Ie(e, t = null) {
-    let a = { gray: 14, red: 22, gold: 32, rainbow: 42 }[e] || 18, o = v === "low" ? 0 : v === "medium" ? Math.round(a * 0.55) : a;
+    let a = { gray: 14, red: 22, gold: 32, rainbow: 42 }[e] || 18, o = T === "low" ? 0 : T === "medium" ? Math.round(a * 0.55) : a;
     if (!o) return;
     let n = {
       gray: ["#d4dae6", "#9aa3b5"],
@@ -2957,7 +3071,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     Mt();
   }
   function ya() {
-    let e = { high: 34, medium: 16, low: 0 }[v] ?? 16;
+    let e = { high: 34, medium: 16, low: 0 }[T] ?? 16;
     if (!e) return;
     let t = performance.now();
     for (let a = 0; a < e; a++)
@@ -2973,11 +3087,11 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       });
     Mt();
   }
-  var we = "", g = null, ce = null, w = !1, Oe = "", E = "play", me = "auto", $ = "low", _ = "", $e = "", L = "card", M = 0, X = "", ba = [1e6, 5e6, 1e7, 5e7, 1e8];
+  var we = "", g = null, ce = null, w = !1, Oe = "", _ = "play", me = "auto", $ = "low", E = "", $e = "", L = "card", M = 0, X = "", ba = [1e6, 5e6, 1e7, 5e7, 1e8];
   function Lt() {
     return (g?.ownedAssets || []).filter((e) => e && e.ownerId === "USER" && e.status === "OWNED" && e.valuationPending !== !0 && (e.bookValueCents || 0) >= 1e5);
   }
-  var W = null, Te = "", Ae = /* @__PURE__ */ new Map(), V = document.getElementById("wfSvg"), ke = V.closest(".wf-board"), B = document.getElementById("wfPack"), F = document.getElementById("wfSide"), Z = document.getElementById("wfGo"), de = document.getElementById("wfResult"), Ue = document.getElementById("wfToast"), ee = document.getElementById("wfModes"), ft = null;
+  var W = null, ve = "", Ae = /* @__PURE__ */ new Map(), V = document.getElementById("wfSvg"), ke = V.closest(".wf-board"), z = document.getElementById("wfPack"), D = document.getElementById("wfSide"), Z = document.getElementById("wfGo"), de = document.getElementById("wfResult"), Ue = document.getElementById("wfToast"), ee = document.getElementById("wfModes"), ft = null;
   function te(e) {
     window.parent.postMessage({ channel: Xe, nonce: we, ...e }, "*");
   }
@@ -2988,12 +3102,12 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     let t = i.errors || {};
     return t[e] ? t[e] : e === "WHEEL_BRIDGE_TIMEOUT" ? i.overlay.common.timeoutError : e === "STALE_REVISION" || e === "STALE_SOURCE" ? i.overlay.common.staleRefreshHint : i.overlay.common.timeoutError;
   }
-  function Se(e) {
+  function Ce(e) {
     return new Promise((t, a) => {
-      let o = ze(), n = setTimeout(() => {
+      let o = Be(), n = setTimeout(() => {
         Ae.delete(o), a(new Error("WHEEL_BRIDGE_TIMEOUT"));
       }, na);
-      Ae.set(o, { resolve: t, reject: a, timer: n }), te({ type: "WHEEL_OP_REQ", reqId: o, op: { ...e, operationId: ze(), expectedRevision: g?.revision ?? 0 }, lineage: g?.lineage || "" });
+      Ae.set(o, { resolve: t, reject: a, timer: n }), te({ type: "WHEEL_OP_REQ", reqId: o, op: { ...e, operationId: Be(), expectedRevision: g?.revision ?? 0 }, lineage: g?.lineage || "" });
     });
   }
   var N = document.getElementById("wfConfirm"), ie = null;
@@ -3059,13 +3173,13 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   function xa(e) {
     if (Oe !== e) {
       if (Oe = e, ke.classList.toggle("is-pack", e === "pack"), e === "pack") {
-        B.hidden = !1, V.innerHTML = "";
+        z.hidden = !1, V.innerHTML = "";
         return;
       }
-      B.hidden = !0, B.innerHTML = "", ue = [0, 0, 0], V.innerHTML = e === "play" ? da() : ma();
+      z.hidden = !0, z.innerHTML = "", ue = [0, 0, 0], V.innerHTML = e === "play" ? da() : ma();
     }
   }
-  function St(e) {
+  function Ct(e) {
     return V.querySelector(`[data-ring="${e}"]`);
   }
   function ht(e) {
@@ -3079,7 +3193,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     e && e.classList.remove("on");
   }
   function yt(e, t, a, o, n) {
-    let r = St(e);
+    let r = Ct(e);
     if (!r) return;
     let c = ue[e];
     r.style.transition = "none", r.style.transformOrigin = `${u}px ${u}px`, r.style.transform = `rotate(${c}deg)`, r.offsetWidth;
@@ -3091,30 +3205,30 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     medium: { dur: 3e3, rotorTurns: 3, ballTurns: 4, trailMax: 3 },
     low: { dur: 900, rotorTurns: 1, ballTurns: 2, trailMax: 0 }
   };
-  function va(e) {
-    let t = gt[v] || gt.medium, a = St(0), o = V.querySelector("#casinoBead"), n = V.querySelector("#casinoTrail");
+  function Ta(e) {
+    let t = gt[T] || gt.medium, a = Ct(0), o = V.querySelector("#casinoBead"), n = V.querySelector("#casinoTrail");
     if (!a || !o) return Promise.resolve();
-    let r = 360 / _e, c = (ue[0] % 360 + 360) % 360, p = c + 360 * t.rotorTurns, s = ((p + e * r + r / 2) % 360 + 360) % 360, d = (bt % 360 + 360) % 360, m = ((d - s) % 360 + 360) % 360, h = d - m - 360 * t.ballTurns;
+    let r = 360 / Ee, c = (ue[0] % 360 + 360) % 360, p = c + 360 * t.rotorTurns, s = ((p + e * r + r / 2) % 360 + 360) % 360, d = (bt % 360 + 360) % 360, m = ((d - s) % 360 + 360) % 360, h = d - m - 360 * t.ballTurns;
     a.style.transition = "none", a.style.transformOrigin = `${u}px ${u}px`;
     let y = performance.now(), k = [];
     return new Promise((R) => {
-      let O = (j) => {
-        let S = Math.min(1, (j - y) / t.dur), A = c + (p - c) * (1 - Math.pow(1 - S, 2.2));
+      let O = (Q) => {
+        let C = Math.min(1, (Q - y) / t.dur), A = c + (p - c) * (1 - Math.pow(1 - C, 2.2));
         a.style.transform = `rotate(${A.toFixed(2)}deg)`;
-        let z = d + (h - d) * (1 - Math.pow(1 - S, 3.6)), Q = 274;
-        if (S > 0.56 && S < 0.9) {
-          let C = (S - 0.56) / 0.34, Ce = 70 * (1 - Math.pow(1 - C, 2)), Ht = Math.abs(Math.sin(C * Math.PI * 3.5)) * (1 - C) * 14;
-          Q = 274 - Ce + Ht;
-        } else S >= 0.9 && (Q = 204);
-        let [ae, oe] = T(Q, z);
-        o.setAttribute("transform", `translate(${ae.toFixed(1)},${oe.toFixed(1)})`), o.dataset.r = Q.toFixed(1), o.dataset.deg = ((z % 360 + 360) % 360).toFixed(2), n && (t.trailMax > 0 && S < 0.94 ? (k.push([ae, oe]), k.length > t.trailMax && k.shift(), n.innerHTML = k.map(
-          (C, Ce) => `<circle cx="${C[0].toFixed(1)}" cy="${C[1].toFixed(1)}" r="${(4 + Ce * 0.75).toFixed(1)}" fill="#e6f0ff" opacity="${((Ce + 1) / (k.length + 1) * 0.35).toFixed(2)}"/>`
-        ).join("")) : n.innerHTML && (n.innerHTML = "")), S < 1 ? requestAnimationFrame(O) : (ue[0] = (p % 360 + 360) % 360, bt = s, R());
+        let B = d + (h - d) * (1 - Math.pow(1 - C, 3.6)), j = 274;
+        if (C > 0.56 && C < 0.9) {
+          let S = (C - 0.56) / 0.34, Se = 70 * (1 - Math.pow(1 - S, 2)), Ht = Math.abs(Math.sin(S * Math.PI * 3.5)) * (1 - S) * 14;
+          j = 274 - Se + Ht;
+        } else C >= 0.9 && (j = 204);
+        let [ae, oe] = v(j, B);
+        o.setAttribute("transform", `translate(${ae.toFixed(1)},${oe.toFixed(1)})`), o.dataset.r = j.toFixed(1), o.dataset.deg = ((B % 360 + 360) % 360).toFixed(2), n && (t.trailMax > 0 && C < 0.94 ? (k.push([ae, oe]), k.length > t.trailMax && k.shift(), n.innerHTML = k.map(
+          (S, Se) => `<circle cx="${S[0].toFixed(1)}" cy="${S[1].toFixed(1)}" r="${(4 + Se * 0.75).toFixed(1)}" fill="#e6f0ff" opacity="${((Se + 1) / (k.length + 1) * 0.35).toFixed(2)}"/>`
+        ).join("")) : n.innerHTML && (n.innerHTML = "")), C < 1 ? requestAnimationFrame(O) : (ue[0] = (p % 360 + 360) % 360, bt = s, R());
       };
       requestAnimationFrame(O);
     });
   }
-  function Ct(e, t, a) {
+  function St(e, t, a) {
     if (e === "play") {
       if (t >= 52) {
         let d = V.querySelector(".core-glow");
@@ -3123,19 +3237,19 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       }
       let o = t >= 46 ? 2 : t >= 30 ? 1 : 0, n = Je[o], r = n.to - n.from, c = 360 / r, p = t - n.from, s = ht(o);
       if (!s) return;
-      s.setAttribute("d", ve(n.r1, n.r2, p * c, (p + 1) * c)), s.classList.add("on");
+      s.setAttribute("d", Te(n.r1, n.r2, p * c, (p + 1) * c)), s.classList.add("on");
       return;
     }
     if (e === "casino") {
-      let o = 360 / _e, n = ht(0);
+      let o = 360 / Ee, n = ht(0);
       if (!n) return;
-      n.setAttribute("d", ve(158, 250, t * o, (t + 1) * o)), n.classList.add("on");
+      n.setAttribute("d", Te(158, 250, t * o, (t + 1) * o)), n.classList.add("on");
     }
   }
-  var Ta = { high: 1, medium: 0.75, low: 0.25 };
-  function _t(e, t) {
-    if (e !== "play") return va(t);
-    let a = Ta[v] ?? 0.75;
+  var va = { high: 1, medium: 0.75, low: 0.25 };
+  function Et(e, t) {
+    if (e !== "play") return Ta(t);
+    let a = va[T] ?? 0.75;
     return new Promise((o) => {
       {
         if (t >= 52) {
@@ -3149,73 +3263,73 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       }
     });
   }
-  var wt = ["high", "medium", "low"], v = (() => {
+  var wt = ["high", "medium", "low"], T = (() => {
     try {
       return sessionStorage.getItem("cj-sgh:fxq") || "medium";
     } catch {
       return "medium";
     }
-  })(), q = !1;
-  function qe(e = v) {
+  })(), K = !1;
+  function Ke(e = T) {
     let t = i.overlay.fx;
     return e === "high" ? t.qualityHigh : e === "low" ? t.qualityLow : t.qualityMed;
   }
-  function Et() {
+  function _t() {
     let e = document.getElementById("wfRoot");
-    e && (e.dataset.fxq = v);
+    e && (e.dataset.fxq = T);
     let t = ee.querySelector("[data-fxq-btn]");
-    t && (t.textContent = qe()), ee.querySelectorAll("[data-fxq-opt]").forEach((a) => {
-      let o = a.dataset.fxqOpt === v;
+    t && (t.textContent = Ke()), ee.querySelectorAll("[data-fxq-opt]").forEach((a) => {
+      let o = a.dataset.fxqOpt === T;
       a.classList.toggle("on", o), a.setAttribute("aria-selected", String(o));
     });
   }
-  function Ke(e, t = !0) {
-    v = ["high", "medium", "low"].includes(e) ? e : "medium";
+  function qe(e, t = !0) {
+    T = ["high", "medium", "low"].includes(e) ? e : "medium";
     try {
-      sessionStorage.setItem("cj-sgh:fxq", v);
+      sessionStorage.setItem("cj-sgh:fxq", T);
     } catch {
     }
-    Et(), t && te({ type: "WHEEL_PREF_SET", wheelFxQuality: v });
+    _t(), t && te({ type: "WHEEL_PREF_SET", wheelFxQuality: T });
   }
   function le(e) {
-    q = !!e;
+    K = !!e;
     let t = ee.querySelector(".wf-fxq-wrap"), a = ee.querySelector("[data-fxq-menu]"), o = ee.querySelector("[data-fxq-btn]");
-    t && t.classList.toggle("is-open", q), a && (a.hidden = !q), o && o.setAttribute("aria-expanded", String(q));
+    t && t.classList.toggle("is-open", K), a && (a.hidden = !K), o && o.setAttribute("aria-expanded", String(K));
   }
-  var K = (() => {
+  var q = (() => {
     try {
       return sessionStorage.getItem("cj-sgh:cfxq") || "medium";
     } catch {
       return "medium";
     }
   })();
-  function Ma(e = K) {
+  function Ma(e = q) {
     let t = i.cardFace;
     return e === "high" ? t.menuHigh : e === "low" ? t.menuLow : t.menuMed;
   }
   function Ot() {
-    document.documentElement.dataset.cfxq = K, ee.querySelectorAll("[data-cfxq-opt]").forEach((e) => {
-      let t = e.dataset.cfxqOpt === K;
+    document.documentElement.dataset.cfxq = q, ee.querySelectorAll("[data-cfxq-opt]").forEach((e) => {
+      let t = e.dataset.cfxqOpt === q;
       e.classList.toggle("on", t), e.setAttribute("aria-selected", String(t));
     });
   }
   function Ve(e, t = !0) {
-    K = ["high", "medium", "low"].includes(e) ? e : "medium";
+    q = ["high", "medium", "low"].includes(e) ? e : "medium";
     try {
-      sessionStorage.setItem("cj-sgh:cfxq", K);
+      sessionStorage.setItem("cj-sgh:cfxq", q);
     } catch {
     }
-    Ot(), t && te({ type: "WHEEL_PREF_SET", cardFxQuality: K });
+    Ot(), t && te({ type: "WHEEL_PREF_SET", cardFxQuality: q });
   }
   function La() {
     let e = wt.map(
-      (a) => `<button role="option" type="button" data-fxq-opt="${a}" class="${a === v ? "on" : ""}" aria-selected="${a === v}">${l(qe(a))}</button>`
+      (a) => `<button role="option" type="button" data-fxq-opt="${a}" class="${a === T ? "on" : ""}" aria-selected="${a === T}">${l(Ke(a))}</button>`
     ).join(""), t = wt.map(
-      (a) => `<button role="option" type="button" data-cfxq-opt="${a}" class="${a === K ? "on" : ""}" aria-selected="${a === K}">${l(Ma(a))}</button>`
+      (a) => `<button role="option" type="button" data-cfxq-opt="${a}" class="${a === q ? "on" : ""}" aria-selected="${a === q}">${l(Ma(a))}</button>`
     ).join("");
-    ee.innerHTML = [["play", xe.play], ["pack", xe.wish], ["casino", xe.casino]].map(([a, o]) => `<button data-mode="${a}" class="${E === a ? "on" : ""}">${a === "play" ? "\u2726" : a === "pack" ? "\u2727" : "\u2756"} ${l(o)}</button>`).join("") + `<span class="wf-fxq-wrap${q ? " is-open" : ""}">
-      <button class="wf-fxq" data-fxq-btn type="button" aria-haspopup="listbox" aria-expanded="${q}">${l(qe())}</button>
-      <div class="wf-fxq-menu" data-fxq-menu role="listbox"${q ? "" : " hidden"}>
+    ee.innerHTML = [["play", xe.play], ["pack", xe.wish], ["casino", xe.casino]].map(([a, o]) => `<button data-mode="${a}" class="${_ === a ? "on" : ""}">${a === "play" ? "\u2726" : a === "pack" ? "\u2727" : "\u2756"} ${l(o)}</button>`).join("") + `<span class="wf-fxq-wrap${K ? " is-open" : ""}">
+      <button class="wf-fxq" data-fxq-btn type="button" aria-haspopup="listbox" aria-expanded="${K}">${l(Ke())}</button>
+      <div class="wf-fxq-menu" data-fxq-menu role="listbox"${K ? "" : " hidden"}>
         <div class="wf-fxq-sec">${l(i.cardFace.menuWheelGroup)}</div>
         ${e}
         <div class="wf-fxq-div" aria-hidden="true"></div>
@@ -3224,14 +3338,14 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       </div>
     </span>`;
   }
-  function je(e, t) {
+  function Qe(e, t) {
     return e === "low" ? t.reason === "LOW_PACK_DAILY_LIMIT" ? i.packs.low.dailyFull : t.mode === "free" ? i.packs.low.costFree : b(i.packs.low.costCash, { price: x(t.costCents) }) : t.unlocked ? t.reason === "WISH_DAILY_LIMIT" ? i.packs.high.dailyFull : t.reason === "WISH_WEEKLY_LIMIT" ? i.packs.high.weeklyFull : t.mode === "free" ? i.packs.high.costFree : b(i.packs.high.costCash, { price: x(t.costCents), rate: Math.round(t.rate * 100) }) : i.packs.high.locked;
   }
   function I() {
     if (g) {
-      if (E === "play") {
+      if (_ === "play") {
         let e = It(), t = me === "auto" ? e.defaultMode : me;
-        F.innerHTML = `<h4>${l(i.overlay.play.sideTitle)}</h4>
+        D.innerHTML = `<h4>${l(i.overlay.play.sideTitle)}</h4>
       <div class="wf-pays">
         <button data-pay="free" ${e.freeAvailable ? "" : "disabled"} class="${t === "free" ? "on" : ""}">${l(i.overlay.play.payModeFree)}</button>
         <button data-pay="cash" ${e.cashAvailable ? "" : "disabled"} class="${t === "cash" ? "on" : ""}">${l(b(i.overlay.play.payModeCash, { price: x(e.costCents) }))}</button>
@@ -3239,26 +3353,26 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       </div>
       <p class="wf-quote">\u2726 ${l(xe.play)} \xB7 ${l(b(i.wheels.cards.play.metaLine, { paid: e.paidToday, limit: e.paidLimit, pRed: Y().pityRed || 0, pGold: Y().pityGold || 0, pRainbow: Y().pityRainbow || 0 }))}</p>
       <p>${l(b(i.overlay.play.ruleText, { minPrice: x(5e4), capPrice: x(5e6), limit: e.paidLimit, points: e.costPoints }))}</p>`;
-      } else if (E === "pack") {
+      } else if (_ === "pack") {
         let e = Re(), t = Pe(), a = $ === "low" ? e : t;
-        F.innerHTML = `<h4>\u2727 ${l(i.packs.low.name)} \xB7 ${l(i.packs.high.name)}</h4>
+        D.innerHTML = `<h4>\u2727 ${l(i.packs.low.name)} \xB7 ${l(i.packs.high.name)}</h4>
       <div class="wf-pools">
-        <button data-pool="low" class="${$ === "low" ? "on" : ""}"><b>${l(i.packs.low.name)}</b><small>${l(i.packs.low.tag)}</small><em>${l(je("low", e))}</em></button>
-        <button data-pool="high" class="${$ === "high" ? "on" : ""}"><b>${l(i.packs.high.name)}</b><small>${l(i.packs.high.tag)}</small><em>${l(je("high", t))}</em></button>
+        <button data-pool="low" class="${$ === "low" ? "on" : ""}"><b>${l(i.packs.low.name)}</b><small>${l(i.packs.low.tag)}</small><em>${l(Qe("low", e))}</em></button>
+        <button data-pool="high" class="${$ === "high" ? "on" : ""}"><b>${l(i.packs.high.name)}</b><small>${l(i.packs.high.tag)}</small><em>${l(Qe("high", t))}</em></button>
       </div>
       <p class="wf-quote">${l($ === "low" ? i.packs.low.sub : i.packs.high.sub)}</p>
       <p>${l($ === "low" ? i.packs.low.ruleText : i.packs.high.ruleText)}</p>
       <p class="wf-step">${l(b(i.bag.binder.codexProgress, { count: ga() }))}</p>`;
       } else {
-        let e = $t(), t = e.find((s) => s.itemId === _) || null, a = Lt(), o = a.find((s) => s.assetId === X) || null, n = i.overlay.casino.stakeEmptyHint, r = L === "card" ? t ? Ia(t) : `<span class="stake-hint">${l(i.overlay.casino.stakePlaceholder)}</span>` : L === "cash" ? `<span class="stake-hint">${l(M ? x(M) : i.overlay.casino.cashEmptyHint)}</span>` : o ? `<span class="stake-hint"><b>${l(o.name)}</b> \xB7 ${l(x(o.bookValueCents))}</span>` : `<span class="stake-hint">${l(i.overlay.casino.assetPlaceholder)}</span>`, c = L === "card" ? t ? `${t.currentPoints ?? 0} ${i.wheels.hub.pointsLabel}` : n : L === "cash" ? M ? x(M) : n : o ? x(o.bookValueCents) : n, p = L === "card" ? `<div class="hand-hd">${l(i.overlay.casino.handTrayTitle)}</div>
-        <div class="hand-tray">${e.length ? e.map((s) => `<button type="button" class="bh-card${_ === s.itemId ? " in-slot" : ""}" data-card="${l(s.itemId)}" draggable="true" style="--wc-w:66px">
+        let e = $t(), t = e.find((s) => s.itemId === E) || null, a = Lt(), o = a.find((s) => s.assetId === X) || null, n = i.overlay.casino.stakeEmptyHint, r = L === "card" ? t ? Ia(t) : `<span class="stake-hint">${l(i.overlay.casino.stakePlaceholder)}</span>` : L === "cash" ? `<span class="stake-hint">${l(M ? x(M) : i.overlay.casino.cashEmptyHint)}</span>` : o ? `<span class="stake-hint"><b>${l(o.name)}</b> \xB7 ${l(x(o.bookValueCents))}</span>` : `<span class="stake-hint">${l(i.overlay.casino.assetPlaceholder)}</span>`, c = L === "card" ? t ? `${t.currentPoints ?? 0} ${i.wheels.hub.pointsLabel}` : n : L === "cash" ? M ? x(M) : n : o ? x(o.bookValueCents) : n, p = L === "card" ? `<div class="hand-hd">${l(i.overlay.casino.handTrayTitle)}</div>
+        <div class="hand-tray">${e.length ? e.map((s) => `<button type="button" class="bh-card${E === s.itemId ? " in-slot" : ""}" data-card="${l(s.itemId)}" draggable="true" style="--wc-w:66px">
             ${ge({ rarity: s.rarity, cardCode: s.cardCode, points: s.currentPoints ?? 0, poolTier: s.poolTier, size: "xs" })}
           </button>`).join("") : `<div class="wf-step">${l(i.overlay.casino.noCardHint)}</div>`}</div>` : L === "cash" ? `<div class="hand-hd">${l(b(i.overlay.casino.cashAvailLabel, { cash: x(g?.cashCents ?? 0) }))}</div>
           <div class="cash-chips">${ba.map((s) => `<button type="button" data-cash-chip="${s}" class="${M === s ? "on" : ""}">${l(x(s))}</button>`).join("")}<button type="button" data-cash-chip="pct">${l(i.overlay.casino.cashChipTenPct)}</button></div>
           <div class="cash-input-row"><input type="number" data-cash-input min="1000" step="100" inputmode="numeric" placeholder="${l(i.overlay.casino.cashCustomPlaceholder)}" value="${M ? Math.round(M / 100) : ""}"></div>` : `<p class="asset-warn-bar">${l(i.overlay.casino.assetWarnBanner)}</p>
           <div class="hand-hd">${l(i.overlay.casino.assetTrayTitle)}</div>
           <div class="asset-tray">${a.length ? a.map((s) => `<button type="button" class="asset-chip${X === s.assetId ? " in-slot" : ""}" data-asset="${l(s.assetId)}"><b>${l(s.name)}</b><small>${l(x(s.bookValueCents))}</small></button>`).join("") : `<div class="wf-step">${l(i.overlay.casino.assetEmptyHint)}</div>`}</div>`;
-        F.innerHTML = `<div class="bet-console">
+        D.innerHTML = `<div class="bet-console">
       <div class="console-hd"><b>${l(i.overlay.casino.consoleTitle)}</b><span class="bc-points">\u2726 ${Y().starPoints || 0}</span></div>
       <div class="stake-tabs">${[["card", i.overlay.casino.tabCard], ["cash", i.overlay.casino.tabCash], ["asset", i.overlay.casino.tabAsset]].map(([s, d]) => `<button type="button" data-stake-kind="${s}" class="${L === s ? "on" : ""}">${l(d)}</button>`).join("")}</div>
       <div class="stake-zone${c === n ? "" : " has-card"}" data-stake-zone>
@@ -3273,7 +3387,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
           </div>
         </div>
       </div>
-      <div class="bet-choices">${Object.entries(Fe).map(([s, d]) => `<button type="button" data-bet="${s}" class="bet-box ${s} ${$e === s ? "selected" : ""}"><b>${l(d.name)}</b></button>`).join("")}</div>
+      <div class="bet-choices">${Object.entries(De).map(([s, d]) => `<button type="button" data-bet="${s}" class="bet-box ${s} ${$e === s ? "selected" : ""}"><b>${l(d.name)}</b></button>`).join("")}</div>
       ${W ? `<div class="outcome-banner ${W.kind}">${l(W.text)}</div>` : ""}
       ${p}
       <p class="bc-rule">${l(i.overlay.casino.ruleText)}</p>
@@ -3284,13 +3398,13 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   }
   function At() {
     let e = i.overlay.common, t = !g?.busy && !w;
-    if (E === "pack") {
+    if (_ === "pack") {
       let a = $ === "low" ? Re() : Pe(), o = w || g?.busy || !a.canSpin;
       Z.hidden = f.phase !== "IDLE", Z.disabled = !!o, Z.textContent = w ? e.goSpinning : g?.busy ? e.goBusy : a.unlocked ? a.canSpin ? i.packs.ui.btnDraw : i.packs.ui.btnSoldOut : i.packs.ui.btnLocked;
       return;
     }
-    if (Z.hidden = !1, E === "casino") {
-      let a = L === "card" ? !!_ : L === "cash" ? M > 0 : !!X, o = t && a && !!$e;
+    if (Z.hidden = !1, _ === "casino") {
+      let a = L === "card" ? !!E : L === "cash" ? M > 0 : !!X, o = t && a && !!$e;
       Z.disabled = !o;
       let n = L === "cash" ? i.overlay.casino.goIdleCash : L === "asset" ? i.overlay.casino.goIdleAsset : i.overlay.casino.goIdle;
       Z.textContent = w ? e.goSpinning : g?.busy ? e.goBusy : o ? e.goReady : n;
@@ -3298,7 +3412,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
     Z.disabled = !t, Z.textContent = w ? e.goSpinning : g?.busy ? e.goBusy : e.goReady;
   }
-  function Qe(e, t) {
+  function je(e, t) {
     de.dataset.rarity = t || "", de.innerHTML = e, de.classList.add("on");
   }
   function G() {
@@ -3330,9 +3444,9 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     });
   }
   var f = { phase: "IDLE", cards: [], progress: 0, revealed: [] };
-  function Sa() {
+  function Ca() {
     let e = f.poolTier === "low" ? i.packs.ui.packSubtitleLow : i.packs.ui.packSubtitleHigh;
-    B.innerHTML = `<div class="pk-wrap">
+    z.innerHTML = `<div class="pk-wrap">
     <div class="pk-pack" id="pkPack" style="--pk:0">
       <div class="pk-foil" aria-hidden="true"></div>
       <div class="pk-flap" aria-hidden="true"></div>
@@ -3343,7 +3457,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     <button class="wf-inline-btn" data-quicktear>${l(i.packs.ui.btnQuickTear)}</button>
   </div>`, Na();
   }
-  var Ca = [
+  var Sa = [
     { rarity: "gray", code: "gray_1", tag: "\u7070\u9636 \xB7 I", points: "10\u201320" },
     { rarity: "red", code: "red_1", tag: "\u7EA2\u9636 \xB7 II", points: "30\u201360" },
     { rarity: "mystery", code: "rainbow_3", tag: "\u661F\u613F\u79D8\u5370", points: "???", isEmblem: !0 },
@@ -3351,8 +3465,8 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     { rarity: "rainbow", code: "rainbow_1", tag: "\u8679\u9636 \xB7 IV", points: "800" }
   ], Le = null;
   function et() {
-    if (!B) return;
-    let e = $ === "low" ? Re() : Pe(), t = $ === "low" ? i.packs.low.name : i.packs.high.name, a = Ca.map((o, n) => {
+    if (!z) return;
+    let e = $ === "low" ? Re() : Pe(), t = $ === "low" ? i.packs.low.name : i.packs.high.name, a = Sa.map((o, n) => {
       let r = $ === "low" && (o.rarity === "gold" || o.rarity === "rainbow") || $ === "high" && o.rarity === "gray", c = n - 2;
       return `<div class="pk-float-slot ${r ? "is-high-only" : ""}" data-float-card="${n}" style="--fi:${n};--fy:${Math.abs(c) * 8}px;--rot:${c * 6.5}deg;--wc-w:100%">
       ${ge({
@@ -3365,18 +3479,18 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       })}
     </div>`;
     }).join("");
-    B.innerHTML = `<div class="pk-idle-stage" data-pack-phase="IDLE">
-    <div class="pk-stage-head"><b>\u2727 ${l(t)} \xB7 ${l(i.packs.stage.arcTitle)}</b><small>${l(je($, e))}</small></div>
+    z.innerHTML = `<div class="pk-idle-stage" data-pack-phase="IDLE">
+    <div class="pk-stage-head"><b>\u2727 ${l(t)} \xB7 ${l(i.packs.stage.arcTitle)}</b><small>${l(Qe($, e))}</small></div>
     <div class="pk-float-arc" id="pkFloatArc">${a}<div class="pk-charge-ring" aria-hidden="true"></div></div>
     <p class="pk-stage-hint">${l(i.packs.stage.arcHint)}</p>
     <button class="wf-inline-btn pk-skip" data-skipspin>${l(i.packs.stage.btnSkipSpin)}</button>
   </div>`;
   }
-  function _a(e = []) {
+  function Ea(e = []) {
     let t = ["gray", "red", "gold", "rainbow"];
     return e.reduce((a, o) => t.indexOf(o?.rarity) > t.indexOf(a) ? o.rarity : a, "gray");
   }
-  function Ea() {
+  function _a() {
     let e = document.getElementById("pkFloatArc");
     if (!e) return Promise.resolve();
     let t = [...e.querySelectorAll(".pk-float-slot")];
@@ -3387,7 +3501,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         r.style.setProperty("--dx", `${Math.round(n - (c.left + c.width / 2))}px`);
       }
     }
-    let a = { high: 1160, medium: 870, low: 0 }[v] ?? 870;
+    let a = { high: 1160, medium: 870, low: 0 }[T] ?? 870;
     return e.style.setProperty("--pk-dur", `${a}ms`), e.classList.add("is-converging"), ya(), new Promise((o) => {
       let n = !1, r = null, c = null, p = () => {
         n || (n = !0, Le = null, r && clearTimeout(r), c && clearTimeout(c), o());
@@ -3397,14 +3511,14 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         return;
       }
       c = setTimeout(() => {
-        Ie(_a(f.cards), e);
+        Ie(Ea(f.cards), e);
       }, Math.round(a * 940 / 1160)), r = setTimeout(p, a + 60), Le = p;
     });
   }
   var Oa = [-8, 0, 8];
   function Aa() {
     let e = f.cards;
-    B.innerHTML = `<div class="pk-fan" data-fan>${e.map((t, a) => `
+    z.innerHTML = `<div class="pk-fan" data-fan>${e.map((t, a) => `
     <button class="pk-slot ${f.revealed[a] ? "is-open" : "is-back"} rar-${l(t.rarity)}" data-reveal="${a}" style="--i:${a};--fan:${Oa[a] ?? 0}deg">
       <span class="pk-inner">
         <span class="pk-back" aria-hidden="true"></span>
@@ -3458,38 +3572,38 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     let e = document.getElementById("pkPack");
     e && e.classList.add("is-burst");
     let t = f.cards.reduce((a, o) => kt(o.rarity) > kt(a) ? o.rarity : a, "gray");
-    Ie(t), Tt(() => {
+    Ie(t), vt(() => {
       f.phase = "FAN", f.revealed = f.cards.map(() => !1), Aa();
     }, 550);
   }
   var kt = (e) => ({ gray: 0, red: 1, gold: 2, rainbow: 3 })[e] ?? 0;
   function Pa(e) {
     if (e !== "gold" && e !== "rainbow") return;
-    let t = B.querySelector("[data-fan]");
+    let t = z.querySelector("[data-fan]");
     if (!t) return;
     let a = e === "rainbow" ? "shake-prism" : "shake-gold";
     t.classList.remove("shake-gold", "shake-prism"), t.offsetWidth, t.classList.add(a), setTimeout(() => t.classList.remove(a), 760);
   }
   function Ra() {
-    let e = B.querySelector("[data-fan]");
+    let e = z.querySelector("[data-fan]");
     e && e.classList.add("is-settled");
-    let t = B.querySelector(".pk-settled-hint");
+    let t = z.querySelector(".pk-settled-hint");
     t && (t.hidden = !1);
   }
   function Nt(e, t) {
     if (f.phase !== "FAN" || f.revealed[e]) return;
     f.revealed[e] = !0;
-    let a = B.querySelector(`[data-reveal="${e}"]`);
-    a && (a.classList.remove("is-back"), a.classList.add("is-open")), t || (Ie(f.cards[e].rarity, a), v !== "low" && Pa(f.cards[e].rarity)), f.revealed.length && f.revealed.every(Boolean) && Ra();
+    let a = z.querySelector(`[data-reveal="${e}"]`);
+    a && (a.classList.remove("is-back"), a.classList.add("is-open")), t || (Ie(f.cards[e].rarity, a), T !== "low" && Pa(f.cards[e].rarity)), f.revealed.length && f.revealed.every(Boolean) && Ra();
   }
-  function za() {
-    f.cards.forEach((e, t) => Tt(() => Nt(t, !1), t * 180));
+  function Ba() {
+    f.cards.forEach((e, t) => vt(() => Nt(t, !1), t * 180));
   }
   var Ye = !1;
-  async function Ba() {
+  async function za() {
     if (Ye) return;
     Ye = !0;
-    let e = [...B.querySelectorAll(".pk-slot")], t = { high: 380, medium: 260, low: 0 }[v] ?? 260;
+    let e = [...z.querySelectorAll(".pk-slot")], t = { high: 380, medium: 260, low: 0 }[T] ?? 260;
     if (t && e.length) {
       let a = window.innerWidth - 44, o = 44;
       e.forEach((n, r) => {
@@ -3502,7 +3616,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
     Ye = !1, f.phase = "IDLE", et(), I(), G();
   }
-  async function Fa() {
+  async function Da() {
     if (w || g?.busy) return;
     let e = It(), t = me === "auto" ? e.defaultMode : me;
     t === "free" && !e.freeAvailable && (t = e.defaultMode), t === "cash" && !e.cashAvailable && (t = e.defaultMode === "cash" ? "points" : e.defaultMode);
@@ -3512,10 +3626,10 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
     he(!0), ye(), G();
     try {
-      let a = await Se({ type: "PLAYER_WHEEL_SPIN", mode: t }), o = a?.result?.prizeId, n = D.findIndex((c) => c.prizeId === o);
-      await _t("play", n), Ct("play", n, a?.result?.rarity), Ie(a?.result?.rarity);
-      let r = D[n];
-      Qe(`<div class="rno">NO.${l(r?.no ?? "")} \xB7 ${l(xe.play)}</div>
+      let a = await Ce({ type: "PLAYER_WHEEL_SPIN", mode: t }), o = a?.result?.prizeId, n = F.findIndex((c) => c.prizeId === o);
+      await Et("play", n), St("play", n, a?.result?.rarity), Ie(a?.result?.rarity);
+      let r = F[n];
+      je(`<div class="rno">NO.${l(r?.no ?? "")} \xB7 ${l(xe.play)}</div>
       <div class="rname">${l(r?.name || "")}</div>
       <div class="rtip">${l(r?.summary || "")}<br>\u300C${l(r?.hint || "")}\u300D</div>
       <div class="rrow"><button class="primary" data-dismiss>${l(i.overlay.play.resultCollect)}</button></div>`, a?.result?.rarity);
@@ -3542,22 +3656,22 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
     he(!0), ye(), G();
     try {
-      let t = Ea(), a = await Se({ type: "PLAYER_PACK_DRAW", poolTier: $ });
-      f.poolTier = $, f.cards = a?.result?.cards || [], f.progress = 0, f.revealed = f.cards.map(() => !1), f.phase = "SEALED", await t, Sa();
+      let t = _a(), a = await Ce({ type: "PLAYER_PACK_DRAW", poolTier: $ });
+      f.poolTier = $, f.cards = a?.result?.cards || [], f.progress = 0, f.revealed = f.cards.map(() => !1), f.phase = "SEALED", await t, Ca();
     } catch (t) {
       Le?.(), f.phase = "IDLE", et(), P(fe(t?.message));
     } finally {
       he(!1), I();
     }
   }
-  async function Da() {
+  async function Fa() {
     if (w || g?.busy) return;
-    let e = $e, t = L, a = t === "card" ? (g?.wishCards || []).find((p) => p.itemId === _) : null, o = t === "asset" ? Lt().find((p) => p.assetId === X) : null, n = t === "card" ? !!a : t === "cash" ? M > 0 : !!o;
+    let e = $e, t = L, a = t === "card" ? (g?.wishCards || []).find((p) => p.itemId === E) : null, o = t === "asset" ? Lt().find((p) => p.assetId === X) : null, n = t === "card" ? !!a : t === "cash" ? M > 0 : !!o;
     if (!e || !n) {
       P(t === "cash" ? i.overlay.casino.goIdleCash : t === "asset" ? i.overlay.casino.goIdleAsset : i.overlay.casino.goIdle);
       return;
     }
-    let r = Fe[e] || {}, c = e === "green" ? 36 : 2;
+    let r = De[e] || {}, c = e === "green" ? 36 : 2;
     {
       let p = i.overlay.confirm;
       if (t === "cash") {
@@ -3586,22 +3700,22 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
     he(!0), ye(), G();
     try {
-      let d = (await Se(t === "card" ? { type: "PLAYER_CASINO_BET", stakeKind: "card", cardId: _, betColor: e } : t === "cash" ? { type: "PLAYER_CASINO_BET", stakeKind: "cash", stakeCents: M, betColor: e } : { type: "PLAYER_CASINO_BET", stakeKind: "asset", assetId: X, betColor: e }))?.result || {};
-      await _t("casino", d.hitIndex || 0), Ct("casino", d.hitIndex || 0);
+      let d = (await Ce(t === "card" ? { type: "PLAYER_CASINO_BET", stakeKind: "card", cardId: E, betColor: e } : t === "cash" ? { type: "PLAYER_CASINO_BET", stakeKind: "cash", stakeCents: M, betColor: e } : { type: "PLAYER_CASINO_BET", stakeKind: "asset", assetId: X, betColor: e }))?.result || {};
+      await Et("casino", d.hitIndex || 0), St("casino", d.hitIndex || 0);
       let m = i.overlay.casino;
       if (d.win) {
-        Te = _;
+        ve = E;
         let h = t === "card" ? b(e === "green" ? m.winGreen : m.winNormal, { value: d.points ?? 0 }) : t === "cash" ? b(e === "green" ? m.winCashGreen : m.winCashNormal, { payout: x(d.payoutCents ?? 0), profit: x(d.profitCents ?? 0) }) : b(e === "green" ? m.winAssetGreen : m.winAssetNormal, { assetName: d.assetName || "", profit: x(d.profitCents ?? 0) });
         W = { kind: "win", text: h }, Ie(e === "green" ? "rainbow" : "gold");
         let y = t === "card" ? `<button class="primary" data-cashout>${l(m.btnCashOut)}</button><button data-lockkeep>${l(m.btnLockKeep)}</button>` : `<button class="primary" data-dismiss>${l(m.btnNextCard)}</button>`;
-        Qe(`<div class="rno">${l(r.name || e)} \xB7 ${l(r.multText || "")}</div>
+        je(`<div class="rno">${l(r.name || e)} \xB7 ${l(r.multText || "")}</div>
         <div class="rname">${l(e === "green" ? m.winGreenTitle : m.winTitle)}</div>
         <div class="rtip">${l(h)}</div>
         <div class="rrow"><button data-again>${l(t === "card" ? m.btnAgain : m.btnAgainStake)}</button>${y}</div>`, e === "green" ? "rainbow" : "gold");
       } else {
-        _ = "", Te = "";
+        E = "", ve = "";
         let h = t === "cash" ? b(m.loseCash, { stake: x(d.stakeCents ?? M) }) : t === "asset" ? b(m.loseAsset, { assetName: d.assetName || "", value: x(d.valueCents ?? 0) }) : m.lose;
-        t === "cash" && (M = 0), t === "asset" && (X = ""), W = { kind: "lose", text: h }, Qe(`<div class="rno">${l(r.name || e)}</div>
+        t === "cash" && (M = 0), t === "asset" && (X = ""), W = { kind: "lose", text: h }, je(`<div class="rno">${l(r.name || e)}</div>
         <div class="rname">${l(m.loseTitle)}</div>
         <div class="rtip">${l(h)}</div>
         <div class="rrow"><button class="primary" data-dismiss>${l(t === "card" ? m.btnNextCard : m.btnAgainStake)}</button></div>`);
@@ -3609,7 +3723,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     } catch (p) {
       P(fe(p?.message));
     } finally {
-      if (he(!1), I(), W && v === "high") {
+      if (he(!1), I(), W && T === "high") {
         let p = W.kind === "win" ? "shake-win" : "shake-lose";
         ke.classList.remove("shake-win", "shake-lose"), ke.offsetWidth, ke.classList.add(p), setTimeout(() => ke.classList.remove(p), 700);
       }
@@ -3630,7 +3744,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   async function Ha(e) {
     if (!w)
       try {
-        let t = await Se({ type: "PLAYER_CARD_REDEEM", cardId: e });
+        let t = await Ce({ type: "PLAYER_CARD_REDEEM", cardId: e });
         P(b(i.overlay.casino.cashOutOk, { value: t?.result?.points ?? 0 })), G(), t?.view && (g = t.view), I();
       } catch (t) {
         P(fe(t?.message));
@@ -3639,41 +3753,41 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   async function Wa(e) {
     if (!w)
       try {
-        let t = await Se({ type: "PLAYER_CARD_LOCK", cardId: e, locked: !0 });
-        P(i.bag.binder.lockedToast), G(), t?.view && (g = t.view), _ = "", I();
+        let t = await Ce({ type: "PLAYER_CARD_LOCK", cardId: e, locked: !0 });
+        P(i.bag.binder.lockedToast), G(), t?.view && (g = t.view), E = "", I();
       } catch (t) {
         P(fe(t?.message));
       }
   }
   ee.addEventListener("click", (e) => {
     if (e.target.closest("[data-fxq-btn]")) {
-      le(!q);
+      le(!K);
       return;
     }
     let a = e.target.closest("[data-fxq-opt]");
     if (a) {
       let r = a.dataset.fxqOpt;
-      le(!1), r !== v && Ke(r);
+      le(!1), r !== T && qe(r);
       return;
     }
     let o = e.target.closest("[data-cfxq-opt]");
     if (o) {
       let r = o.dataset.cfxqOpt;
-      le(!1), r !== K && Ve(r);
+      le(!1), r !== q && Ve(r);
       return;
     }
     le(!1);
     let n = e.target.closest("[data-mode]");
-    !n || w || n.dataset.mode === E || (E = n.dataset.mode, G(), ye(), f.phase = "IDLE", Bt());
+    !n || w || n.dataset.mode === _ || (_ = n.dataset.mode, G(), ye(), f.phase = "IDLE", zt());
   });
-  function zt(e) {
-    w || !$t().find((a) => a.itemId === e) || (_ = e, W = null, I());
+  function Bt(e) {
+    w || !$t().find((a) => a.itemId === e) || (E = e, W = null, I());
   }
   function Ga() {
-    let e = F.querySelector("[data-stake-val]");
+    let e = D.querySelector("[data-stake-val]");
     e && (e.classList.remove("flash"), e.offsetWidth, e.classList.add("flash"));
   }
-  F.addEventListener("click", (e) => {
+  D.addEventListener("click", (e) => {
     let t = e.target.closest("[data-pay]");
     if (t && !w) {
       me = t.dataset.pay, I();
@@ -3689,8 +3803,8 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       $e = o.dataset.bet, W = null, I();
       return;
     }
-    if (e.target.closest("[data-cashout-now]") && !w && _) {
-      Rt(_);
+    if (e.target.closest("[data-cashout-now]") && !w && E) {
+      Rt(E);
       return;
     }
     let r = e.target.closest("[data-stake-kind]");
@@ -3709,41 +3823,41 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       return;
     }
     if (e.target.closest("[data-return-card]") && !w) {
-      L === "card" ? _ = "" : L === "cash" ? M = 0 : X = "", W = null, I();
+      L === "card" ? E = "" : L === "cash" ? M = 0 : X = "", W = null, I();
       return;
     }
     let d = e.target.closest("[data-card]");
     if (d && !w) {
-      zt(d.dataset.card);
+      Bt(d.dataset.card);
       return;
     }
   });
-  F.addEventListener("change", (e) => {
+  D.addEventListener("change", (e) => {
     let t = e.target.closest("[data-cash-input]");
     if (!t || w) return;
     let a = Number(t.value), o = Number.isFinite(a) && a >= 1e3 ? Math.round(a) * 100 : 0, n = Math.max(0, Number(g?.cashCents) || 0);
     M = o ? Math.min(Math.round(o / 100) * 100, Math.floor(n / 100) * 100) : 0, I();
   });
-  F.addEventListener("dragstart", (e) => {
+  D.addEventListener("dragstart", (e) => {
     let t = e.target.closest("[data-card]");
     if (t) {
       try {
         e.dataTransfer.setData("text/plain", t.dataset.card), e.dataTransfer.effectAllowed = "move";
       } catch {
       }
-      F.querySelector("[data-stake-zone]")?.classList.add("drag-over");
+      D.querySelector("[data-stake-zone]")?.classList.add("drag-over");
     }
   });
-  F.addEventListener("dragend", () => F.querySelector("[data-stake-zone]")?.classList.remove("drag-over"));
-  F.addEventListener("dragover", (e) => {
+  D.addEventListener("dragend", () => D.querySelector("[data-stake-zone]")?.classList.remove("drag-over"));
+  D.addEventListener("dragover", (e) => {
     let t = e.target.closest("[data-stake-zone]");
     t && (e.preventDefault(), t.classList.add("drag-over"));
   });
-  F.addEventListener("dragleave", (e) => {
+  D.addEventListener("dragleave", (e) => {
     let t = e.target.closest("[data-stake-zone]");
     t && t.classList.remove("drag-over");
   });
-  F.addEventListener("drop", (e) => {
+  D.addEventListener("drop", (e) => {
     let t = e.target.closest("[data-stake-zone]");
     if (!t) return;
     e.preventDefault(), t.classList.remove("drag-over");
@@ -3752,9 +3866,9 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       a = e.dataTransfer?.getData("text/plain") || "";
     } catch {
     }
-    a && zt(a);
+    a && Bt(a);
   });
-  B.addEventListener("click", (e) => {
+  z.addEventListener("click", (e) => {
     let t = e.target.closest("[data-quicktear],[data-skipspin],[data-reveal],[data-revealall],[data-collect],[data-again]");
     if (t) {
       if (t.dataset.quicktear !== void 0) {
@@ -3768,7 +3882,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         return;
       }
       if (t.dataset.revealall !== void 0) {
-        za();
+        Ba();
         return;
       }
       if (t.dataset.reveal !== void 0) {
@@ -3781,7 +3895,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
           return;
         }
         if (t.dataset.collect !== void 0) {
-          Ba();
+          za();
           return;
         }
       }
@@ -3796,21 +3910,21 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         return;
       }
       if (t.hasAttribute("data-lockkeep")) {
-        let a = Te || _;
+        let a = ve || E;
         a && Wa(a);
         return;
       }
       if (t.hasAttribute("data-cashout")) {
-        let a = Te || _;
+        let a = ve || E;
         a && Rt(a);
       }
     }
   });
   Z.addEventListener("click", () => {
-    E === "play" ? Fa() : E === "pack" ? Pt() : Da();
+    _ === "play" ? Da() : _ === "pack" ? Pt() : Fa();
   });
   document.addEventListener("click", (e) => {
-    q && (e.target.closest(".wf-fxq-wrap") || le(!1));
+    K && (e.target.closest(".wf-fxq-wrap") || le(!1));
   });
   document.addEventListener("click", (e) => {
     if (e.target.closest("[data-close]")) {
@@ -3827,7 +3941,7 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         Me(!1);
         return;
       }
-      if (q) {
+      if (K) {
         le(!1);
         return;
       }
@@ -3838,10 +3952,10 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       (f.phase === "SEALED" || f.phase === "FAN") && P(i.packs.ui.autoSavedToast), te({ type: "WHEEL_CLOSE_REQ" });
     }
   });
-  function Bt() {
-    xa(E);
+  function zt() {
+    xa(_);
     let e = document.getElementById("wfRoot");
-    e && (e.dataset.mode = E), La(), I(), ye(), Et(), Ot(), E === "pack" && f.phase === "IDLE" && et();
+    e && (e.dataset.mode = _), La(), I(), ye(), _t(), Ot(), _ === "pack" && f.phase === "IDLE" && et();
   }
   window.addEventListener("message", (e) => {
     let t = e.data;
@@ -3850,14 +3964,14 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
         if (t.type === "WHEEL_INIT") we = t.nonce;
         else if (t.nonce && t.nonce !== we) return;
         if (t.nonce !== we) return;
-        Ne(), E = t.wheelType === "wish" ? "pack" : t.wheelType || "play", _ = t.preselectCardId || "", $e = "", L = "card", M = 0, X = "", Te = "", me = "auto", f.phase = "IDLE", g = t.view, ce = null;
+        Ne(), _ = t.wheelType === "wish" ? "pack" : t.wheelType || "play", E = t.preselectCardId || "", $e = "", L = "card", M = 0, X = "", ve = "", me = "auto", f.phase = "IDLE", g = t.view, ce = null;
         let a = t.view?.fxQuality || t.fxQuality, o = t.view?.cardFxQuality || t.cardFxQuality;
-        a && Ke(a, !1), o && Ve(o, !1), G(), Bt(), Ua(t.originRect || t.view?.originRect), te({ type: "WHEEL_BUILT", wheelType: E });
+        a && qe(a, !1), o && Ve(o, !1), G(), zt(), Ua(t.originRect || t.view?.originRect), te({ type: "WHEEL_BUILT", wheelType: _ });
         return;
       }
       if (t.nonce === we) {
         if (t.type === "WHEEL_STATE_SYNC") {
-          if (t.view?.fxQuality && t.view.fxQuality !== v && Ke(t.view.fxQuality, !1), t.view?.cardFxQuality && t.view.cardFxQuality !== K && Ve(t.view.cardFxQuality, !1), w) {
+          if (t.view?.fxQuality && t.view.fxQuality !== T && qe(t.view.fxQuality, !1), t.view?.cardFxQuality && t.view.cardFxQuality !== q && Ve(t.view.cardFxQuality, !1), w) {
             ce = t.view;
             return;
           }
@@ -3875,13 +3989,13 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
           return;
         }
         if (t.type === "WHEEL_CLOSE_ANIMATE") {
-          Ya(t.originRect || Ft);
+          Ya(t.originRect || Dt);
           return;
         }
       }
     }
   });
-  var Ft = null;
+  var Dt = null;
   function tt() {
     return { stage: document.querySelector(".wf-stage"), bg: document.querySelector(".wf-backdrop") };
   }
@@ -3894,18 +4008,18 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
       } catch {
       }
     J = [];
-    for (let o of Ee) clearTimeout(o);
-    Ee.clear(), fa(), ie && Me(!1);
+    for (let o of _e) clearTimeout(o);
+    _e.clear(), fa(), ie && Me(!1);
     let e = document.getElementById("wfRoot");
     e && e.classList.remove("is-closing");
     let { stage: t, bg: a } = tt();
     t && (t.style.visibility = ""), a && (a.style.visibility = "");
   }
   function Ua(e) {
-    Ft = e || null, Ne();
+    Dt = e || null, Ne();
     let { stage: t, bg: a } = tt();
-    if (!(!t || !a || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || v === "low" || typeof t.animate != "function")) {
-      if (v === "high" && e && e.width > 0) {
+    if (!(!t || !a || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || T === "low" || typeof t.animate != "function")) {
+      if (T === "high" && e && e.width > 0) {
         let n = t.getBoundingClientRect(), r = e.left + e.width / 2 - (n.left + n.width / 2), c = e.top + e.height / 2 - (n.top + n.height / 2), p = Math.max(0.1, e.width / Math.max(1, n.width)), s = Math.max(0.1, e.height / Math.max(1, n.height));
         J = [
           a.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: "ease-out" }),
@@ -3926,16 +4040,16 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
   function Ya(e) {
     Ne();
     let { stage: t, bg: a } = tt(), o = !1, n = () => {
-      o || (o = !0, se && (clearTimeout(se), se = null), t && (t.style.visibility = "hidden"), a && (a.style.visibility = "hidden"), te({ type: "WHEEL_CLOSE_DONE", wheelType: E }));
+      o || (o = !0, se && (clearTimeout(se), se = null), t && (t.style.visibility = "hidden"), a && (a.style.visibility = "hidden"), te({ type: "WHEEL_CLOSE_DONE", wheelType: _ }));
     }, r = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    if (!t || !a || r || v === "low" || typeof t.animate != "function") {
+    if (!t || !a || r || T === "low" || typeof t.animate != "function") {
       n();
       return;
     }
     let c = document.getElementById("wfRoot");
     c && c.classList.add("is-closing"), se = setTimeout(n, 340);
     try {
-      if (v === "high" && e && e.width > 0) {
+      if (T === "high" && e && e.width > 0) {
         let s = t.getBoundingClientRect(), d = e.left + e.width / 2 - (s.left + s.width / 2), m = e.top + e.height / 2 - (s.top + s.height / 2), h = Math.max(0.08, e.width / Math.max(1, s.width)), y = Math.max(0.08, e.height / Math.max(1, s.height));
         J = [
           a.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, easing: "ease-in", fill: "forwards" }),
@@ -3959,12 +4073,12 @@ ${D.map((e) => `<symbol id="g${e.no}" viewBox="0 0 24 24"><path d="${Be[Number(e
     }
   }
   var xt = 0;
-  function Dt() {
+  function Ft() {
     xt += 1, window.parent.postMessage({ channel: Xe, type: "WHEEL_READY" }, "*"), !(Oe || xt >= 4) && setTimeout(() => {
-      Oe || Dt();
+      Oe || Ft();
     }, 1200);
   }
-  Dt();
+  Ft();
 })();
 </script>
 </body>

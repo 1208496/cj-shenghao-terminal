@@ -48,6 +48,8 @@ export function prowessTier(score){integer(score,1,100);
 const ABILITY_SCALAR={ab_voice:2,ab_gaze:3,ab_scent:12,ab_stamina:12};
 export function hasAbility(s,abilityId){return (s?.user?.abilities||[]).some(a=>a.abilityId===abilityId);}
 export function abilityBonus(s,abilityId){return hasAbility(s,abilityId)?(ABILITY_SCALAR[abilityId]||0):0;}
+// rc.58（4A 方案 B §3.2）：NO.53「终端最终愿望」的四个许愿方向。ASSET/ROMANCE 有脚本当场效果，POWER/CUSTOM 只注入。
+export const WISH_KINDS=['ASSET','ROMANCE','POWER','CUSTOM'];
 // rc.42：玩家手动补录的自定义资产，估值由模型按行情给，脚本按类别硬钳位（单位：分）。
 // 下限/上限/兜底都写死在这里，模型报「9亿」也只会落在上限上。
 export const ASSET_VALUATION_BOUNDS={
@@ -173,6 +175,88 @@ export function formatYuanReadable(centsValue) {
     return `${sign}${Number.isInteger(wan) ? wan : Number(wan.toFixed(2))}万元（¥${absYuan.toLocaleString('zh-CN')}）`;
   }
   return `${sign}${absYuan.toLocaleString('zh-CN')}元`;
+}
+// rc.58（4A 方案 A §6.1；YG 2026-11-27 选 A：正则收窄）——
+// 「年龄—身份自洽」的确定性收敛表。全表 min>=18，18 岁下限不下探。
+// 收窄三处：① 高中加否定前瞻，② 去掉裸「学姐」，③ 在校教职工一律不按学生档收敛。
+export const AGE_BAND_RULES = [
+  { id: 'HIGH_SCHOOL_ADULT', re: /高三|高二|高一|高中(?!教师|老师|校长|主任|部)|复读|艺考|职高|中专|备考高考/, min: 18, max: 19, defaultAge: 18 },
+  { id: 'FRESHMAN', re: /大一|大二|新生|大学学妹|直系学妹/, min: 18, max: 20, defaultAge: 19 },
+  { id: 'UNDERGRAD_INTERN', re: /大三|大四|本科|大学生|校花|学妹|实习生|助教|学生会|社团/, min: 19, max: 23, defaultAge: 21 },
+  { id: 'GRAD_STUDENT', re: /研究生|硕士|研一|研二|研三|博士|博一|博二|女博/, min: 22, max: 28, defaultAge: 24 },
+  { id: 'JUNIOR_YOUTH', re: /刚毕业|应届|新人|前台|柜姐|导购|空姐|护士|幼师|练习生|主播|模特|女仆|调酒师|咖啡师|花艺|烘焙/, min: 19, max: 27, defaultAge: 22 },
+  { id: 'KIN_DAUGHTER', relOnly: true, re: /女儿|养女|干女儿|继女|侄女|外甥女/, min: 18, max: 24, defaultAge: 19 },
+  { id: 'SENIOR_PRO', re: /主治医|主任医|教授|副教授|资深|律所合伙人|投行董事|总监|主编|总裁|董事长|集团副总|行长|院长/, min: 26, max: 45, defaultAge: 30 },
+  { id: 'MATURE_ELDER', relOnly: true, re: /阿姨|小姨|姑姑|舅妈|岳母|丈母娘|后妈|继母|师母|房东太太|寡妇|美妇|少妇/, min: 28, max: 48, defaultAge: 34 },
+];
+// 在校教职工不是学生：职业串里出现这些词的人一律跳过学生档（防「25 岁高中老师」被改成 18）。
+const AGE_BAND_STAFF_RE = /教师|老师|校长|主任|讲师|导师|辅导员|班主任/;
+const AGE_BAND_STUDENT_IDS = new Set(['HIGH_SCHOOL_ADULT', 'FRESHMAN', 'UNDERGRAD_INTERN', 'GRAD_STUDENT']);
+// 旧存档自愈的额外闸：身份串里必须真的出现学生/亲属类词，光靠职业关键词不算数。
+export const AGE_BAND_STUDENT_HINT = /学生|在读|年级|高考|艺考|复读|新生|学妹|实习|女儿|养女|继女|侄女|外甥女/;
+// 旧存档自愈只处理这四类最高频违和身份（上限均 < 25）。
+const LEGACY_AGE_RECONCILE_BANDS = new Set(['HIGH_SCHOOL_ADULT', 'FRESHMAN', 'UNDERGRAD_INTERN', 'KIN_DAUGHTER']);
+
+const CN_DIGITS = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+export function parseExplicitAge(input) {
+  if (typeof input === 'number' && Number.isFinite(input)) return Math.round(input);
+  const s = String(input ?? '').trim();
+  if (!s) return null;
+  if (/^-?\d+(?:\.\d+)?$/.test(s)) return Math.round(Number(s));
+  const arab = s.match(/(?:^|[^\d])([1-9]\d)\s*(?:岁|周岁)/);
+  if (arab) return Number(arab[1]);
+  const cn = s.match(/([一二三四五六七八九]?十[一二三四五六七八九]?|[一二两三四五六七八九])\s*(?:岁|周岁)/);
+  if (cn) {
+    const token = cn[1];
+    if (token === '十') return 10;
+    if (token.startsWith('十')) return 10 + (CN_DIGITS[token[1]] || 0);
+    if (token.endsWith('十')) return (CN_DIGITS[token[0]] || 1) * 10;
+    const [tens, ones] = token.split('十');
+    if (ones !== undefined) return (CN_DIGITS[tens] || 1) * 10 + (CN_DIGITS[ones] || 0);
+    return CN_DIGITS[token] ?? null;
+  }
+  return null;
+}
+
+export function matchAgeBand(c) {
+  const occ = String(c?.occupation || '').trim();
+  const rel = String(c?.relationshipLabel || '').trim();
+  const primary = `${occ} ${rel}`;
+  const skipStudent = AGE_BAND_STAFF_RE.test(occ);
+  for (const rule of AGE_BAND_RULES) {
+    if (skipStudent && AGE_BAND_STUDENT_IDS.has(rule.id)) continue;
+    const target = rule.relOnly ? rel : primary;
+    if (rule.re.test(target)) return rule;
+  }
+  const fallback = `${c?.knownFacts || ''} ${c?.firstContactEvidence || ''}`;
+  for (const rule of AGE_BAND_RULES) {
+    if (rule.relOnly) continue;
+    if (skipStudent && AGE_BAND_STUDENT_IDS.has(rule.id)) continue;
+    if (rule.re.test(fallback)) return rule;
+  }
+  return null;
+}
+
+export function reconcileCharacterAge(raw, { briefText = '', skeletonDefault = 25 } = {}) {
+  const clamp = (n) => Math.min(80, Math.max(18, Math.round(n)));
+  // 1. 玩家在一句话描述里显式写了年龄 → 钳到 [18, 80] 后直接以玩家为准
+  const explicitFromBrief = briefText ? parseExplicitAge(briefText) : null;
+  if (explicitFromBrief !== null) return clamp(explicitFromBrief);
+
+  const parsedRaw = parseExplicitAge(raw?.age);
+  const band = matchAgeBand(raw);
+  if (!band) {
+    return parsedRaw !== null ? clamp(parsedRaw) : skeletonDefault;
+  }
+  if (parsedRaw === null) return band.defaultAge;
+  const clamped = clamp(parsedRaw);
+  // 模型/旧骨架随手塞了 25 岁，且 25 岁不在该职业区间内 → 直接落到该职业默认典型年龄
+  if (clamped === skeletonDefault && (clamped < band.min || clamped > band.max)) {
+    return band.defaultAge;
+  }
+  if (clamped < band.min) return band.min;
+  if (clamped > band.max) return band.max;
+  return clamped;
 }
 // rc.30：根据性格标签、职业与外貌判定五大性格原型（cool/warm/sunny/proud/pure），
 // 让私密设定、体香、敏感带、性观念、性癖、软肋与三层心绪链彻底告别千篇一律。
@@ -1220,6 +1304,32 @@ export function sanitizeInventoryAndUnlocks(s){
         out.changed=true;
       }
     }
+    // rc.58（4A 方案 B §6.2）：旧版「空放的 w53」自愈 —— status USED 却没有 wishText，说明玩家点了使用、
+    // 愿望却没进上下文（旧引导词里根本没有许愿位）。这类券退回 READY 让玩家重许一次；幂等锁防重复退。
+    for(const [itemId,item] of Object.entries(s.inventory)){
+      if(!item||item.category!=='WHEEL_PRIZE'||item.refId!=='w53')continue;
+      if(item.status!=='USED'||item.pendingUndo===true||item.wishText)continue;
+      const factKey='legacy_w53_restored:'+itemId;
+      if(Object.hasOwn(s.facts,factKey))continue;
+      item.status='READY';item.usedDate=null;item.usedRevision=null;
+      s.facts[factKey]={type:'LEGACY_W53_RESTORE',itemId};
+      out.changed=true;
+    }
+    // rc.58（4A 方案 A §4.2；YG 选 A 后加了一道闸门）：旧存档「25 岁的高二学生」读档即自愈。
+    // 只动 25 岁 + 学生/晚辈女儿身份，且身份串里必须真的出现学生类词；玩家手改过的永不触碰。
+    for(const c of Object.values(s.characters)){
+      if(!c||typeof c!=='object')continue;
+      if(Number(c.age)!==25)continue;
+      if(Object.hasOwn(s.facts,'profile_edited:'+c.id)||Object.hasOwn(s.facts,'legacy_age_reconciled:'+c.id))continue;
+      const band=matchAgeBand(c);
+      if(!band||!LEGACY_AGE_RECONCILE_BANDS.has(band.id))continue;
+      const hint=`${c.occupation||''} ${c.relationshipLabel||''} ${c.knownFacts||''}`;
+      if(!AGE_BAND_STUDENT_HINT.test(hint))continue;
+      const from=c.age;c.age=band.defaultAge;
+      if(c.profileFixed&&typeof c.profileFixed.identity==='string')c.profileFixed.identity=c.profileFixed.identity.replace(new RegExp(`${from}\\s*岁`,'g'),`${c.age}岁`).slice(0,750);
+      s.facts['legacy_age_reconciled:'+c.id]={type:'LEGACY_AGE_RECONCILE',from,to:c.age};
+      out.changed=true;
+    }
   }catch{/* 容错底线：清洗绝不阻断旧存档加载 */}
   return out;
 }
@@ -1396,6 +1506,9 @@ function applyEvent(s,e,eventKey,anchor) {
       requireRule(e.completed===true,'NOT_COMPLETED');
       const a=e.asset&&typeof e.asset==='object'?e.asset:null;requireRule(a,'ASSET_REQUIRED');
       const name=text(a.name,120);requireRule(name,'INVALID_TEXT');
+      // rc.58（4A 方案 B §8）：同名在持资产幂等 —— 脚本已为「终端最终愿望」当场入账时，
+      // 模型若惯性再发一条 ASSET_GRANT，不得出现两件同名房产。
+      if(Object.values(s.finance.assets).some(x=>x&&x.ownerId==='USER'&&x.status==='OWNED'&&x.name===name))return;
       const kind=assetKind(a.kind,name),assetId=id(a.assetId||('asset_'+fnv(name+':'+e.factId)));
       requireRule(!s.finance.assets[assetId],'DUPLICATE_ASSET');
       const bookValueCents=integer(a.bookValueCents??0,0);
@@ -1899,7 +2012,16 @@ export function applyOperation(state,op,anchor) {
     const participants=(Array.isArray(op.participants)?op.participants:[]).slice(0,5).map(x=>id(x));
     for(const p of participants)requireRule(s.characters[p],'UNKNOWN_PERSON');
     const prize=WHEEL_POOL_BY_ID[item.refId];
+    // rc.58（4A 方案 B §3.2/§4）：NO.53「终端最终愿望」走专属许愿契约 —— 只能立即兑现，必须带愿望文本，
+    // 并按方向当场给出脚本确定性效果（顶奢资产入账 / 目标女性到场升温）。
+    const isFinalWish=item.refId==='w53';
+    if(isFinalWish)requireRule(op.immediate===true,'ITEM_NOT_READY');
     if(op.immediate===true){
+      const wishKind=isFinalWish?(WISH_KINDS.includes(op.wishKind)?op.wishKind:'CUSTOM'):null;
+      let wishText=typeof op.wishText==='string'?op.wishText.trim().slice(0,300):'';
+      if(isFinalWish){
+        requireRule(wishText.length>=2&&wishText.length<=120,'WISH_TEXT_REQUIRED');
+      }else if(wishText&&wishText.length>120)wishText=wishText.slice(0,120);
       item.status='USED';item.usedDate=s.world.date;item.targetCharacterIds=participants;
       // rc.43：revision 在函数末尾才自增，这里写 +1 才对得上新版本；pendingUndo 打开撤销窗口。
       item.usedRevision=s.meta.revision+1;
@@ -1908,7 +2030,40 @@ export function applyOperation(state,op,anchor) {
       item.pendingUndo=true;item.undoSnapshot=null;
       // rc.46：把实际塞进输入框的引导词快照下来，撤销时按原文精确剔除，不再靠名字猜。
       item.usedDraftText=typeof op.usedDraftText==='string'?op.usedDraftText.slice(0,2000):null;
-      result={itemId:item.itemId,prizeId:item.refId,title:prize?.name||'',immediate:true,participants};
+      item.wishKind=wishKind;item.wishText=wishText||null;
+      let grantedAsset=null,romance=null;
+      if(isFinalWish&&wishKind==='ASSET'){
+        // 铁律一：脚本当场入账，不等模型下一轮发 ASSET_GRANT（防漏发导致愿望落空）。
+        // 零现金、basisCents 0、acquisitionIsInitial true —— 不动 cashCents，也不稀释提现倍率。
+        const assetName=String(op.wishAssetName||'').trim().slice(0,60);
+        requireRule(assetName.length>=2&&assetName.length<=40,'WISH_ASSET_NAME_REQUIRED');
+        const kind=resolveCustomAssetKind(assetName,`${wishText} ${assetName}`);
+        const value=ASSET_TIER_TABLE[kind].TOP;
+        const assetId='asset_wish_'+fnv(assetName+':'+s.meta.branchKey+':'+op.operationId).slice(0,12);
+        requireRule(!s.finance.assets[assetId],'DUPLICATE_ASSET');
+        s.finance.assets[assetId]={assetId,kind,name:assetName,ownerId:'USER',bookValueCents:value,basisCents:0,
+          status:'OWNED',acquisitionEventId:op.operationId,acquisitionIsInitial:true,
+          description:assetDescription({name:assetName,bookValueCents:value},kind,value),
+          locationNote:'',ownershipNote:'终端最终愿望 · 顶奢旗舰档',valuationPending:false,valuationTier:'TOP',
+          isCustom:false,registeredDate:s.world.date};
+        const ledgerId=op.operationId+':wish_asset';
+        addLedger(s,ledgerId,{factId:ledgerId,kind:'ASSET_GRANT',direction:'NONE',amountCents:0,payer:'TERMINAL',itemName:assetName,memo:'终端最终愿望 · '+assetName,assetId},anchor);
+        grantedAsset={assetId,kind,name:assetName,bookValueCents:value};
+        item.undoSnapshot={grantedAssetId:assetId,grantedLedgerId:ledgerId};
+      }else if(isFinalWish&&wishKind==='ROMANCE'&&participants.length){
+        // 不直接把好感/堕落拉满（那会架空双轴养成）：只把人拉到现场并松动心防，涨幅仍由当轮 BEHAVIOR 结算。
+        const targetId=participants[0],c=s.characters[targetId];
+        if(c){
+          const priorPresentIds=clone(s.scene.presentCharacterIds||[]);
+          const priorArousal=Number(c.arousal)||0;
+          if(!priorPresentIds.includes(targetId))s.scene.presentCharacterIds.push(targetId);
+          c.arousal=Math.max(priorArousal,65);
+          romance={targetId,priorArousal,arousal:c.arousal};
+          item.undoSnapshot={priorPresentIds,targetId,priorArousal};
+        }
+      }
+      result={itemId:item.itemId,prizeId:item.refId,title:prize?.name||'',immediate:true,participants,
+        ...(wishKind?{wishKind,wishText}:{}),...(grantedAsset?{grantedAsset}:{}),...(romance?{romance}:{})};
     } else {
       requireRule(/^\d{4}-\d{2}-\d{2}$/.test(String(op.date||'')),'INVALID_DRAFT');
       requireRule(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(op.time||'')),'INVALID_DRAFT');
@@ -1966,7 +2121,16 @@ export function applyOperation(state,op,anchor) {
     requireRule(item.pendingUndo===true,'UNDO_NOT_ALLOWED');
     if(item.category==='WHEEL_PRIZE'){
       requireRule(item.status==='USED','UNDO_NOT_ALLOWED');
-      item.status='READY';item.scheduledAppointmentId=null;
+      // rc.58（4A 方案 B §3.3）：w53 的脚本副作用按快照原样回退——资产与账本一起删，
+      // 在场名单与情欲值按启用前的值还原，许愿字段清空。
+      const snap=item.undoSnapshot||{};
+      if(snap.grantedAssetId){
+        delete s.finance.assets[snap.grantedAssetId];
+        if(snap.grantedLedgerId)delete s.finance.ledger[snap.grantedLedgerId];
+      }
+      if(Array.isArray(snap.priorPresentIds))s.scene.presentCharacterIds=clone(snap.priorPresentIds);
+      if(snap.targetId&&s.characters[snap.targetId]&&Number.isFinite(Number(snap.priorArousal)))s.characters[snap.targetId].arousal=Number(snap.priorArousal);
+      item.status='READY';item.scheduledAppointmentId=null;item.wishKind=null;item.wishText=null;
     } else {
       const snap=item.undoSnapshot||{};
       if(snap.mirrorAdded===true&&Array.isArray(w.unlockedSecretPages)&&snap.mirrorTarget){
@@ -2156,6 +2320,42 @@ export function applyOperation(state,op,anchor) {
       c.addressing=value;
       result={personRef:c.id,addressing:value};
     } else
+    if(op.type==='PLAYER_EDIT_CHARACTER') {
+      // rc.58（4A 方案 A §6.2）：玩家侧纠错通道。age/外貌/三围在 settleNative 里被 prior-wins 锁死，
+      // 模型改不动；这里开一条脚本独占操作，写进 operationHistory，删楼/换 swipe 可重放。
+      const patch=op.patch&&typeof op.patch==='object'?op.patch:{};
+      const priorAge=c.age,priorOcc=String(c.occupation||'');
+      c.age=integer(patch.age,18,80);
+      c.relationshipLabel=text(patch.relationshipLabel,12);
+      c.occupation=text(patch.occupation ?? '',100,true);
+      c.addressing=text(patch.addressing ?? '',20,true);
+      if(Object.hasOwn(patch,'beautyScore'))c.beautyScore=patch.beautyScore===null?null:integer(patch.beautyScore,1,100);
+      c.cupSize=text(patch.cupSize ?? '',8,true);
+      const num=(v,min,max)=>{const n=v===null||v===undefined||v===''?null:Number(v);requireRule(n===null||(Number.isFinite(n)&&n>=min&&n<=max),'INVALID_BASIC_PROFILE');return n===null?null:Math.round(n*10)/10;};
+      c.heightCm=num(patch.heightCm,100,230);c.weightKg=num(patch.weightKg,25,250);
+      c.bustCm=num(patch.bustCm,40,200);c.waistCm=num(patch.waistCm,30,200);c.hipCm=num(patch.hipCm,40,200);c.shoeSizeEu=num(patch.shoeSizeEu,25,55);
+      const tags=Array.isArray(patch.personalityTags)?patch.personalityTags:[];
+      requireRule(tags.length<=6,'INVALID_BASIC_PROFILE');
+      c.personalityTags=tags.map(x=>text(x,12)).filter(Boolean);
+      c.appearance=text(patch.appearance ?? '',500,true);
+      c.body=text(patch.body ?? '',500,true);
+      c.recentGoal=text(patch.recentGoal ?? '',200,true);
+      c.longTermDream=text(patch.longTermDream ?? '',200,true);
+      // 罩杯留空（或三围改动后没手动定）→ 按新的三围与身材描述重算，避免 D 罩杯配 70 胸围。
+      if(!c.cupSize)c.cupSize=inferCupSize(c.bustCm,c.waistCm,c.heightCm,`${c.body||''} ${c.appearance||''}`);
+      // 九大档案联动：identity 里的旧年龄/旧职业字面量同步成新值。
+      if(c.profileFixed&&typeof c.profileFixed.identity==='string'){
+        let idText=c.profileFixed.identity;
+        if(priorAge&&priorAge!==c.age){
+          idText=idText.replace(new RegExp(`${priorAge}\\s*岁`,'g'),`${c.age}岁`);
+          if(!idText.includes(`${c.age}岁`))idText=`${idText.replace(/[。.\s]+$/,'')}，${c.age}岁。`;
+        }
+        if(priorOcc&&c.occupation&&priorOcc!==c.occupation&&idText.includes(priorOcc))idText=idText.split(priorOcc).join(c.occupation);
+        c.profileFixed.identity=idText.slice(0,750);
+      }
+      s.facts['profile_edited:'+c.id]={type:'PLAYER_EDIT_CHARACTER',revision:s.meta.revision+1};
+      result={personRef:c.id,age:c.age,occupation:c.occupation};
+    } else
     if(op.type==='PLAYER_WITHDRAW') {
       requireRule(canWithdraw(s,c.id),'WITHDRAWAL_LOCKED');const q=withdrawalQuote(s,c.id),allocations={},recoveryAllocations={};
       for(const r of Object.values(s.rewardEvents))if(r.characterId===c.id&&r.valid&&!r.withdrawalId&&r.cashbackCents>r.refundedCents){r.withdrawalId=op.operationId;r.claimedCents=r.cashbackCents-r.refundedCents;allocations[r.eventId]=r.claimedCents;}
@@ -2247,9 +2447,26 @@ export function projection(s) {
       :type==='AFFECTION_PING'?'发来今天的一件小事，话尾试探你今晚有没有空'
       :'说手上的事卡住了，想听你的意见，问你最近能不能见一面';
     return {characterId:who.id,name:who.name,type,hint};
-  })();  const mustDepictUsedItems=Object.values(s.inventory||{}).filter(i=>i.pendingUndo===true).slice(0,6).map(i=>{const def=i.category==='SURREAL_ITEM'?SURREAL_ITEM_BY_ID[i.refId]:WHEEL_POOL_BY_ID[i.refId];const names=(i.targetCharacterIds||[]).map(pid=>s.characters[pid]?.name).filter(Boolean);return {category:i.category==='SURREAL_ITEM'?'奇物':'玩法券',name:def?.name||i.refId,effectOrHint:def?.effect||def?.hint||def?.summary||'',...(names.length?{targetNames:names}:{})};});
+  })();  const mustDepictUsedItems=Object.values(s.inventory||{}).filter(i=>i.pendingUndo===true).slice(0,6).map(i=>{const def=i.category==='SURREAL_ITEM'?SURREAL_ITEM_BY_ID[i.refId]:WHEEL_POOL_BY_ID[i.refId];const names=(i.targetCharacterIds||[]).map(pid=>s.characters[pid]?.name).filter(Boolean);
+    // rc.58（玩家反馈「终端最终愿望许愿实现不了」）：玩法券旧口径优先 hint，而 hint 是登场旁白的悬念句
+    // （w53「终端屏幕整个黑了，只剩一行字在闪：说吧，你想要什么。」），模型照抄就只写到发问为止，愿望从不兑现。
+    // 玩法券改为优先 summary（这张券实际给到什么），hint 退为旁白兜底；奇物维持原口径（effect 才是效果语句）。
+    const effectOrHint=i.category==='SURREAL_ITEM'?(def?.effect||def?.hint||def?.summary||''):(def?.summary||def?.effect||def?.hint||'');
+    return {category:i.category==='SURREAL_ITEM'?'奇物':'玩法券',name:def?.name||i.refId,effectOrHint,...(i.wishText?{playerWish:i.wishText}:{}),...(names.length?{targetNames:names}:{})};});
+  // rc.58（4A 方案 B §5.2）：NO.53 待生效时，_context 顶层挂一条高优先级待办，把「愿望」本身送进模型。
+  // 没有待生效的 w53 时整段省略，零 token 开销。
+  const wishItem=Object.values(s.inventory||{}).find(i=>i&&i.category==='WHEEL_PRIZE'&&i.refId==='w53'&&i.pendingUndo===true&&i.wishText);
+  const activeTerminalWish=wishItem?(()=>{
+    const names=(wishItem.targetCharacterIds||[]).map(pid=>s.characters[pid]?.name).filter(Boolean);
+    const granted=wishItem.undoSnapshot?.grantedAssetId?s.finance.assets[wishItem.undoSnapshot.grantedAssetId]:null;
+    return {prizeId:'w53',name:'终端最终愿望',wishKind:wishItem.wishKind||'CUSTOM',wishText:wishItem.wishText,
+      targetCharacterIds:clone(wishItem.targetCharacterIds||[]),
+      ...(names.length?{targetNames:names}:{}),
+      ...(granted?{preGrantedAsset:{assetId:granted.assetId,kind:granted.kind,name:granted.name,bookValueYuan:formatYuanReadable(granted.bookValueCents),alreadyInFinanceAssets:true}}:{}),
+      directive:'【终极愿望强制当轮兑现】玩家已消耗虹阶『终端最终愿望』并许下上述愿望。本轮正文必须在1句以内写完终端黑屏金字锁定指令，随后立即在当前轮次内把愿望转化为已发生、已交割的现实结果与在场人物的震撼反应！严禁只写到『终端问你想要什么』就结束，严禁拖延到下一轮。若preGrantedAsset非空，代表脚本已将该顶奢资产免款记入玩家名下，正文直接写产权/钥匙交接与现场体验，无需重复提交ASSET_GRANT；若涉及破局或亲密互动，同轮正常提交高分BEHAVIOR。'};
+  })():null;
   return {schemaVersion:3,revision:s.meta.revision,starredOffscreenIds,...(presentChars.length>=2?{presentThoughtIds:presentChars.map(c=>c.id)}:{}),user:{...s.user,cashYuan:formatYuanReadable(s.user.cashCents),wealthTier:wealthTier(tierBasis(s)),pendingProfileFields:['heightCm','weightKg','shoeSizeEu'].filter(k=>s.user[k]==null)},scene:{...s.scene,...(intimateActive?{intimateStage:'INTIMATE_SCENE_ACTIVE'}:{})},characters,pendingBasicProfiles,
-    ...(mustDepictUsedItems.length?{mustDepictUsedItems}:{}),...(pendingAbilityUses.length?{pendingAbilityUses}:{}),
+    ...(mustDepictUsedItems.length?{mustDepictUsedItems}:{}),...(activeTerminalWish?{activeTerminalWish}:{}),...(pendingAbilityUses.length?{pendingAbilityUses}:{}),
     ...(incomingPing?{incomingPing}:{}),
     ...(userAbilities.length?{userAbilities}:{}),...(bagSurrealItems.length?{bagSurrealItems}:{}),
     ...(todaySchedules.length?{todaySchedules}:{}),...(bagReadyItems.length?{bagReadyItems}:{}),
