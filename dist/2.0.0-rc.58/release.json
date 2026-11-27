@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "projectId": "cj-shenghao-terminal-v2",
+  "repository": "1208496/cj-shenghao-terminal",
+  "version": "2.0.0-rc.58",
+  "runtimeFile": "dist/terminal.js",
+  "mark": "CJ_SHENGHAO_TERMINAL_CORE",
+  "worldbookHash": "38407da18f1aa301cfabca8616c9294b07a37f0153c113cf98da734e60e68192",
+  "sha256": "d62e447b7f8d08e006375c268eda4d870538d1419c54510b68cfc3fc74a713d0",
+  "notes": "v2.0.0-rc.58：人物详情新增「编辑资料」——年龄、职业、关系、称呼、颜值、罩杯与三围、外貌身材、近期目标与长期梦想都能自己改，改完即锁；新人物年龄按身份自动收敛（高三/复读 18–19），不再出现「25 岁的高二学生」，旧存档里已有的错位读档即自愈；「终端最终愿望」改为许愿台：四个方向 + 必填愿望，确认后终端当场兑现——顶奢资产直接入账、指定女性立刻到场升温，生成前可一键撤销并无损回退；旧版被空放的愿望券会自动退回，可重许一次。"
+}
